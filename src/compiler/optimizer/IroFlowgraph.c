@@ -74,6 +74,10 @@ static void AddSucc(IRONode* a, IRONode* b) {
     b->numpred++;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (14)
+#endif
 static void AddLabelSucc(IRONode* node, CLabel* label) {
     IRONode* targetnode = (IRONode*)label->stmt;
     if (targetnode) {
@@ -83,6 +87,10 @@ static void AddLabelSucc(IRONode* node, CLabel* label) {
         CError_FATAL(126);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void AddSwitchSucc(IRONode* node) {
     SwitchInfo* info = node->last->u.swtch.info;
@@ -199,8 +207,13 @@ next_linear:
             count = 0;
             if (IRO_IsThrowingCall(linear)) {
                 count = 0;
+#if MWCCPS2_B52
                 for (action = linear->stmt ? linear->stmt->dobjstack : NULL; action;
                      action = action->prev) {
+#else
+                for (action = linear->stmt ? linear->stmt->dobjstack : NULL; action;
+                     action = action->prev) {
+#endif
                     if (action->type == EAT_CATCHBLOCK || action->type == EAT_SPECIFICATION) {
                         count++;
                     }
@@ -300,29 +313,56 @@ fallthrough:
 
     for (node = IRO_FirstNode; node; node = node->nextnode) {
         for (linear = node->first; linear; linear = linear->next) {
+#if MWCCPS2_B52
             if (linear->type == IROLinearAsm &&
                 linear->u.asm_stmt &&
                 (label = func_0052B3F0(linear->u.asm_stmt)) &&
                 label->stmt) {
+#else
+            if (linear->type == IROLinearAsm &&
+                linear->u.asm_stmt &&
+                (label = func_0052B3F0(linear->u.asm_stmt)) &&
+                label->stmt) {
+#endif
                 ((IRONode*)label->stmt)->referenced = TRUE;
             }
+#if MWCCPS2_B52
             for (action = linear->stmt ? linear->stmt->dobjstack : NULL; action;
                  action = action->prev) {
+#else
+            for (action = linear->stmt ? linear->stmt->dobjstack : NULL; action;
+                 action = action->prev) {
+#endif
                 if (action->type == EAT_CATCHBLOCK) {
+#if MWCCPS2_B52
                     if (action->data.catch_block.catch_label &&
                         action->data.catch_block.catch_label->stmt) {
+#else
+                    if (action->data.catch_block.catch_label &&
+                        action->data.catch_block.catch_label->stmt) {
+#endif
                         ((IRONode*)action->data.catch_block.catch_label->stmt)->referenced = TRUE;
                     }
                 } else if (action->type == EAT_SPECIFICATION) {
+#if MWCCPS2_B52
                     if (action->data.specification.unexp_label &&
                         action->data.specification.unexp_label->stmt) {
+#else
+                    if (action->data.specification.unexp_label &&
+                        action->data.specification.unexp_label->stmt) {
+#endif
                         ((IRONode*)action->data.specification.unexp_label->stmt)->referenced = TRUE;
                     }
                 }
             }
             if (node->first->type == IROLinearLabel &&
+#if MWCCPS2_B52
                 (linear->type == IROLinearBeginCatch ||
                  linear->type == IROLinearEndCatch ||
+#else
+                (linear->type == IROLinearBeginCatch ||
+                 linear->type == IROLinearEndCatch ||
+#endif
                  linear->type == IROLinearEndCatchDtor)) {
                 node->referenced = TRUE;
             }
@@ -649,8 +689,13 @@ void IRO_FindAsmBarriers(void) {
     }
     for (fnode = IRO_FirstNode; fnode; fnode = fnode->nextnode) {
         if (fnode->last) {
+#if MWCCPS2_B52
             for (linear = fnode->first;
                  !fnode->hasAsmBarrier && linear && linear != fnode->last->next;
+#else
+            for (linear = fnode->first;
+                 !fnode->hasAsmBarrier && linear && linear != fnode->last->next;
+#endif
                  linear = linear->next) {
                 if (linear->type == IROLinearAsm && IRO_GetAsmEffectsHook && linear->u.asm_stmt) {
                     IROAsmEffects effects = IRO_EmptyAsmEffects;
@@ -716,8 +761,13 @@ void IRO_BuildFlowgraph(IROLinear* linear) {
         while (!endsNode && scan->next && !(scan->next->flags & IROLF_StartsNode)) {
             if (IRO_FunctionCallMightThrowException(scan)) {
                 count = 0;
+#if MWCCPS2_B52
                 for (action = scan->stmt ? scan->stmt->dobjstack : NULL; action;
                      action = action->prev) {
+#else
+                for (action = scan->stmt ? scan->stmt->dobjstack : NULL; action;
+                     action = action->prev) {
+#endif
                     if (action->type == EAT_CATCHBLOCK || action->type == EAT_SPECIFICATION) {
                         count++;
                     }
@@ -1010,8 +1060,13 @@ IRONode* IRO_MergeFlowGraphNodes(IRONode* a, IRONode* b) {
         // 3.0.1 (0x5766B0): IRO_UseDef301's uses
         if (data_006242B8 && data_00625304) {
             IROUse301* use;
+#if MWCCPS2_B52
             for (use = data_006242B8; use && use != data_00625304->globalnext;
                  use = use->globalnext) {
+#else
+            for (use = data_006242B8; use && use != data_00625304->globalnext;
+                 use = use->globalnext) {
+#endif
                 if (use->node == b) {
                     use->node = a;
                 }

@@ -71,6 +71,7 @@ typedef struct Header {
     StaticData* cprec_staticdata;
     UInt32 uniqueID;
     CallbackAction* callbackactions;
+#if !MWCCPS2_B52
     Type* cobjc_type_class;
     Type* cobjc_type_id;
     Type* cobjc_type_sel;
@@ -80,6 +81,7 @@ typedef struct Header {
     UInt32 cobjc_selrefcount;
     UInt32 cobjc_classrefcount;
     UInt32 cobjc_stringcount;
+#endif
     InitExpr* init_expressions;
     CI_Action* cinline_tactionlist;
     TemplateFunction* ctempl_templatefuncs;
@@ -147,7 +149,11 @@ static AddrPatch** cprec_addrhash;
 static Patch* cprec_patch_list;
 static BuiltIn* cprec_builtin;
 static PointerHash** cprec_pointerhash;
+#if MWCCPS2_B52
+StaticData* cprec_staticdata; // a global in b52 (0x5B6504), not in the unit's .bss
+#else
 static StaticData* cprec_staticdata;
+#endif
 static TokenPatch* cprec_tokenpatches;
 static void** cprec_builtin_array;
 static int cprec_builtins;
@@ -155,7 +161,11 @@ static SInt32 cprec_offset;
 static SInt32 cprec_zero_offset;
 static void* cprec_buffer;
 static void* cprec_rawbuffer;
+#if MWCCPS2_B52
+static SInt32 cprec_ioerror; // 4 bytes in b52 (read and written as a dword)
+#else
 static OSErr cprec_ioerror;
+#endif
 static Boolean cprec_dowrite;
 static Boolean cprec_exportargnames;
 static SInt32 flushmax;
@@ -392,6 +402,12 @@ static void CPrec_SetupBuiltIn(void) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-11)
+#endif
 static void CPrec_NewPointerPatch(void* src, void* ptr) {
     if (cprec_dowrite) {
         Patch* patch = lalloc(sizeof(Patch));
@@ -427,7 +443,19 @@ static void CPrec_NewPointerPatch(void* src, void* ptr) {
         *((void**)(*cprec_glist.data + (SInt32)src)) = ptr;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-11)
+#endif
 static void CPrec_ExistingPointerPatch(void* src, void* ptr) {
     SInt32 key = (SInt32)ptr;
     if (cprec_dowrite) {
@@ -460,6 +488,12 @@ static void CPrec_ExistingPointerPatch(void* src, void* ptr) {
         *((void**)(*cprec_glist.data + (SInt32)src)) = addrPatch->value;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static void CPrec_NamePatch(void* src, HashNameNode* name) {
     name->id = 1;
@@ -477,60 +511,114 @@ static SInt32 CPrec_AppendAlign(void) {
     return cprec_offset;
 }
 
+#if MWCCPS2_B52
+// 2.4.5's appenders return nothing (b69 0x4E25D0..0x4E2690: the offset is bumped
+// in place, never loaded)
+static void CPrec_AppendByte(UInt8 v) {
+#else
 static UInt32 CPrec_AppendByte(UInt8 v) {
+#endif
     if (cprec_dowrite) {
         AppendGListByte(&cprec_glist, v);
     }
+#if MWCCPS2_B52
+    cprec_offset++;
+#else
     return cprec_offset++;
+#endif
 }
 
+#if MWCCPS2_B52
+static void CPrec_AppendWord16(UInt16 v) {
+#else
 static UInt32 CPrec_AppendWord16(UInt16 v) {
     UInt32 offset;
+#endif
     if (cprec_dowrite) {
         AppendGListWord(&cprec_glist, v);
     }
+#if !MWCCPS2_B52
     offset = cprec_offset;
+#endif
     cprec_offset += 2;
+#if !MWCCPS2_B52
     return offset;
+#endif
 }
 
+#if MWCCPS2_B52
+static void CPrec_AppendWord32(UInt32 v) {
+#else
 static UInt32 CPrec_AppendWord32(UInt32 v) {
     UInt32 offset;
+#endif
     if (cprec_dowrite) {
         AppendGListLong(&cprec_glist, v);
     }
+#if !MWCCPS2_B52
     offset = cprec_offset;
+#endif
     cprec_offset += 4;
+#if !MWCCPS2_B52
     return offset;
+#endif
 }
 
+#if MWCCPS2_B52
+static void CPrec_AppendPointer(void* v) {
+#else
 static UInt32 CPrec_AppendPointer(void* v) {
     UInt32 offset;
+#endif
     if (cprec_dowrite) {
         AppendGListLong(&cprec_glist, (SInt32)v);
     }
+#if !MWCCPS2_B52
     offset = cprec_offset;
+#endif
     cprec_offset += 4;
+#if !MWCCPS2_B52
     return offset;
+#endif
 }
 
+#if MWCCPS2_B52
+static void CPrec_AppendPointerPatch(void* v) {
+#else
 static UInt32 CPrec_AppendPointerPatch(void* v) {
+#endif
     AddrPatch* addrPatch;
 
     if (v) {
+#if MWCCPS2_B52
+        CError_ASSERT(644, addrPatch = CPrec_FindAddrPatch(v));
+#else
         CError_ASSERT(660, addrPatch = CPrec_FindAddrPatch(v));
+#endif
 
         if (cprec_dowrite) {
             Patch* patch = lalloc(sizeof(Patch));
             patch->offset = cprec_offset;
             patch->next = cprec_patch_list;
             cprec_patch_list = patch;
+#if MWCCPS2_B52
+            CError_ASSERT(651, (patch->offset & 0x80000001) == 0);
+#else
             CError_ASSERT(667, (patch->offset & 0x80000001) == 0);
+#endif
         }
 
+#if MWCCPS2_B52
+        CPrec_AppendPointer(addrPatch->value);
+#else
         return CPrec_AppendPointer(addrPatch->value);
+#endif
     } else {
+#if MWCCPS2_B52
+        CPrec_AppendPointer(NULL);
+#else
         return CPrec_AppendPointer(NULL);
+#endif
     }
 }
 
@@ -920,6 +1008,12 @@ static ExceptSpecList* CPrec_GetExceptSpecPatch(ExceptSpecList* exspec) {
     return first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (8)
+#endif
 static FuncArg* CPrec_GetArgListPatch(FuncArg* lst, Boolean includeNames) {
     SInt32 first;
     SInt32 current;
@@ -971,6 +1065,12 @@ static FuncArg* CPrec_GetArgListPatch(FuncArg* lst, Boolean includeNames) {
 
     return (FuncArg*)first;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static TypeFunc* CPrec_GetTypeFuncPatch(TypeFunc* type) {
     SInt32 p;
@@ -1022,6 +1122,10 @@ static TypeMemberPointer* CPrec_GetTypeMemberPointerPatch(TypeMemberPointer* typ
     return (TypeMemberPointer*)p;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static TypeTemplDep* CPrec_GetTypeTemplDepPatch(TypeTemplDep* type) {
     SInt32 p;
 
@@ -1088,6 +1192,10 @@ static TypeTemplDep* CPrec_GetTypeTemplDepPatch(TypeTemplDep* type) {
 
     return (TypeTemplDep*)p;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static ClassList* CPrec_GetClassListPatch(ClassList* cl) {
     AddrPatch* addrPatch;
@@ -1587,6 +1695,10 @@ static ObjCCategory* CPrec_GetObjCCategoryPatch(ObjCCategory* cat) {
     return (ObjCCategory*)first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (466)
+#endif
 static ObjCInfo* CPrec_GetObjCInfoPatch(ObjCInfo* info) {
     ObjCInfo* p = (void*)CPrec_AppendAlign();
     CPrec_AppendData(info, sizeof(ObjCInfo));
@@ -1612,6 +1724,10 @@ static ObjCInfo* CPrec_GetObjCInfoPatch(ObjCInfo* info) {
 
     return p;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 #if MWCCPSP
 #undef CError_B145_SHIFT
@@ -1736,7 +1852,15 @@ static TemplParam* CPrec_GetTemplateParamPatch(TemplParam* param) {
     return (TemplParam*)first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static TStreamElement* CPrec_GetTStreamPatch(TStreamElement* tokens, SInt32 count) {
+#if MWCCPS2_B52
+    int b69_dead;
+    TStreamElement* b69_dead2;
+#endif
     TStreamElement elem;
     SInt32 first;
     SInt32 current;
@@ -1744,7 +1868,11 @@ static TStreamElement* CPrec_GetTStreamPatch(TStreamElement* tokens, SInt32 coun
     SInt32 x;
 
     scan = tokens;
+#if MWCCPS2_B52
+    b69_dead = x = 0;
+#else
     x = 0;
+#endif
     while (x < count) {
         elem = *scan;
         memclrw(scan, sizeof(TStreamElement));
@@ -1768,7 +1896,11 @@ static TStreamElement* CPrec_GetTStreamPatch(TStreamElement* tokens, SInt32 coun
                 break;
         }
         x++;
+#if MWCCPS2_B52
+        b69_dead2 = scan++;
+#else
         scan++;
+#endif
     }
 
     first = current = CPrec_AppendAlign();
@@ -1783,7 +1915,11 @@ static TStreamElement* CPrec_GetTStreamPatch(TStreamElement* tokens, SInt32 coun
     }
 
     scan = tokens;
+#if MWCCPS2_B52
+    b69_dead = x = 0;
+#else
     x = 0;
+#endif
     while (x < count) {
         switch (scan->tokentype) {
             case TK_IDENTIFIER:
@@ -1816,11 +1952,19 @@ static TStreamElement* CPrec_GetTStreamPatch(TStreamElement* tokens, SInt32 coun
         }
         x++;
         scan++;
+#if MWCCPS2_B52
+        b69_dead = current += sizeof(TStreamElement);
+#else
         current += sizeof(TStreamElement);
+#endif
     }
 
     return (TStreamElement*)first;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static TemplFuncInstance* CPrec_GetTemplFuncInstancePatch(TemplFuncInstance* inst) {
     AddrPatch* addrPatch;
@@ -2354,12 +2498,14 @@ static TypeClass* CPrec_GetTypeClassPatch(TypeClass* tclass) {
             );
         }
 #if !MWCCPSP
+#if !MWCCPS2_B52
         if (tclass->friends) {
             CPrec_NewPointerPatch(
                 (void*)(current + offsetof(TypeClass, friends)),
                 CPrec_GetClassFriendPatch(tclass->friends)
             );
         }
+#endif
 #endif
         if (tclass->vtable) {
             CPrec_NewPointerPatch(
@@ -2373,12 +2519,14 @@ static TypeClass* CPrec_GetTypeClassPatch(TypeClass* tclass) {
             );
         }
 #if !MWCCPSP
+#if !MWCCPS2_B52
         if (tclass->objcinfo) {
             CPrec_NewPointerPatch(
                 (void*)(current + offsetof(TypeClass, objcinfo)),
                 CPrec_GetObjCInfoPatch(tclass->objcinfo)
             );
         }
+#endif
 #endif
 
         if (hasNextTempl) {
@@ -2414,6 +2562,10 @@ static TypeClass* CPrec_GetTypeClassPatch(TypeClass* tclass) {
     return (TypeClass*)first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static Type* CPrec_GetTypePatch(Type* type) {
     AddrPatch* addrPatch;
 
@@ -2450,7 +2602,15 @@ static Type* CPrec_GetTypePatch(Type* type) {
             return NULL;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static ExceptionAction* CPrec_GetExceptionPatch(ExceptionAction* exc) {
     SInt32 first;
     SInt32 current;
@@ -2578,6 +2738,10 @@ static ExceptionAction* CPrec_GetExceptionPatch(ExceptionAction* exc) {
     }
     return (ExceptionAction*)first;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static ENodeList* CPrec_GetExpressionListPatch(ENodeList* lst) {
     SInt32 first;
@@ -2604,6 +2768,10 @@ static ENodeList* CPrec_GetExpressionListPatch(ENodeList* lst) {
     return (ENodeList*)first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static EMemberInfo* CPrec_GetEMemberInfoPatch(EMemberInfo* emember) {
     EMemberInfo* p;
 
@@ -2623,7 +2791,15 @@ static EMemberInfo* CPrec_GetEMemberInfoPatch(EMemberInfo* emember) {
 
     return p;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static ENode* CPrec_GetExpressionPatch(ENode* expr) {
     SInt32 p;
 
@@ -2851,7 +3027,9 @@ static ENode* CPrec_GetExpressionPatch(ENode* expr) {
         case ELABEL:
         case EINSTRUCTION:
 #if !MWCCPSP // not a 3.0.1 node kind
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
 #endif
             break;
         default:
@@ -2860,6 +3038,10 @@ static ENode* CPrec_GetExpressionPatch(ENode* expr) {
 
     return (ENode*)p;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static CI_Switch* CPrec_GetSwitchInfoPatch(CI_Switch* si) {
     SInt32 p = CPrec_AppendAlign();
@@ -2898,6 +3080,10 @@ static InlineAsm* CPrec_GetInlineAsmPatch(InlineAsm* ia, SInt32 size) {
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
 #define CError_LINE_SHIFT -51
+#endif
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (179)
 #endif
 static CI_Statement* CPrec_GetStatementPatch(CI_Statement* stmt, short count) {
     short i;
@@ -2973,6 +3159,10 @@ static CI_Statement* CPrec_GetStatementPatch(CI_Statement* stmt, short count) {
 
     return (CI_Statement*)first;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static CI_Var* CPrec_GetLocObjectPatch(CI_Var* obj, short count) {
     SInt32 first;
@@ -3011,14 +3201,21 @@ static CI_FuncData* CPrec_GetInlineFuncPatch(CI_FuncData* ifunc) {
         CPrec_NewPointerPatch(&p->vars, CPrec_GetLocObjectPatch(ifunc->vars, ifunc->numvars));
     }
 #else
+#if MWCCPS2_B52
+    if (ifunc->numvars) {
+        CPrec_NewPointerPatch(&p->vars, CPrec_GetLocObjectPatch(ifunc->vars, ifunc->numvars));
+#else
     if (ifunc->numarguments) {
         CPrec_NewPointerPatch(
             &p->arguments, CPrec_GetLocObjectPatch(ifunc->arguments, ifunc->numarguments)
         );
+#endif
     }
+#if !MWCCPS2_B52
     if (ifunc->numlocals) {
         CPrec_NewPointerPatch(&p->locals, CPrec_GetLocObjectPatch(ifunc->locals, ifunc->numlocals));
     }
+#endif
 #endif
     if (ifunc->numstatements) {
         CPrec_NewPointerPatch(
@@ -3029,6 +3226,10 @@ static CI_FuncData* CPrec_GetInlineFuncPatch(CI_FuncData* ifunc) {
     return p;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -3 // b145 asserts
@@ -3080,6 +3281,10 @@ static ObjEnumConst* CPrec_GetObjEnumConstPatch(ObjEnumConst* obj) {
 
     return (ObjEnumConst*)first;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
@@ -3557,6 +3762,10 @@ static NameSpace* CPrec_GetNameSpacePatch(NameSpace* nspace) {
     return (NameSpace*)p;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 static void CPrec_DumpRootNameSpace(void) {
     NameSpaceList* nslist;
     NameSpaceName* nsname;
@@ -3587,6 +3796,10 @@ static void CPrec_DumpRootNameSpace(void) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static CSOMStub* CPrec_GetSOMPatch(CSOMStub* stub) {
     CSOMStub* first;
@@ -3851,10 +4064,17 @@ static void CPrec_GenerateBuiltinPatches(void) {
     Patch* scan;
     int x;
     int y;
+#if MWCCPS2_B52
+    Patch* b69_dead;
+#endif
 
     for (x = 0; x < cprec_builtins; x++) {
         y = 0;
+#if MWCCPS2_B52
+        for (b69_dead = scan = cprec_builtin[x].patches; scan; scan = scan->next) {
+#else
         for (scan = cprec_builtin[x].patches; scan; scan = scan->next) {
+#endif
             ++y;
         }
 
@@ -3891,8 +4111,16 @@ static OSErr CPrec_CompressWrite(const char* data, SInt32 size) {
     int blockstart;
     int c;
     const char* p = data;
+#if MWCCPS2_B52
+    const char* end;
+    const char* b69_dead;
+#else
     const char* end = data + size;
+#endif
 
+#if MWCCPS2_B52
+    b69_dead = end = data + size;
+#endif
     for (;;) {
         if (p < end) {
             if (!*p) {
@@ -3978,6 +4206,10 @@ static void CPrec_AppendBigEndianWord32(SInt32 v) {
     CPrec_AppendByte(u.b[0]);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (170)
+#endif
 static int CPrec_CompressPatches(void) {
     Patch* scan;
     int count;
@@ -4007,6 +4239,10 @@ static int CPrec_CompressPatches(void) {
 
     return count;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static OSErr CPrec_DumpColorSymbolTable(Boolean doWrite) {
     OSErr err;
@@ -4100,6 +4336,7 @@ static OSErr CPrec_DumpColorSymbolTable(Boolean doWrite) {
         }
     }
 
+#if !MWCCPS2_B52
     if (cobjc_type_class) {
         Type* p = CPrec_GetTypePatch(cobjc_type_class);
         if (doWrite) {
@@ -4109,7 +4346,9 @@ static OSErr CPrec_DumpColorSymbolTable(Boolean doWrite) {
             return err;
         }
     }
+#endif
 
+#if !MWCCPS2_B52
     if (cobjc_type_id) {
         Type* p = CPrec_GetTypePatch(cobjc_type_id);
         if (doWrite) {
@@ -4161,6 +4400,7 @@ static OSErr CPrec_DumpColorSymbolTable(Boolean doWrite) {
         }
     }
 
+#endif
     if (init_expressions) {
         InitExpr* p = CPrec_GetIExpressionPatch(init_expressions);
         if (doWrite) {
@@ -4242,9 +4482,11 @@ static OSErr CPrec_WriteFile(void) {
     cprec_header->check_header_flags = copts.checkprecompflags;
     cprec_header->cplusplus = copts.cplusplus;
     cprec_header->uniqueID = CParser_GetUniqueID();
+#if !MWCCPS2_B52
     cprec_header->cobjc_selrefcount = cobjc_selrefcount;
     cprec_header->cobjc_classrefcount = cobjc_classrefcount;
     cprec_header->cobjc_stringcount = cobjc_stringcount;
+#endif
 
     if ((err = COS_FileWrite(cprec_refnum, cprec_header, sizeof(Header))) != noErr) {
         return err;
@@ -4693,13 +4935,16 @@ void PrecompilerRead(short refnum, void* buffer) {
             (CallbackAction*)((UInt8*)cprec_rawbuffer + (UInt32)cprec_header->callbackactions);
     }
 
+#if !MWCCPS2_B52
     if (!cprec_header->cobjc_type_class) {
         cobjc_type_class = NULL;
     } else {
         cobjc_type_class =
             (Type*)((UInt8*)cprec_rawbuffer + (UInt32)cprec_header->cobjc_type_class);
     }
+#endif
 
+#if !MWCCPS2_B52
     if (!cprec_header->cobjc_type_id) {
         cobjc_type_id = NULL;
     } else {
@@ -4733,6 +4978,7 @@ void PrecompilerRead(short refnum, void* buffer) {
             (struct ObjCProtocol*)((UInt8*)cprec_rawbuffer + (UInt32)cprec_header->cobjc_protocols);
     }
 
+#endif
     if (!cprec_header->init_expressions) {
         init_expressions = NULL;
     } else {
@@ -4748,9 +4994,11 @@ void PrecompilerRead(short refnum, void* buffer) {
     }
 
     CParser_SetUniqueID(cprec_header->uniqueID);
+#if !MWCCPS2_B52
     cobjc_selrefcount = cprec_header->cobjc_selrefcount;
     cobjc_classrefcount = cprec_header->cobjc_classrefcount;
     cobjc_stringcount = cprec_header->cobjc_stringcount;
+#endif
 
     cprec_refnum = 0;
     if (cprec_glist.data != NULL) {

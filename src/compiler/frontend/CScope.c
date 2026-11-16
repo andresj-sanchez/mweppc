@@ -64,7 +64,14 @@ void CScope_Cleanup(void) {
     cscope_currentclass = NULL;
 }
 #else
+#if MWCCPS2_B52
+void CScope_Cleanup(void) {
+    cscope_currentfunc = NULL; // b52 (0x44CDE0)
+    cscope_currentclass = NULL;
+}
+#else
 void CScope_Cleanup(void) {}
+#endif
 #endif
 
 void CScope_GetScope(CScopeSave* save) {
@@ -156,6 +163,10 @@ static Boolean CScope_ObjectIsFunction(Object* obj) {
     return obj->otype == OT_OBJECT && IS_TYPE_FUNC(obj->type);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (123)
+#endif
 Boolean CScope_IsEmptySymTable(void) {
     NameSpaceObjectList* scan;
     NameSpaceName* nsname;
@@ -180,6 +191,10 @@ Boolean CScope_IsEmptySymTable(void) {
 
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 Boolean CScope_IsInLocalNameSpace(NameSpace* nspace) {
     while (nspace) {
@@ -308,6 +323,10 @@ NameSpaceObjectList* CScope_InsertName(NameSpace* nspace, HashNameNode* name) {
     return &nsname->first;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (150)
+#endif
 static NameSpaceObjectList* CScope_AppendName(NameSpace* nspace, HashNameNode* name) {
     NameSpaceName* nsname;
     NameSpaceName* scan;
@@ -340,14 +359,23 @@ static NameSpaceObjectList* CScope_AppendName(NameSpace* nspace, HashNameNode* n
 
     return &nsname->first;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 static NameSpaceList* CScope_AddNameSpaceToList(NameSpaceList* list, NameSpace* nspace) {
     NameSpaceList* scan;
     NameSpaceList* newlist;
     ClassList* clslist;
 
+#if MWCCPS2_B52
+    for (newlist = list; newlist; newlist = newlist->next) {
+        if (newlist->nspace == nspace) {
+#else
     for (scan = list; scan; scan = scan->next) {
         if (scan->nspace == nspace) {
+#endif
             return list;
         }
     }
@@ -528,6 +556,10 @@ Boolean CScope_IsStdNameSpace(NameSpace* nspace) {
         !strcmp(nspace->name->name, "std");
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (202)
+#endif
 Boolean CScope_IsEmptyNameSpace(NameSpace* nspace) {
 #if MWCCPSP
     CError_ASSERT(866, !nspace->is_hash);
@@ -536,7 +568,15 @@ Boolean CScope_IsEmptyNameSpace(NameSpace* nspace) {
 #endif
     return nspace->data.list == NULL;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (202)
+#endif
 void CScope_MergeNameSpace(NameSpace* dst, NameSpace* src) {
     NameSpaceName* nsname;
 
@@ -555,7 +595,15 @@ void CScope_MergeNameSpace(NameSpace* dst, NameSpace* src) {
         dst->data.list = src->data.list;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (202)
+#endif
 void CScope_AddObject(NameSpace* nspace, HashNameNode* name, ObjBase* obj) {
     UInt8 otype;
     NameSpaceObjectList* scan;
@@ -661,6 +709,10 @@ void CScope_AddObject(NameSpace* nspace, HashNameNode* name, ObjBase* obj) {
     }
 done:;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CScope_AddGlobalObject(Object* obj) {
     obj->nspace = cscope_root;
@@ -852,6 +904,10 @@ static NameSpaceObjectList* CScope_CopyNameSpaceObjectList(NameSpaceObjectList* 
 }
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (91)
+#endif
 static NameSpace* CScope_ExtractNameSpace(NameSpaceObjectList* list, Boolean* fail) {
     Type* type;
 
@@ -896,6 +952,10 @@ restart:
         return TYPE_CLASS(type)->nspace;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static BClassList* CScope_RecFindClassMember(NameResult* result, TypeClass* tclass, SInt32 offset) {
     Boolean fail;
@@ -1137,21 +1197,38 @@ static BClassList* CScope_GetAccessPathRec(TypeClass* src, TypeClass* dest, SInt
     BClassList* list;
     ClassList* base;
     BClassList* best;
+#if MWCCPS2_B52
+    BClassList* b69_dead;
+#endif
 
     if (src == dest) {
         if (cscope_foundclass && cscope_foundclassoffset != offset) {
             CError_Error(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
         }
 
+#if MWCCPS2_B52
+        best = lalloc(sizeof(BClassList));
+        best->next = NULL;
+        best->type = TYPE(src);
+#else
         list = lalloc(sizeof(BClassList));
         list->next = NULL;
         list->type = TYPE(src);
+#endif
         cscope_foundclass = src;
         cscope_foundclassoffset = offset;
+#if MWCCPS2_B52
+        return best;
+#else
         return list;
+#endif
     }
 
+#if MWCCPS2_B52
+    for (base = src->bases, b69_dead = best = NULL; base; base = base->next) {
+#else
     for (base = src->bases, best = NULL; base; base = base->next) {
+#endif
         if ((list = CScope_GetAccessPathRec(
                  base->base,
                  dest,
@@ -1629,8 +1706,13 @@ static NameSpaceObjectList* CScope_FindQualifiedName(
 }
 
 static Boolean CScope_FindQualifiedTag(NameResult* result, NameSpace* nspace, HashNameNode* name) {
+#if !MWCCPS2_B52
     NameSpaceObjectList* list;
+#endif
     NameSpaceLookupList* lookup;
+#if MWCCPS2_B52
+    NameSpaceObjectList* list;
+#endif
     Type* best;
     NameSpace* bestnspace;
     NameSpaceList* scan;
@@ -1959,6 +2041,10 @@ static Boolean CScope_CheckDtorName(TypeClass* tclass, Boolean* noDtor) {
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (2559)
+#endif
 static Boolean CScope_ParseQualifiedName(NameResult* result, NameSpace* nspace) {
     NameSpaceObjectList* list;
     HashNameNode* saveidentifier;
@@ -2046,6 +2132,10 @@ static Boolean CScope_ParseQualifiedName(NameResult* result, NameSpace* nspace) 
         return TRUE;
     } while (1);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 Boolean CScope_ParseExprName(NameResult* result) {
     CScopeNSIterator iterator;
@@ -3010,11 +3100,19 @@ BClassList* CScope_GetClassAccessPath(BClassList* list, TypeClass* tclass) {
         }
     }
 
+#if MWCCPS2_B52
+    if ((scan = CScope_GetAccessPath(tclass, TYPE_CLASS(list->type)))) {
+        for (path = scan; path; path = path->next) {
+            if (path->type == list->type) {
+                path->next = list->next;
+                return scan;
+#else
     if ((path = CScope_GetAccessPath(tclass, TYPE_CLASS(list->type)))) {
         for (scan = path; scan; scan = scan->next) {
             if (scan->type == list->type) {
                 scan->next = list->next;
                 return path;
+#endif
             }
         }
         CError_FATAL(3217);

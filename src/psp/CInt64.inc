@@ -14,17 +14,34 @@
 
 #if MWCCPS2
 void CInt64_SetLong(CInt64* pN, SInt32 n) {
+#if MWCCPS2_B52
+    UInt32 sign = (n >= 0) ? 0 : 0xFFFFFFFF;
+    int i;
+
+    for (i = 0; i < CINT64_WORDS - 1; i++) {
+        W(*pN, i) = sign;
+    }
+#else
     UInt32 sign = (n < 0) ? 0xFFFFFFFF : 0;
     pN->hi = sign;
     pN->mid[0] = sign;
     pN->mid[1] = sign;
+#endif
     pN->lo = n;
 }
 
 void CInt64_SetULong(CInt64* pN, UInt32 n) {
+#if MWCCPS2_B52
+    int i;
+
+    for (i = 0; i < CINT64_WORDS - 1; i++) {
+        W(*pN, i) = 0;
+    }
+#else
     pN->hi = 0;
     pN->mid[0] = 0;
     pN->mid[1] = 0;
+#endif
     pN->lo = n;
 }
 #else
@@ -42,10 +59,16 @@ void CInt64_SetULong(CInt64* pN, UInt32 n) {
 #if MWCCPS2
 Boolean CInt64_IsZero(CInt64* n) {
     int i;
+#if !MWCCPS2_B52
     UInt32* w = (UInt32*)n;
+#endif
 
     for (i = 0; i < CINT64_WORDS; i++) {
+#if MWCCPS2_B52
+        if (W(*n, i)) {
+#else
         if (w[i]) {
+#endif
             return 0;
         }
     }
@@ -83,41 +106,71 @@ extern CInt64 cint64_zero;
 
 #if MWCCPS2
 CInt64 CInt64_Or(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    int i;
+#else
     UInt32 a = rhs.lo;
     UInt32 b = rhs.mid[1];
     UInt32 c = rhs.mid[0];
     UInt32 d = rhs.hi;
+#endif
 
+#if MWCCPS2_B52
+    for (i = 0; i < CINT64_WORDS; i++) {
+        W(lhs, i) |= W(rhs, i);
+    }
+#else
     lhs.hi |= d;
     lhs.mid[0] |= c;
     lhs.mid[1] |= b;
     lhs.lo |= a;
+#endif
     return lhs;
 }
 
 CInt64 CInt64_Xor(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    int i;
+#else
     UInt32 a = rhs.lo;
     UInt32 b = rhs.mid[1];
     UInt32 c = rhs.mid[0];
     UInt32 d = rhs.hi;
+#endif
 
+#if MWCCPS2_B52
+    for (i = 0; i < CINT64_WORDS; i++) {
+        W(lhs, i) ^= W(rhs, i);
+    }
+#else
     lhs.hi ^= d;
     lhs.mid[0] ^= c;
     lhs.mid[1] ^= b;
     lhs.lo ^= a;
+#endif
     return lhs;
 }
 
 CInt64 CInt64_And(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    int i;
+#else
     UInt32 a = rhs.lo;
     UInt32 b = rhs.mid[1];
     UInt32 c = rhs.mid[0];
     UInt32 d = rhs.hi;
+#endif
 
+#if MWCCPS2_B52
+    for (i = 0; i < CINT64_WORDS; i++) {
+        W(lhs, i) &= W(rhs, i);
+    }
+#else
     lhs.hi &= d;
     lhs.mid[0] &= c;
     lhs.mid[1] &= b;
     lhs.lo &= a;
+#endif
     return lhs;
 }
 
@@ -177,10 +230,21 @@ Boolean CInt64_Equal(CInt64 lhs, CInt64 rhs) {
 // arguments in place and reload each word for the second test
 static int ucompare(CInt64* lhs, CInt64* rhs) {
     int i;
+#if MWCCPS2_B52
+    UInt32 b;
+    UInt32 a;
+#endif
 
     for (i = 0; i < CINT64_WORDS; i++) {
+#if MWCCPS2_B52
+        b = W(*rhs, i);
+        a = W(*lhs, i);
+        if (a != b) {
+            return (a < b) ? -1 : 1;
+#else
         if (((SInt32*)lhs)[i] != ((SInt32*)rhs)[i]) {
             return (W(*lhs, i) < W(*rhs, i)) ? -1 : 1;
+#endif
         }
     }
     return 0;
@@ -282,10 +346,15 @@ Boolean CInt64_Less(CInt64 lhs, CInt64 rhs) {
 #endif
 
 CInt64 CInt64_ShrU(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    int count;
+#endif
     int i;
     UInt32 n;
 #if MWCCPS2
+#if !MWCCPS2_B52
     int count;
+#endif
 #endif
 
     for (i = 0; i < CINT64_WORDS - 1; i++) {
@@ -327,15 +396,30 @@ CInt64 CInt64_ShrU(CInt64 lhs, CInt64 rhs) {
 #if MWCCPS2
 // b210 sends a too-large count back to the word test (the count word is
 // nonzero, so it takes the too-big return)
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on
+#endif
+#endif
 CInt64 CInt64_Shr(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    int count;
+#endif
     int i;
     UInt32 n;
+#if !MWCCPS2_B52
     int count;
+#endif
 
     for (i = 0; i < CINT64_WORDS - 1; i++) {
     check:
         if (W(rhs, i)) {
+#if MWCCPS2_B52
+            // b69 calls the out-of-line CInt64_IsNegative here
+            return CInt64_IsNegative(&lhs) ? cint64_negone : cint64_zero;
+#else
             return (W(lhs, 0) & 0x80000000) ? cint64_negone : cint64_zero;
+#endif
         }
     }
     n = W(rhs, i);
@@ -353,6 +437,11 @@ CInt64 CInt64_Shr(CInt64 lhs, CInt64 rhs) {
     }
     return lhs;
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 #else
 CInt64 CInt64_Shr(CInt64 lhs, CInt64 rhs) {
     int i;
@@ -529,6 +618,11 @@ CInt64 CInt64_Shl(CInt64 lhs, CInt64 rhs) {
 
 extern CInt64 cint64_one;
 
+#if MWCCPS2_B52
+// -inline off emits this as an external function (0x4BC730); its own name
+// keeps it apart from CExpr2's global iszero (0x4EEBE0)
+#define iszero CInt64_iszero
+#endif
 #if MWCCPS2
 static inline Boolean iszero(CInt64* n) {
     int i;
@@ -568,52 +662,90 @@ done:
 #endif
 
 #if MWCCPS2
+#if MWCCPS2_B52
+#define INV_WORDS(x) do { int _k; for (_k = 0; _k < CINT64_WORDS; _k++) { W(x, _k) = ~W(x, _k); } } while (0)
+#else
 #define INV_WORDS(x) do { W(x, 0) = ~W(x, 0); W(x, 1) = ~W(x, 1); W(x, 2) = ~W(x, 2); W(x, 3) = ~W(x, 3); } while (0)
+#endif
 #else
 #define INV_WORDS(x) do { W(x, 0) = ~W(x, 0); W(x, 1) = ~W(x, 1); } while (0)
 #endif
 
+#if MWCCPS2_B52
+static void CInt64_AddWords(CInt64* lhs, CInt64* rhs, int carry);
+
+#endif
 CInt64 CInt64_Inv(CInt64 input) {
+#if MWCCPS2_B52
+    int i;
+
+    for (i = 0; i < CINT64_WORDS; i++) {
+        W(input, i) = ~W(input, i);
+    }
+#else
     INV_WORDS(input);
+#endif
     return input;
 }
 
 static inline CInt64 CInt64_NegInline(CInt64 input) {
 #if MWCCPS2
+#if !MWCCPS2_B52
     int carry;
 
+#endif
     INV_WORDS(input);
+#if MWCCPS2_B52
+    CInt64_AddWords(&input, &cint64_one, 0);
+#else
     carry = 0;
+#endif
 #else
     int carry = 0;
 
     INV_WORDS(input);
 #endif
+#if !MWCCPS2_B52
     ADD_WORDS(input, cint64_one, carry);
+#endif
     return input;
 }
 
 CInt64 CInt64_Neg(CInt64 input) {
 #if MWCCPS2
+#if !MWCCPS2_B52
     int carry;
 
+#endif
     INV_WORDS(input);
+#if MWCCPS2_B52
+    CInt64_AddWords(&input, &cint64_one, 0);
+#else
     carry = 0;
+#endif
 #else
     int carry = 0;
 
     INV_WORDS(input);
 #endif
+#if !MWCCPS2_B52
     ADD_WORDS(input, cint64_one, carry);
+#endif
     return input;
 }
 
 CInt64 CInt64_Sub(CInt64 lhs, CInt64 rhs) {
+#if !MWCCPS2_B52
     int carry;
 
+#endif
     INV_WORDS(rhs);
+#if MWCCPS2_B52
+    CInt64_AddWords(&lhs, &rhs, 1);
+#else
     carry = 1;
     ADD_WORDS(lhs, rhs, carry);
+#endif
     return lhs;
 }
 
@@ -668,20 +800,73 @@ static inline CInt64 CInt64_AddInline(CInt64 lhs, CInt64 rhs) {
 #endif
 
 CInt64 CInt64_Add(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    CInt64_AddWords(&lhs, &rhs, 0);
+#else
     int carry = 0;
 
     ADD_WORDS(lhs, rhs, carry);
+#endif
     return lhs;
 }
 
+#if MWCCPS2_B52
+// lhs += rhs + carry, word by word from the least significant (ADD_WORDS
+// with an if for the last carry)
+static void CInt64_AddWords(CInt64* lhs, CInt64* rhs, int carry) {
+    UInt32 a;
+    int i;
+    UInt32 b;
+
+    for (i = CINT64_WORDS - 1; i >= 0; i--) {
+        a = W(*lhs, i);
+        b = W(*rhs, i);
+        if (a & 0x80000000) {
+            if (b & 0x80000000) {
+                a += b + carry;
+                carry = 1;
+            } else {
+            mixed:
+                a += b;
+                if (carry) {
+                    carry = 0;
+                    if (!(a & 0x80000000)) {
+                        carry++;
+                    }
+                    a++;
+                    if (!(a & 0x80000000)) {
+                        carry = 1;
+                    }
+                } else {
+                    carry = (a & 0x80000000) == 0 ? 1 : 0;
+                }
+            }
+        } else if (b & 0x80000000) {
+            goto mixed;
+        } else {
+            a += b + carry;
+            carry = 0;
+        }
+        W(*lhs, i) = a;
+    }
+}
+
+#endif
 #if MWCCPS2
 CInt64 CInt64_MulU(CInt64 lhs, CInt64 rhs) {
     CInt64 result;
     CInt64 work;
+#if !MWCCPS2_B52
     int i;
+#endif
     int j;
     UInt32 bits;
+#if MWCCPS2_B52
+    int i;
+    int k;
+#else
     int carry;
+#endif
 
     for (i = 0; i < CINT64_WORDS - 1; i++) {
         if (W(lhs, i) || W(rhs, i)) {
@@ -694,10 +879,14 @@ CInt64 CInt64_MulU(CInt64 lhs, CInt64 rhs) {
         return result;
     }
 
+#if MWCCPS2_B52
+    CInt64_SetLong(&result, 0);
+#else
     result.hi = 0;
     result.mid[0] = 0;
     result.mid[1] = 0;
     result.lo = 0;
+#endif
     for (i = 0; i < CINT64_WORDS; i++) {
         bits = W(rhs, CINT64_WORDS - 1 - i);
         if (!bits) {
@@ -708,17 +897,28 @@ CInt64 CInt64_MulU(CInt64 lhs, CInt64 rhs) {
         }
         for (;;) {
             if (bits & 1) {
+#if MWCCPS2_B52
+                CInt64_AddWords(&result, &work, 0);
+#else
                 carry = 0;
                 ADD_WORDS(result, work, carry);
+#endif
             }
             bits >>= 1;
             if (!bits) {
                 break;
             }
+#if MWCCPS2_B52
+            for (k = 0; k < CINT64_WORDS - 1; k++) {
+                W(work, k) <<= 1;
+                if (W(work, k + 1) & 0x80000000) {
+                    W(work, k) |= 1;
+#else
             for (j = 0; j < CINT64_WORDS - 1; j++) {
                 W(work, j) <<= 1;
                 if (W(work, j + 1) & 0x80000000) {
                     W(work, j) |= 1;
+#endif
                 }
             }
             W(work, CINT64_WORDS - 1) <<= 1;
@@ -727,18 +927,45 @@ CInt64 CInt64_MulU(CInt64 lhs, CInt64 rhs) {
     return result;
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls IsNegative and Neg out of line
+#endif
+#endif
 CInt64 CInt64_Mul(CInt64 lhs, CInt64 rhs) {
+#if MWCCPS2_B52
+    if (CInt64_IsNegative(&rhs)) {
+        if (CInt64_IsNegative(&lhs)) {
+            return CInt64_MulU(CInt64_Neg(lhs), CInt64_Neg(rhs));
+#else
     if (W(rhs, 0) & 0x80000000) {
         if (W(lhs, 0) & 0x80000000) {
             return CInt64_MulU(CInt64_NegInline(lhs), CInt64_NegInline(rhs));
+#endif
         }
+#if MWCCPS2_B52
+        return CInt64_Neg(CInt64_MulU(lhs, CInt64_Neg(rhs)));
+#else
     } else if (W(lhs, 0) & 0x80000000) {
         return CInt64_NegInline(CInt64_MulU(CInt64_NegInline(lhs), rhs));
     } else {
         return CInt64_MulU(lhs, rhs);
+#endif
     }
+#if MWCCPS2_B52
+    if (CInt64_IsNegative(&lhs)) {
+        return CInt64_Neg(CInt64_MulU(CInt64_Neg(lhs), rhs));
+#else
     return CInt64_NegInline(CInt64_MulU(lhs, CInt64_NegInline(rhs)));
+#endif
 }
+#if MWCCPS2_B52
+    return CInt64_MulU(lhs, rhs);
+}
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 
 #else
 CInt64 CInt64_MulU(CInt64 lhs, CInt64 rhs) {
@@ -826,11 +1053,23 @@ Boolean CInt64_IsInURange(CInt64 value, short len) {
         case 0:
             return 1;
         case 1:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFFFFFF00) == 0;
+#else
             return !(W(value, i) & 0xFFFFFF00);
+#endif
         case 2:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFFFF0000) == 0;
+#else
             return !(W(value, i) & 0xFFFF0000);
+#endif
         case 3:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFF000000) == 0;
+#else
             return !(W(value, i) & 0xFF000000);
+#endif
     }
 }
 #else
@@ -860,6 +1099,12 @@ Boolean CInt64_IsInURange(CInt64 value, short len) {
 }
 #endif
 
+#if MWCCPS2_B52
+// b69 calls the out-of-line CInt64_IsNegative
+#if defined(__MWERKS__)
+#pragma dont_inline on
+#endif
+#endif
 #if MWCCPS2
 Boolean CInt64_IsInRange(CInt64 value, short len) {
     int i;
@@ -868,7 +1113,11 @@ Boolean CInt64_IsInRange(CInt64 value, short len) {
     if (len >= CINT64_WORDS * 4) {
         return 1;
     }
+#if MWCCPS2_B52
+    if (CInt64_IsNegative(&value)) {
+#else
     if (W(value, 0) & 0x80000000) {
+#endif
         value = CInt64_Inv(value);
     }
     n = CINT64_WORDS - 1 - ((len - 1) >> 2);
@@ -880,15 +1129,36 @@ Boolean CInt64_IsInRange(CInt64 value, short len) {
     switch (len & 3) {
         default:
         case 1:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFFFFFF80) == 0;
+#else
             return !(W(value, i) & 0xFFFFFF80);
+#endif
         case 2:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFFFF8000) == 0;
+#else
             return !(W(value, i) & 0xFFFF8000);
+#endif
         case 3:
+#if MWCCPS2_B52
+            return (W(value, i) & 0xFF800000) == 0;
+#else
             return !(W(value, i) & 0xFF800000);
+#endif
         case 0:
+#if MWCCPS2_B52
+            return (W(value, i) & 0x80000000) == 0;
+#else
             return !(W(value, i) & 0x80000000);
+#endif
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 #else
 Boolean CInt64_IsInRange(CInt64 value, short len) {
     int n;
@@ -964,13 +1234,28 @@ static inline CInt64 negate(CInt64 input) {
     return input;
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the out-of-line CInt64_IsNegative
+#endif
+#endif
 double CInt64_ConvertToLongDouble(const CInt64* value) {
     CInt64 magnitude;
 
+#if MWCCPS2_B52
+    if (CInt64_IsNegative(value)) {
+        magnitude = CInt64_Neg(*value);
+#else
     if (W(*value, 0) & 0x80000000) {
         magnitude = negate(*value);
+#endif
         return -CInt64_ConvertUToLongDouble(&magnitude);
     } else {
         return CInt64_ConvertUToLongDouble(value);
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif

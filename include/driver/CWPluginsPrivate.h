@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #pragma pack(push, 2)
+#if !MWCCPS2_B52
 #if MWCCPSP
 // 3.0.1: the plugin's target info with shell specs (0xE22 bytes; the
 // CWCompilerLinkerContext constructor, 0x41A8A0/0x41A9C0)
@@ -57,6 +58,7 @@ PLUGIN_TARGET_INFO(PluginTargetInfo2, 0x104)
 #if MWCCPSP
 
 #endif
+#endif
 struct CWPluginPrivateContext {
 #ifdef __cplusplus
     CWPluginPrivateContext(SInt32 thePluginType, SInt32 totalSize = 0);
@@ -64,6 +66,13 @@ struct CWPluginPrivateContext {
 #endif
 
     SInt32 request;
+#if MWCCPS2_B52
+    SInt32 apiVersion;
+    void* shellContext;
+    void* pluginStorage;
+    CWFileSpec projectFile;
+    CWFileSpec outputFileDirectory;
+#else
     SInt32 apiVersion;
     void* shellContext;
     void* pluginStorage;
@@ -76,7 +85,15 @@ struct CWPluginPrivateContext {
     CWFileSpec projectFile;
     CWFileSpec outputFileDirectory;
 #endif
+#endif
     SInt32 shellSignature;
+#if MWCCPS2_B52
+    SInt32 pluginType;
+    SInt32 numFiles;
+    SInt32 numOverlayGroups;
+    SInt32 callbackOSError; // b52, as 3.0.1: 32-bit (build_tool at +0x49C)
+    SInt32 pluginOSError;
+#else
     SInt32 pluginType;
     SInt32 numFiles;
     SInt32 numOverlayGroups;
@@ -86,6 +103,7 @@ struct CWPluginPrivateContext {
 #else
     OSErr callbackOSError;
     OSErr pluginOSError;
+#endif
 #endif
     CWIDEInfo* shellInfo;
     struct IDEAccessPathList* accessPathList;
@@ -99,12 +117,18 @@ struct CWPluginPrivateContext {
 struct CWCompilerLinkerContext : CWPluginPrivateContext {
     CWCompilerLinkerContext();
     ~CWCompilerLinkerContext();
+#if MWCCPS2_B52
+
+    SInt32 whichfile;
+    CWFileSpec sourcefile;
+#else
 
     SInt32 whichfile;
 #if MWCCPSP
     OSSpec sourcefile; // +0x48C (CWCompilerLinkerContext::CWCompilerLinkerContext 0x42CB..)
 #else
     CWFileSpec sourcefile;
+#endif
 #endif
     const char* sourcetext;
     SInt32 sourcetextsize;
@@ -118,6 +142,14 @@ struct CWCompilerLinkerContext : CWPluginPrivateContext {
     Boolean recordbrowseinfo;
     void* reserved;
     SInt32 sequenceID;
+#if MWCCPS2_B52
+    CWCompilerLinkerContext* parentPB;
+    void* targetStorage;
+    SInt32 reservedcompiler[7];
+    CWMemHandle texthandle;
+    CWTargetInfoV7 targetinfo_V7;
+    CWTargetInfo* targetinfo;
+#else
     CWCompilerLinkerContext* parentPB;
     void* targetStorage;
     SInt32 reservedcompiler[7];
@@ -131,6 +163,7 @@ struct CWCompilerLinkerContext : CWPluginPrivateContext {
     struct PluginTargetInfo* targetinfo; // 0xE22 bytes
 #else
     CWTargetInfo* targetinfo;
+#endif
 #endif
     const char* commandLineArgs;
     CWFileSpec* workingDirectorySpec;
@@ -275,11 +308,13 @@ extern CW_CALLBACK CWAllocMemHandle(
     CWPluginContext context, SInt32 size, Boolean useTempMemory, CWMemHandle* handle
 );
 extern CW_CALLBACK CWFreeMemHandle(CWPluginContext context, CWMemHandle handle);
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern CW_CALLBACK CWAllocateMemory(
     CWPluginContext context, SInt32 size, Boolean isPermanent, void** ptr
 );
 extern CW_CALLBACK CWResizeMemHandle(CWPluginContext context, CWMemHandle handle, SInt32 newSize);
+#endif
 #endif
 extern CW_CALLBACK CWLockMemHandle(
     CWPluginContext context, CWMemHandle handle, Boolean moveHi, void** ptr

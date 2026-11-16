@@ -59,8 +59,17 @@ static inline MultEntry* FindMultEntry(SInt32 value) {
     int h;
     MultEntry* e;
 
+#if MWCCPS2_B52
+    // b69 0x502B58 calls abs; CW Pro 6 expands abs inline here and then loses
+    // |value| before the remainder (it subtracts q * 0x1FF from the low half of
+    // the reciprocal product), which indexed MultHash out of bounds
+    h = value < 0 ? -value : value;
+    h %= MULT_HASH;
+    for (e = MultHash[h]; e && e->value != value; e = e->next) {}
+#else
     h = abs(value) % MULT_HASH;
     for (e = MultHash[h]; e && e->value != value; e = e->next) {}
+#endif
     if (!e) {
         e = lalloc(sizeof(MultEntry));
         memset(e, 0, sizeof(MultEntry));
@@ -74,9 +83,13 @@ static inline MultEntry* FindMultEntry(SInt32 value) {
 
 // what the multiply instruction (or the runtime call) costs
 #if MWCCPS2
+#if MWCCPS2_B52
+BE_NOINLINE // b210 MultiplyByConstant calls it
+#else
 __declspec(noinline) // b210 MultiplyByConstant calls it
 #endif
-static UInt32 MultCost(SInt32 value, Type* type) {
+#endif
+    static UInt32 MultCost(SInt32 value, Type* type) {
 #if MWCCPS2 // b210: a 64-bit multiply is only expensive with mips_option25
     if (IS_64BIT_INT(type) && copts.mips_option25) {
 #else
@@ -97,9 +110,13 @@ static UInt32 MultCost(SInt32 value, Type* type) {
 }
 
 #if MWCCPS2
+#if MWCCPS2_B52
+BE_NOINLINE // b210 MultiplyByConstant calls it
+#else
 __declspec(noinline) // b210 MultiplyByConstant calls it
 #endif
-static void InitMultTable(VOperand* src) {
+#endif
+    static void InitMultTable(VOperand* src) {
     MultEntry* one;
     MultEntry* neg;
 #if MWCCPS2
@@ -123,9 +140,13 @@ static void InitMultTable(VOperand* src) {
 }
 
 #if MWCCPS2
+#if MWCCPS2_B52
+BE_NOINLINE // b210 MultiplyByConstant calls it
+#else
 __declspec(noinline) // b210 MultiplyByConstant calls it
 #endif
-static MultEntry* SearchMult(SInt32 value, UInt32 budget) {
+#endif
+    static MultEntry* SearchMult(SInt32 value, UInt32 budget) {
     MultEntry* e;
     MultEntry* sub;
     SInt32 k;

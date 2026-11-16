@@ -2,6 +2,9 @@
 #define COMPILER_IROLOOP_H
 
 #include "compiler/common.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,4 +85,7 @@ extern CLabel* BuildLabel(IROList* list);
 }
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

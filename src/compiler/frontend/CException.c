@@ -23,6 +23,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#if MWCCPS2_B52
+// 2.4.5 builds offset and size constants as int where 2.4.7 uses long: b69's
+// CABI_MakeThisExpr, CClass_AccessMember, CExcept_CatchExpressionInit ... reference
+// stunsignedint (0x5360D8, integral 8) and CABI_GetPtrDiffTType stsignedint
+#define ST_OFFS_U stunsignedint
+#define ST_OFFS_S stsignedint
+
+#endif
 typedef struct UniqueObj {
     struct UniqueObj* next;
     Object* object;
@@ -150,11 +158,18 @@ void CExcept_CheckStackRefs(ExceptionAction* actions) {
 }
 
 void CExcept_CompareSpecifications(ExceptSpecList* a, ExceptSpecList* b) {
+#if MWCCPS2_B52
+    ExceptSpecList* b69_dead;
+#endif
     ExceptSpecList* aa;
     ExceptSpecList* bb;
 
     aa = a;
+#if MWCCPS2_B52
+    b69_dead = bb = b;
+#else
     bb = b;
+#endif
     while (1) {
         if (!aa) {
             if (!bb) {
@@ -170,7 +185,11 @@ void CExcept_CompareSpecifications(ExceptSpecList* a, ExceptSpecList* b) {
         }
 
         aa = aa->next;
+#if MWCCPS2_B52
+        b69_dead = bb = bb->next;
+#else
         bb = bb->next;
+#endif
     }
 
     if (a->type == NULL) {
@@ -324,6 +343,10 @@ int CExcept_IsSubList(ExceptionAction* a, ExceptionAction* b) {
     return diff;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (33)
+#endif
 #if MWCCPSP
 Boolean CExcept_ActionNeedsDestruction(ExceptionAction* action) {
     if (!action) {
@@ -379,6 +402,10 @@ Boolean CExcept_ActionNeedsDestruction(ExceptionAction* action) {
 
     return FALSE;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #endif
 
 ENode* CExcept_RegisterDestructorObject(
@@ -408,7 +435,11 @@ ENode* CExcept_RegisterDestructorObject(
 #if MWCCPSP
         expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
 #else
+#if MWCCPS2_B52
+        expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
+#else
         expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
     }
 
@@ -454,6 +485,10 @@ void CExcept_RegisterDeleteObject(Statement* stmt, Object* pointerobject, Object
     cexcept_hasdobjects = TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (55)
+#endif
 static void CExcept_PatchConstructorAction(Statement* stmt, ExceptionAction* actionArg) {
     ExceptionAction* scan;
     ExceptionAction* action;
@@ -541,6 +576,10 @@ nextStmt:
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CExcept_Terminate(void) {
     ExceptionAction* action;
@@ -558,6 +597,10 @@ void CExcept_Magic(void) {
     cexcept_magic = TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (57)
+#endif
 static Object* CExcept_FindLocalObject(char* name) {
     NameResult result;
     NameSpaceObjectList* list;
@@ -570,6 +613,10 @@ static Object* CExcept_FindLocalObject(char* name) {
     CError_FATAL(580);
     return NULL;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CExcept_ArrayInit(void) {
     ExceptionAction* action;
@@ -587,6 +634,10 @@ void CExcept_ArrayInit(void) {
     cexcept_dobjstack = action;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (57)
+#endif
 void CExcept_RegisterMember(
     Statement* stmt, Object* objectptr, SInt32 offset, Object* dtor, Object* cond, Boolean isMember
 ) {
@@ -621,6 +672,10 @@ void CExcept_RegisterMember(
     CExcept_PatchConstructorAction(stmt, action);
     stmt->flags |= StmtFlag_EndsConstruction;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 void CExcept_RegisterMemberArray(
     Statement* stmt,
@@ -646,6 +701,10 @@ void CExcept_RegisterMemberArray(
     stmt->flags |= StmtFlag_EndsConstruction;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (57)
+#endif
 static Statement* CExcept_DestroyLocal(
     ExceptionAction* ea, Statement* stmt, Object* object, Object* dtor, SInt32 offset
 ) {
@@ -656,7 +715,11 @@ static Statement* CExcept_DestroyLocal(
 #if MWCCPSP
         expr = makediadicnode(expr, intconstnode(TYPE_UNSIGNED_OFFSET, offset), EADD);
 #else
+#if MWCCPS2_B52
+        expr = makediadicnode(expr, intconstnode(TYPE(&ST_OFFS_U), offset), EADD);
+#else
         expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
     }
 
@@ -676,6 +739,10 @@ static Statement* CExcept_DestroyLocal(
     stmt->dobjstack = ea->prev;
     return stmt;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static Statement* CExcept_DestroyLocalPointer(
     ExceptionAction* ea, Statement* stmt, Object* object, Object* deletefunc
@@ -701,8 +768,16 @@ static Statement* CExcept_DestroyLocalArray(
 
     newStmt = CFunc_InsertStatement(ST_EXPRESSION, stmt);
 
+#if MWCCPS2_B52
+    if (dtor) {
+        dtorExpr = create_objectrefnode(CABI_GetDestructorObject(dtor, CABIDestroyComplete));
+    } else {
+        dtorExpr = nullnode();
+    }
+#else
     dtorExpr = dtor ? create_objectrefnode(CABI_GetDestructorObject(dtor, CABIDestroyComplete))
                     : nullnode();
+#endif
 
     newStmt->expr = funccallexpr(
         darr_func,
@@ -722,13 +797,29 @@ static Statement* CExcept_DestroyLocalArray(
 }
 
 static Statement* CExcept_EndCatch(ExceptionAction* ea, Statement* stmt) {
+#if MWCCPS2_B52
+    Statement* newstmt;
+
+    newstmt = CFunc_InsertStatement(ST_ENDCATCHDTOR, stmt);
+    newstmt->expr = create_objectrefnode(ea->data.active_catch_block.catch_info_object);
+    newstmt->dobjstack = ea->prev;
+#else
     stmt = CFunc_InsertStatement(ST_ENDCATCHDTOR, stmt);
     stmt->expr = create_objectrefnode(ea->data.active_catch_block.catch_info_object);
     stmt->dobjstack = ea->prev;
+#endif
     if (!ea->data.active_catch_block.call_dtor) {
+#if MWCCPS2_B52
+        newstmt->type = ST_ENDCATCH;
+#else
         stmt->type = ST_ENDCATCH;
+#endif
     }
+#if MWCCPS2_B52
+    return newstmt;
+#else
     return stmt;
+#endif
 }
 
 Statement* CExcept_ActionCleanup(ExceptionAction* ea, Statement* stmt) {
@@ -814,6 +905,10 @@ static void CExcept_MangleNameSpaceName(NameSpace* nspace) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (103)
+#endif
 static void CExcept_MangleClassName(TypeClass* tclass) {
     NameSpace* nspace;
     char buf[64];
@@ -847,6 +942,10 @@ static void CExcept_MangleClassName(TypeClass* tclass) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 typedef struct BCL {
     struct BCL* next;
@@ -997,11 +1096,19 @@ static ENode* CExcept_GetTypeID(Type* type, UInt32 qual, Boolean isThrow) {
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (103)
+#endif
 static Object* CExcept_TypeID(Type* type, UInt32 qual) {
     ENode* expr = CExcept_GetTypeID(type, qual, FALSE);
     CError_ASSERT(1086, expr->type == ESTRINGCONST);
     return CInit_DeclareString(expr->data.string.data, expr->data.string.size, FALSE, FALSE);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 void CExcept_ScanExceptionSpecification(TypeFunc* tfunc) {
     ExceptSpecList* exspecs;
@@ -1430,7 +1537,11 @@ static ENode* CExcept_CatchExpressionInit(DeclInfo* di, CatchBlock* catchBlock) 
 #if MWCCPSP
         intconstnode(TYPE_UNSIGNED_OFFSET, 12),
 #else
+#if MWCCPS2_B52
+        intconstnode(TYPE(&ST_OFFS_U), 12),
+#else
         intconstnode(TYPE(&stunsignedlong), 12),
+#endif
 #endif
         EADD
     );
@@ -1626,6 +1737,10 @@ static Object* CExcept_GetETEMPObject(ENode* expr) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (480)
+#endif
 static ENode* CExcept_TempTrans_ETEMP(ENode* expr) {
     Object* object;
     DtorTemp* dtorTemp;
@@ -1665,13 +1780,25 @@ static ENode* CExcept_TempTrans_ETEMP(ENode* expr) {
     expr->data.objref = object;
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static ENode* CExcept_TransNewException(ENode* expr, Boolean isCond) {
+#if MWCCPS2_B52
+    ExceptionAction* ea;
+#else
     Object* tempObj;
+#endif
     CLabel* label;
     Boolean isArray;
     Statement* stmt;
+#if MWCCPS2_B52
+    Object* tempObj;
+#else
     ExceptionAction* ea;
+#endif
     ENode* result;
 
     isArray = expr->type == ENEWEXCEPTIONARRAY;
@@ -2001,8 +2128,12 @@ static ENode* CExcept_TempTransFuncCall(ENode* expr, Boolean isCond) {
 #if MWCCPSP
             expr = CEXPR_COPYENODE(stmt->expr);
 #else
+#if MWCCPS2_B52
+            expr = CExpr_CopyENode(stmt->expr);
+#else
             expr = lalloc(sizeof(ENode));
             *expr = *stmt->expr;
+#endif
 #endif
             expr->type = EOBJREF;
             expr->data.objref = tempArg->node->data.objref;
@@ -2099,6 +2230,10 @@ static ENode* CExcept_TempTransExprCond(ENode* expr) {
         case ECOMMA:
         case EROTL:
         case EROTR:
+#if MWCCPS2_B52
+        case EMIN:
+        case EMAX:
+#endif
 #if MWCCPSP
         case EMIN:
         case EMAX:
@@ -2126,7 +2261,9 @@ static ENode* CExcept_TempTransExprCond(ENode* expr) {
         case ELABEL:
         case EINSTRUCTION:
 #if !MWCCPSP // not a 3.0.1 node kind
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
 #endif
             return expr;
         default:
@@ -2197,6 +2334,10 @@ static ENode* CExcept_TempTransExpr(ENode* expr) {
         case EORASS:
         case EROTL:
         case EROTR:
+#if MWCCPS2_B52
+        case EMIN:
+        case EMAX:
+#endif
 #if MWCCPSP
         case EMIN:
         case EMAX:
@@ -2242,7 +2383,9 @@ static ENode* CExcept_TempTransExpr(ENode* expr) {
 #endif
         case EINSTRUCTION:
 #if !MWCCPSP // not a 3.0.1 node kind
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
 #endif
             return expr;
         default:
@@ -2256,12 +2399,19 @@ static ENode* CExcept_TempTransExpr(ENode* expr) {
 }
 
 static Statement* CExcept_DtorTransform(Statement* stmt) {
+#if MWCCPS2_B52
+    Statement* b69_dead;
+#endif
     DtorTemp* dtorTemp;
     Statement* curStmt;
     CLabel* lastLabel;
 
     dtorTemp = cexcept_dtortemps;
+#if MWCCPS2_B52
+    b69_dead = curStmt = stmt;
+#else
     curStmt = stmt;
+#endif
     while (dtorTemp) {
         if (cexcept_eaafter &&
             (cexcept_eaafter->type == EAT_DESTROYLOCAL ||
@@ -2301,6 +2451,10 @@ static Statement* CExcept_DtorTransform(Statement* stmt) {
     return curStmt;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (527)
+#endif
 #if MWCCPS2 // b210's asserts here are 527 lines later
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 527
@@ -2395,6 +2549,10 @@ static void CExcept_TempTransform(Statement* stmt, Boolean discardValue, Boolean
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #if MWCCPS2
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 0
@@ -2443,6 +2601,10 @@ static void CExcept_SetupCatchTypeIDs(Statement* stmt) {
 }
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (3073)
+#endif
 #if MWCCPSP
 // 3.0.1 (0x4DEE40): catch type IDs first; a call that returns its result in
 // the destroyed local (struct result argument) also constructs it
@@ -2576,9 +2738,16 @@ static void CExcept_CleanupExceptionActions(Statement* stmt) {
         cexcept_prevstmt = iter;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #endif
 
 static void CExcept_InsertSpecificationActions(Statement* stmt, ExceptSpecList* exspecs) {
+#if MWCCPS2_B52
+    ExceptSpecList* b69_dead;
+#endif
     Statement* iter;
     ExceptionAction* ea_spec;
     ExceptionAction* ea;
@@ -2637,7 +2806,11 @@ static void CExcept_InsertSpecificationActions(Statement* stmt, ExceptSpecList* 
     }
 
     i = 0;
+#if MWCCPS2_B52
+    b69_dead = spec_iter = exspecs;
+#else
     spec_iter = exspecs;
+#endif
     while (spec_iter) {
         i++;
         spec_iter = spec_iter->next;
@@ -2649,7 +2822,11 @@ static void CExcept_InsertSpecificationActions(Statement* stmt, ExceptSpecList* 
     ea_spec->data.specification.unexp_info_object = catch_info_object;
 
     i = 0;
+#if MWCCPS2_B52
+    for (b69_dead = spec_iter = exspecs; spec_iter; spec_iter = spec_iter->next) {
+#else
     for (spec_iter = exspecs; spec_iter; spec_iter = spec_iter->next) {
+#endif
         ea_spec->data.specification.unexp_id[i++] =
             CExcept_TypeID(spec_iter->type, spec_iter->qual);
     }
@@ -2696,6 +2873,12 @@ static void CExcept_HasFuncCallCallBack(ENode* expr) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-11)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (617)
+#endif
 static Boolean CExcept_CanThrowCheck(Object* func, Statement* stmt) {
     cexcept_canthrow = FALSE;
 
@@ -2718,7 +2901,9 @@ static Boolean CExcept_CanThrowCheck(Object* func, Statement* stmt) {
             case ST_ENDCATCH:
             case ST_ENDCATCHDTOR:
 #if !MWCCPSP // 3.0.1: a computed goto is an internal error here
+#if !MWCCPS2_B52
             case ST_GOTOEXPR:
+#endif
 #endif
 #if MWCCPSP
                 CExpr_SearchExprTree(stmt->expr, CExcept_HasFuncCallCallBack);
@@ -2747,7 +2932,19 @@ static Boolean CExcept_CanThrowCheck(Object* func, Statement* stmt) {
         return TRUE;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-11)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (617)
+#endif
 void CExcept_ExceptionTansform(Statement* stmt) {
     cexcept_uniqueobjs = NULL;
     CExcept_CleanupExceptionActions(stmt);
@@ -2763,6 +2960,12 @@ void CExcept_ExceptionTansform(Statement* stmt) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 #pragma pack(2)
 #if MWCCPSP

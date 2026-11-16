@@ -19,6 +19,7 @@ div_t div(int numerator, int denominator);
 void qsort(
     void* table_base, size_t num_members, size_t member_size, _compare_function compare_members
 );
+#if !MWCCPS2_B52
 #if MWCCPSP
 void* bsearch(
     const void* key,
@@ -27,6 +28,7 @@ void* bsearch(
     size_t size,
     int (*compare)(const void*, const void*)
 );
+#endif
 #endif
 void* malloc(size_t size);
 void free(void* ptr);

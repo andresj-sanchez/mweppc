@@ -16,6 +16,9 @@
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"
 #include "driver/Utils.h"
+#if MWCCPS2_B52
+#include "driver/pref_structs.h"
+#endif
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -139,11 +142,15 @@ int Opt_AddAccessPath(const char* opt, void* var, const char* arg, int flags) {
 
     err = OS_MakePathSpec(0, path, &spec);
     if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+#if MWCCPS2_B52
+        // b52 (0x40F8B7): a missing access path is reported only with -v
+        if (pCmdLine.verbose)
+#endif
 #if MWCCPSP
-        // 3.0.1 reports a missing path only when verbose
-        if (pCmdLine.verbose) {
-            CLPReportWarning(CLPStr45, path);
-        }
+            // 3.0.1 reports a missing path only when verbose
+            if (pCmdLine.verbose) {
+                CLPReportWarning(CLPStr45, path);
+            }
 #else
         CLPReportWarning(CLPStr45, path);
 #endif

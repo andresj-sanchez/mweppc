@@ -2,6 +2,9 @@
 #define COMPILER_IROJUMP_H
 
 #include "compiler/common.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,4 +20,7 @@ extern Boolean IRO_RemoveLabels(void);
 }
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

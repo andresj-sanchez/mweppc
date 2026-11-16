@@ -46,6 +46,23 @@ extern void func_00490370(void); // end the block
 extern MPCode* func_00480420(int op, SInt16 nargs);
 extern SInt32 data_00625A98[7]; // next virtual register of each class
 extern SInt16 data_00625E48; // the move opcode
+#if MWCCPS2_B52
+extern SInt16 data_00625E74; // the 16-byte register move
+#else
+static void func_0052E3B0(
+    UInt16 loadop,
+    UInt16 storeop,
+    SInt32 step,
+    VOperand* dstEnd,
+    VOperand* srcEnd,
+    VOperand* dst,
+    VOperand* src,
+    SInt32 len
+);
+#endif
+// an address operand into a register
+#if MWCCPS2_B52
+#define MWCCPS2_B69_NOQFLAG 1
 static void func_0052E3B0(
     UInt16 loadop,
     UInt16 storeop,
@@ -57,6 +74,7 @@ static void func_0052E3B0(
     SInt32 len
 );
 // an address operand into a register
+#endif
 #define COERCE_ADDRESS(op) \
     do { \
         if ((op)->kind == 2) { \
@@ -188,6 +206,7 @@ static void func_0052FA10(VOperand* dst, VOperand* src, SInt32 len) {
 // the copy loop: len / step iterations (two accesses each when that is even
 // and at least 6) of loadop/storeop through pointer registers, which
 // dstEnd/srcEnd describe afterwards (for the remainder)
+#if MWCCPS2_B52
 static void func_0052E3B0(
     UInt16 loadop,
     UInt16 storeop,
@@ -198,6 +217,18 @@ static void func_0052E3B0(
     VOperand* src,
     SInt32 len
 ) {
+#else
+static void func_0052E3B0(
+    UInt16 loadop,
+    UInt16 storeop,
+    SInt32 step,
+    VOperand* dstEnd,
+    VOperand* srcEnd,
+    VOperand* dst,
+    VOperand* src,
+    SInt32 len
+) {
+#endif
     SInt32 rtmp;
     SInt32 rtmp2;
     SInt32 rcount;
@@ -241,10 +272,22 @@ static void func_0052E3B0(
         rtmp2 = data_00625A98[0]++;
     }
     counter = func_0047F660(count);
+#if MWCCPS2_B52
+    {
+        SInt16 move = step == 16 ? data_00625E74 : data_00625E48;
+        emitpcode(move, rcount, counter.reg);
+#else
     emitpcode(data_00625E48, rcount, counter.reg);
-    counter.reg = rcount;
+#endif
+        counter.reg = rcount;
+#if MWCCPS2_B52
+        emitpcode(move, rsrc, src->reg);
+        emitpcode(move, rdst, dst->reg);
+    }
+#else
     emitpcode(data_00625E48, rsrc, src->reg);
     emitpcode(data_00625E48, rdst, dst->reg);
+#endif
     func_00490370();
     func_0046FA90((MPCodeLabel*)label->pclabel);
 
@@ -253,7 +296,11 @@ static void func_0052E3B0(
     pc->args[0] = func_004C3E70(rtmp, 0, 0x12);
     pc->args[1] = func_004C3C60(&smem);
     pc->args[2] = func_004C3E70(rsrc, 0, 0x11);
+#if MWCCPS2_B52
+    if (!MWCCPS2_B69_NOQFLAG && (pc->op == MACRO_OP(0x5D) || pc->op == OPC(0x1D1))) {
+#else
     if (pc->op == MACRO_OP(0x5D) || pc->op == 0x1D1) {
+#endif
         pc->args[0].flags |= 0x2000;
     }
     appendpcode(data_006246B4, pc);
@@ -261,7 +308,11 @@ static void func_0052E3B0(
         pc = func_00480420(loadop, 3);
         pc->flags |= 0x20;
         pc->args[0] = func_004C3E70(rtmp2, 0, 0x12);
+#if MWCCPS2_B52
+        if (!MWCCPS2_B69_NOQFLAG && (pc->op == MACRO_OP(0x5D) || pc->op == OPC(0x1D1))) {
+#else
         if (pc->op == MACRO_OP(0x5D) || pc->op == 0x1D1) {
+#endif
             pc->args[0].flags |= 0x2000;
         }
         smem.offset += step;
@@ -293,7 +344,11 @@ static void func_0052E3B0(
     pc = func_00480420(storeop, 3);
     pc->flags |= 0x20;
     pc->args[0] = func_004C3E70(rtmp, 0, 0x11);
+#if MWCCPS2_B52
+    if (!MWCCPS2_B69_NOQFLAG && (pc->op == MACRO_OP(0x7F) || pc->op == OPC(0x1D2))) {
+#else
     if (pc->op == MACRO_OP(0x7F) || pc->op == 0x1D2) {
+#endif
         pc->args[0].flags |= 0x2000;
     }
     pc->args[1] = func_004C3C60(&dmem);
@@ -303,7 +358,11 @@ static void func_0052E3B0(
         pc = func_00480420(storeop, 3);
         pc->flags |= 0x20;
         pc->args[0] = func_004C3E70(rtmp2, 0, 0x11);
+#if MWCCPS2_B52
+        if (!MWCCPS2_B69_NOQFLAG && (pc->op == MACRO_OP(0x5D) || pc->op == OPC(0x1D1))) {
+#else
         if (pc->op == MACRO_OP(0x5D) || pc->op == 0x1D1) {
+#endif
             pc->args[0].flags |= 0x2000;
         }
         dmem.offset += step;

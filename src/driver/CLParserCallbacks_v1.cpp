@@ -388,7 +388,12 @@ static CWParserCallbacks parser_cb = {
 CWParserContext::CWParserContext()
     : CWPluginPrivateContext(CWDROPINPARSERTYPE, sizeof(CWParserContext)) {
 #else
+#if MWCCPS2_B52
+CWParserContext::CWParserContext()
+    : CWPluginPrivateContext(CWDROPINPARSERTYPE, sizeof(CWParserContext)) {
+#else
 CWParserContext::CWParserContext() : CWPluginPrivateContext(CWDROPINPARSERTYPE, -1) {
+#endif
 #endif
     args = NULL;
     cpu = os = 0;

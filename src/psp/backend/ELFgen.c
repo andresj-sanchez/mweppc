@@ -36,6 +36,10 @@
         } \
     } while (0)
 
+#if MWCCPS2_B52
+// b52's .bss (0x59F200..0x59F270) holds all but elf_ehdr (a global,
+// 0x5B4CC4), elf_nullsym lowest: statics declared in the reverse order
+#else
 static Elf32_Sym elf_nullsym;
 static UInt8 elf_zeros[0x40];
 static SInt32 elf_encoding; // 1: little endian
@@ -46,7 +50,20 @@ ELFSection* elf_strtab;
 ELFSection* elf_symtab;
 ELFSection** elf_sections;
 static SInt32 elf_sectioncapacity;
+#endif
 Elf32_Ehdr elf_ehdr;
+#if MWCCPS2_B52
+static SInt32 elf_sectioncapacity;
+static ELFSection** elf_sections;
+static ELFSection* elf_symtab;
+static ELFSection* elf_strtab;
+static ELFSection* elf_shstrtab;
+static ELFSymbol* elf_symbols;
+static ELFSymbol** elf_symtail;
+static SInt32 elf_encoding; // 1: little endian
+static UInt8 elf_zeros[0x40];
+static Elf32_Sym elf_nullsym;
+#endif
 
 static void ELF_WriteRelocEntry(ELFSection* section, Elf32_Rela* rela);
 static void ELF_WriteSymEntry(ELFSection* section, Elf32_Sym* sym);
@@ -201,9 +218,15 @@ static void ELF_WriteSymEntry(ELFSection* section, Elf32_Sym* sym) {
     PUT16(p, sym->st_shndx);
 }
 
+#if MWCCPS2_B52
 ELFSymbol* ELF_NewSymbol(
     char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
 ) {
+#else
+ELFSymbol* ELF_NewSymbol(
+    char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
+) {
+#endif
     ELFSymbol* sym;
 
     sym = galloc(sizeof(ELFSymbol));
@@ -219,9 +242,15 @@ ELFSymbol* ELF_NewSymbol(
     return sym;
 }
 
+#if MWCCPS2_B52
 void ELF_DefineSymbol(
     ELFSymbol* sym, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
 ) {
+#else
+void ELF_DefineSymbol(
+    ELFSymbol* sym, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
+) {
+#endif
     ELFSection* section;
     UInt32 misalign;
     UInt32 offset;
@@ -267,9 +296,15 @@ void ELF_DefineSymbol(
     }
 }
 
+#if MWCCPS2_B52
 ELFSymbol* ELF_NewUndefinedSymbol(
     char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, UInt32 value
 ) {
+#else
+ELFSymbol* ELF_NewUndefinedSymbol(
+    char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, UInt32 value
+) {
+#endif
     ELFSymbol* sym;
 
     sym = galloc(sizeof(ELFSymbol));

@@ -10,7 +10,31 @@
 #include "compiler/CError.h"
 #include "compiler/CompilerTools.h"
 #include "psp/BE.h"
+#if MWCCPS2_B52
+#include <stdio.h>
+#include <stdlib.h>
+#include "compiler/InlineAsmMIPS.h"
+#endif
 
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+typedef struct DumpAlias {
+    void* next;
+    void* hashNext;
+    void* children;
+    void* parents;
+    void* object;
+    SInt32 offset;
+    SInt32 size;
+    int valuenumber;
+    void* valuepcode;
+    UInt32* membervec;
+    int index;
+    unsigned char type; // AliasType is one byte here (short enums)
+} DumpAlias;
+#pragma pack(pop)
+
+#endif
 typedef struct DGNode {
     struct DGNode* next;
     struct DGNode* prev;
@@ -56,7 +80,12 @@ extern void func_004C34A0(void);
 extern void gather_alias_info(void);
 extern Boolean may_alias(MPCode* a, MPCode* b);
 
+#if MWCCPS2_B52
+// b52 (0x59D190..0x59D24E): MI between refcount and criticalpath, packed to 2
+// bytes (Pro 6 lays statics out with the packing in force at the end of the file)
+#else
 static MachineInfo* MI;
+#endif
 static DGNode* head;
 static DGNodeList** register_uses[7];
 static DGNodeList** register_defs[7];
@@ -71,9 +100,17 @@ static DGNodeList* side_effects;
 static DGNodeList* volatile_refs;
 static DGNode* defaultsuccessor;
 static UInt16 criticalpath;
+#if MWCCPS2_B52
+static MachineInfo* MI;
+#else
 static SInt32* refcount[7]; // uses left of each register in the block
 static SInt32 avail[7]; // registers available per class
+#endif
 static SInt32 live[7]; // registers live per class
+#if MWCCPS2_B52
+static SInt32 avail[7]; // registers available per class
+static SInt32* refcount[7]; // uses left of each register in the block (b52 0x59D190: func_004B60F0)
+#endif
 
 #define DEDICATED(rclass, reg) \
     ((reg) < data_00624744[(rclass)] && data_0060FEE8[(rclass)][(reg)] == 2)
@@ -92,10 +129,20 @@ static void scheduleblock(MPCodeBlock* block);
 void func_004B5210(void) {
     MPCodeBlock* block;
 
+#if MWCCPS2_B52
+    if (getenv("MWCCPS2_SCHEDDUMP")) {
+        fprintf(stderr, "SCHED\n");
+    }
+#endif
     gather_alias_info();
     func_004C34A0();
     for (block = data_00624FD0; block; block = block->next) {
+#if MWCCPS2_B52
+        // b69 (0x4AE360) skips only blocks flagged 2 or 8
+        if (block->pcodecount >= 2 && !(block->flags2E & 2) && !(block->flags2E & 8)) {
+#else
         if (block->pcodecount >= 2 && !(block->flags2E & 0x11B)) {
+#endif
             scheduleblock(block);
             block->flags2E |= 8;
         }
@@ -116,6 +163,32 @@ static void scheduleblock(MPCodeBlock* block) {
     MPCode* instr;
 
     MI->initialize();
+#if MWCCPS2_B52
+    {
+        static int opdumped;
+        if (!opdumped && getenv("MWCCPS2_OPDUMP")) {
+            // the opcode table's scheduling fields and the model's latency of
+            // each opcode (compare b69's table at 0x56E958)
+            MPCode* fake = calloc(1, sizeof(MPCode) + 16 * sizeof(MOperand));
+            int op;
+            opdumped = 1;
+            for (op = 0; op < 0x5C5; op++) {
+                fake->op = op;
+                fake->flags = 0;
+                fprintf(
+                    stderr,
+                    "OP %03x f%08x g%08x u%08x lat%d\n",
+                    op,
+                    (unsigned)data_006115F8[op].flags,
+                    (unsigned)data_006115F8[op].flags2,
+                    (unsigned)data_006115F8[op].unk28,
+                    MI->latency(fake)
+                );
+            }
+            free(fake);
+        }
+    }
+#endif
     initresources();
     func_004B61E0(block);
     defaultsuccessor = NULL;
@@ -146,7 +219,75 @@ static void scheduleblock(MPCodeBlock* block) {
     for (n = head; n; n = n->next) {
         n->latest = criticalpath - n->height;
     }
+#if MWCCPS2_B52
+    if (getenv("MWCCPS2_SCHEDDUMP")) {
+#endif
 
+#if MWCCPS2_B52
+        // hybrid's at b69 0x4AE2A0)
+        int cnt = 0;
+        int k;
+        DGNode* m;
+        for (n = head; n; n = n->next) {
+            cnt++;
+        }
+        fprintf(stderr, "BLOCK %d\n", cnt);
+        for (n = head, k = 0; n; n = n->next, k++) {
+            fprintf(
+                stderr,
+                " %d op%03x f%08x lat%d k%d h%d L%d p%d |",
+                k,
+                n->instr->op,
+                (unsigned)(n->instr->flags & 0x3fffffff & ~0x2000000),
+                n->latency,
+                n->kind,
+                n->height,
+                n->latest,
+                n->predCount
+            );
+            {
+                int q;
+                for (q = 0; q < n->instr->argcount; q++) {
+                    MOperand* o = &n->instr->args[q];
+                    if (o->kind <= 1) {
+                        fprintf(
+                            stderr,
+                            " %c%d:%d/%x",
+                            o->kind ? 's' : 'r',
+                            o->rclass,
+                            o->reg,
+                            o->flags & 3
+                        );
+                    }
+                }
+            }
+            if (n->instr->flags & 0x60006) {
+                DumpAlias* al = (DumpAlias*)n->instr->alias;
+                if (al) {
+                    fprintf(
+                        stderr,
+                        " A%d/%d/%d/%d",
+                        (int)al->type,
+                        (int)al->offset,
+                        (int)al->size,
+                        (int)al->index
+                    );
+                } else {
+                    fprintf(stderr, " A-");
+                }
+            }
+            for (succ = n->successors; succ; succ = succ->next) {
+                int j = 0;
+                for (m = head; m && m != succ->node; m = m->next) {
+                    j++;
+                }
+                fprintf(stderr, " %d:%d", m ? j : -1, succ->latency);
+            }
+            fprintf(stderr, "\n");
+        }
+    }
+
+#endif
     block->first = block->last = NULL;
     block->pcodecount = 0;
 
@@ -222,9 +363,15 @@ static DGNode* selectinstruction(DGNode* nodes, UInt16 counter) {
         // the instruction that frees the most registers
         best = func_004B5F30(node->instr);
         for (candidate = node->next; candidate; candidate = candidate->next) {
+#if MWCCPS2_B52
             if (candidate->predCount == 0 &&
                 candidate->earliest <= counter &&
                 MI->can_issue(candidate->instr) &&
+#else
+            if (candidate->predCount == 0 &&
+                candidate->earliest <= counter &&
+                MI->can_issue(candidate->instr) &&
+#endif
                 func_004B5F30(candidate->instr) < best) {
                 best = func_004B5F30(candidate->instr);
                 node = candidate;
@@ -234,9 +381,15 @@ static DGNode* selectinstruction(DGNode* nodes, UInt16 counter) {
     }
 
     for (candidate = node->next; candidate; candidate = candidate->next) {
+#if MWCCPS2_B52
         if (candidate->predCount == 0 &&
             candidate->earliest <= counter &&
             MI->can_issue(candidate->instr) &&
+#else
+        if (candidate->predCount == 0 &&
+            candidate->earliest <= counter &&
+            MI->can_issue(candidate->instr) &&
+#endif
             (node->latest > counter || candidate->latest <= counter)) {
             if (node->latest > counter && candidate->latest <= counter) {
                 node = candidate;
@@ -302,9 +455,15 @@ static inline void serializelist(DGNode* node, DGNodeList* list) {
 }
 
 static void serialize_store(DGNode* node);
+#if MWCCPS2_B52
 static void serializeregister(
     int special, DGNode* node, DGNodeList** defs, DGNodeList** uses, int isWrite
 );
+#else
+static void serializeregister(
+    int special, DGNode* node, DGNodeList** defs, DGNodeList** uses, int isWrite
+);
+#endif
 
 static void findsuccessors(DGNode* node) {
     MPCode* instr;
@@ -319,18 +478,31 @@ static void findsuccessors(DGNode* node) {
             case 0:
                 if (op->flags & 2) {
                     serializeregister(
+#if MWCCPS2_B52
                         0,
                         node,
                         &register_defs[op->rclass][op->reg],
                         &register_uses[op->rclass][op->reg],
+#else
+                        0,
+                        node,
+                        &register_defs[op->rclass][op->reg],
+                        &register_uses[op->rclass][op->reg],
+#endif
                         op->flags & 2
                     );
                 }
                 break;
             case 1:
+#if MWCCPS2_B52
                 serializeregister(
                     1, node, &special_defs[op->reg], &special_uses[op->reg], op->flags & 2
                 );
+#else
+                serializeregister(
+                    1, node, &special_defs[op->reg], &special_uses[op->reg], op->flags & 2
+                );
+#endif
                 break;
             case 2:
             case 3:
@@ -348,18 +520,31 @@ static void findsuccessors(DGNode* node) {
             case 0:
                 if (op->flags & 1) {
                     serializeregister(
+#if MWCCPS2_B52
                         0,
                         node,
                         &register_defs[op->rclass][op->reg],
                         &register_uses[op->rclass][op->reg],
+#else
+                        0,
+                        node,
+                        &register_defs[op->rclass][op->reg],
+                        &register_uses[op->rclass][op->reg],
+#endif
                         op->flags & 2
                     );
                 }
                 break;
             case 1:
+#if MWCCPS2_B52
                 serializeregister(
                     1, node, &special_defs[op->reg], &special_uses[op->reg], op->flags & 2
                 );
+#else
+                serializeregister(
+                    1, node, &special_defs[op->reg], &special_uses[op->reg], op->flags & 2
+                );
+#endif
                 break;
             case 2:
             case 3:
@@ -436,9 +621,15 @@ static void serialize_store(DGNode* node) {
     }
 }
 
+#if MWCCPS2_B52
 static void serializeregister(
     int special, DGNode* node, DGNodeList** defs, DGNodeList** uses, int isWrite
 ) {
+#else
+static void serializeregister(
+    int special, DGNode* node, DGNodeList** defs, DGNodeList** uses, int isWrite
+) {
+#endif
     DGNodeList* list;
 
     if (isWrite) {
@@ -564,10 +755,17 @@ static int func_004B5F30(MPCode* instr) {
     }
     count = instr->argcount;
     for (op = instr->args, n = count; n--; op++) {
+#if MWCCPS2_B52
         if (op->kind == 0 &&
             (op->flags & 1) &&
             !DEDICATED(op->rclass, op->reg) &&
             refcount[op->rclass][op->reg] == 0) {
+#else
+        if (op->kind == 0 &&
+            (op->flags & 1) &&
+            !DEDICATED(op->rclass, op->reg) &&
+            refcount[op->rclass][op->reg] == 0) {
+#endif
             d = live[op->rclass] - avail[op->rclass];
             prio--;
             if (d <= 1) {
@@ -577,10 +775,17 @@ static int func_004B5F30(MPCode* instr) {
         }
     }
     for (op = instr->args, n = count; n--; op++) {
+#if MWCCPS2_B52
         if (op->kind == 0 &&
             (op->flags & 2) &&
             !DEDICATED(op->rclass, op->reg) &&
             refcount[op->rclass][op->reg] &&
+#else
+        if (op->kind == 0 &&
+            (op->flags & 2) &&
+            !DEDICATED(op->rclass, op->reg) &&
+            refcount[op->rclass][op->reg] &&
+#endif
             !(op->flags & 1)) {
             d = live[op->rclass] - avail[op->rclass];
             if (d <= 1) {
@@ -603,18 +808,31 @@ static void func_004B60F0(MPCode* instr) {
     int n;
 
     for (op = instr->args, n = instr->argcount; n--; op++) {
+#if MWCCPS2_B52
         if (op->kind == 0 &&
             (op->flags & 1) &&
             !DEDICATED(op->rclass, op->reg) &&
+#else
+        if (op->kind == 0 &&
+            (op->flags & 1) &&
+            !DEDICATED(op->rclass, op->reg) &&
+#endif
             --refcount[op->rclass][op->reg] == 0) {
             live[op->rclass]--;
         }
     }
     for (op = instr->args, n = instr->argcount; n--; op++) {
+#if MWCCPS2_B52
         if (op->kind == 0 &&
             (op->flags & 2) &&
             !DEDICATED(op->rclass, op->reg) &&
             refcount[op->rclass][op->reg] &&
+#else
+        if (op->kind == 0 &&
+            (op->flags & 2) &&
+            !DEDICATED(op->rclass, op->reg) &&
+            refcount[op->rclass][op->reg] &&
+#endif
             !(op->flags & 1)) {
             live[op->rclass]++;
         }
@@ -633,8 +851,13 @@ static void func_004B61E0(MPCodeBlock* block) {
         avail[rclass] = func_00462160(rclass);
         live[rclass] = 0;
         for (i = 0; i < data_00625A98[rclass]; i++) {
+#if MWCCPS2_B52
             if (BITSET(data_0062541C[rclass].blocks[block->number].livein, i) &&
                 !DEDICATED(rclass, i)) {
+#else
+            if (BITSET(data_0062541C[rclass].blocks[block->number].livein, i) &&
+                !DEDICATED(rclass, i)) {
+#endif
                 live[rclass]++;
             }
         }
@@ -642,8 +865,13 @@ static void func_004B61E0(MPCodeBlock* block) {
     for (rclass = 0; rclass < 7; rclass++) {
         refcount[rclass] = oalloc(sizeof(SInt32) * data_00625A98[rclass]);
         for (i = 0; i < data_00625A98[rclass]; i++) {
+#if MWCCPS2_B52
             refcount[rclass][i] =
                 BITSET(data_0062541C[rclass].blocks[block->number].liveout, i) ? 1 : 0;
+#else
+            refcount[rclass][i] =
+                BITSET(data_0062541C[rclass].blocks[block->number].liveout, i) ? 1 : 0;
+#endif
         }
     }
     for (pc = block->first; pc; pc = pc->next) {
@@ -654,3 +882,7 @@ static void func_004B61E0(MPCodeBlock* block) {
         }
     }
 }
+#if MWCCPS2_B52
+
+#pragma pack(2) // see the statics above
+#endif

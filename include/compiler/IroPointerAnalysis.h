@@ -2,6 +2,9 @@
 #define COMPILER_IROPOINTERANALYSIS_H
 
 #include "compiler/common.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +30,7 @@ extern void PointerAnalysis_ParseFunctionModifiesSpecifier(DeclInfo* di);
 }
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

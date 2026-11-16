@@ -561,3 +561,15 @@ int vectorarraystoregs(void) {
     freeoheap();
     return converted_arrays;
 }
+#if MWCCPS2_B52
+
+// IRO's is_unsigned wrapper (compiler/IroUtil.h). Its unit is unknown
+// (0x480DB0 sits among unlabelled optimizer functions); its code (ecx, no
+// frame) is that of a -sym off unit, as this one is. Not IROUseDef.c, also
+// -sym off: a definition there renumbers its deferred inlines' `_@N` literals.
+#include "compiler/CParser.h"
+#undef is_unsigned
+Boolean IRO_IsUnsigned_b69_00480DB0(Type* type) {
+    return is_unsigned(type);
+}
+#endif

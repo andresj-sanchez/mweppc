@@ -31,6 +31,10 @@ typedef struct MachineInfo {
 // mwccps2 b210 replaces this unit's model with MIPSSimulation.c (the R5900:
 // two-issue, six units, two two-slot pipelines); see the end of the file.
 // Its data (0x61B720..0x61B808):
+#if MWCCPS2_B52
+// ones and the pipes (0x4C2960..0x4C3220, width 2); Pro 6 lays statics out
+// in reverse declaration order.
+#else
 static int (*oplatency)(MPCode* instr); // 0x61B720
 static SInt32 pipelat[2]; // 0x61B724
 static SInt32 pipeflag[2]; // 0x61B72C
@@ -40,7 +44,23 @@ static SInt32 finished[6]; // 0x61B754
 static MPCode* lastinstr[6]; // 0x61B76C
 static SInt32 busycount[6]; // 0x61B784
 static MPCode* busy[6]; // 0x61B79C
+#endif
 static SInt32 clock; // 0x61B804
+#if MWCCPS2_B52
+static MPCode* busy5[5]; // 0x59D178
+static SInt32 busycount5[5]; // 0x59D164
+static MPCode* lastinstr5[5]; // 0x59D150
+static SInt32 finished5[5]; // 0x59D13C
+static MPCode* busy[6]; // 0x59D124
+static SInt32 busycount[6]; // 0x59D10C
+static MPCode* lastinstr[6]; // 0x59D0F4
+static SInt32 finished[6]; // 0x59D0DC
+static MPCode* pipeinstr[2][2]; // 0x59D0CC
+static SInt32 pipecount[2][2]; // 0x59D0BC
+static SInt32 pipeflag[2]; // 0x59D0B4
+static SInt32 pipelat[2]; // 0x59D0AC
+static int (*oplatency)(MPCode* instr); // 0x59D0A8
+#endif
 #else
 static int (*oplatency)(MPCode* instr); // 0x603DC0
 static SInt32 finished[5]; // 0x603E54: clock when the unit's last instruction finished
@@ -58,8 +78,13 @@ static SInt32 clock; // 0x603EA4
 // in another order with their own returns (the block layout follows them)
 static int func_004B4EC0(MPCode* instr) {
     switch (instr->op) {
+#if MWCCPS2_B52
+        case OPC(0x7C):
+        case OPC(0x7D):
+#else
         case 0x7C:
         case 0x7D:
+#endif
         case MACRO_OP(0x35):
         case MACRO_OP(0x37):
         case MACRO_OP(0x38):
@@ -67,8 +92,13 @@ static int func_004B4EC0(MPCode* instr) {
         case MACRO_OP(0x6A):
         case MACRO_OP(0x6B):
             return 36;
+#if MWCCPS2_B52
+        case OPC(0xB6):
+        case OPC(0xB7):
+#else
         case 0xB6:
         case 0xB7:
+#endif
 #if MWCCPS2_BUILD >= 210 // b145 has no latency for these
         case 0x400:
         case 0x401:
@@ -82,8 +112,13 @@ static int func_004B4EC0(MPCode* instr) {
         case MACRO_OP(0x67):
         case MACRO_OP(0x68):
             return 3;
+#if MWCCPS2_B52
+        case OPC(0x7A):
+        case OPC(0x7B):
+#else
         case 0x7A:
         case 0x7B:
+#endif
         case MACRO_OP(0x31):
         case MACRO_OP(0x32):
         case MACRO_OP(0x33):
@@ -91,8 +126,13 @@ static int func_004B4EC0(MPCode* instr) {
         case MACRO_OP(0x40):
         case MACRO_OP(0x41):
             return 68;
+#if MWCCPS2_B52
+        case OPC(0x80):
+        case OPC(0x81):
+#else
         case 0x80:
         case 0x81:
+#endif
         case MACRO_OP(0x3A):
         case MACRO_OP(0x3B):
         case MACRO_OP(0x3C):
@@ -100,6 +140,40 @@ static int func_004B4EC0(MPCode* instr) {
         case MACRO_OP(0x3E):
         case MACRO_OP(0x3F):
             return 6;
+#if MWCCPS2_B52
+        case OPC(0x44):
+        case OPC(0x45):
+        case OPC(0x46):
+        case OPC(0x47):
+        case OPC(0x48):
+        case OPC(0x49):
+        case OPC(0x4A):
+        case OPC(0x4B):
+        case OPC(0x4C):
+        case OPC(0x4D):
+        case OPC(0x4E):
+        case OPC(0x4F):
+        case OPC(0x50):
+        case OPC(0x51):
+        case OPC(0x52):
+        case OPC(0x53):
+        case OPC(0x54):
+        case OPC(0x55):
+        case OPC(0x56):
+        case OPC(0x57):
+        case OPC(0x58):
+        case OPC(0x59):
+        case OPC(0x5A):
+        case OPC(0x5B):
+        case OPC(0x5C):
+        case OPC(0x5D):
+        case OPC(0x5E):
+        case OPC(0x5F):
+        case OPC(0x60):
+        case OPC(0x61):
+        case OPC(0x62):
+        case OPC(0x63):
+#else
         case 0x44:
         case 0x45:
         case 0x46:
@@ -132,35 +206,102 @@ static int func_004B4EC0(MPCode* instr) {
         case 0x61:
         case 0x62:
         case 0x63:
+#endif
             return 2;
+#if MWCCPS2_B52
+        case OPC(0xEC):
+        case OPC(0xED):
+        case OPC(0x102):
+        case OPC(0x103):
+#else
         case 0xEC:
         case 0xED:
         case 0x102:
         case 0x103:
+#endif
             return 4;
+#if MWCCPS2_B52
+        case OPC(0x6C):
+#else
         case 0x6C:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0x6D):
+#else
         case 0x6D:
+#endif
             return 2;
+#if MWCCPS2_B52
+        case OPC(0x6E):
+        case OPC(0x6F):
+        case OPC(0x70):
+#else
         case 0x6E:
         case 0x6F:
         case 0x70:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0x71):
+#else
         case 0x71:
+#endif
             return 3;
+#if MWCCPS2_B52
+        case OPC(0x72):
+        case OPC(0x73):
+        case OPC(0x74):
+        case OPC(0x75):
+#else
         case 0x72:
         case 0x73:
         case 0x74:
         case 0x75:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0xF2):
+#else
         case 0xF2:
+#endif
             return 59;
+#if MWCCPS2_B52
+        case OPC(0xF3):
+#else
         case 0xF3:
+#endif
             return 31;
+#if MWCCPS2_B52
+        case OPC(0xB4):
+#else
         case 0xB4:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0xB5):
+#else
         case 0xB5:
+#endif
             return 5;
+#if MWCCPS2_B52
+        case OPC(0xEE):
+        case OPC(0xEF):
+        case OPC(0xF0):
+        case OPC(0xF1):
+        case OPC(0xF4):
+        case OPC(0xF5):
+        case OPC(0xF6):
+        case OPC(0xF7):
+        case OPC(0xFC):
+        case OPC(0xFD):
+        case OPC(0xFE):
+        case OPC(0xFF):
+        case OPC(0x104):
+        case OPC(0x105):
+        case OPC(0x106):
+        case OPC(0x107):
+#else
         case 0xEE:
         case 0xEF:
         case 0xF0:
@@ -177,11 +318,32 @@ static int func_004B4EC0(MPCode* instr) {
         case 0x105:
         case 0x106:
         case 0x107:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0x100):
+#else
         case 0x100:
+#endif
             return 59;
+#if MWCCPS2_B52
+        case OPC(0x101):
+#else
         case 0x101:
+#endif
             return 31;
+#if MWCCPS2_B52
+        case OPC(0x112):
+        case OPC(0x113):
+        case OPC(0x114):
+        case OPC(0x115):
+        case OPC(0x116):
+        case OPC(0x117):
+        case OPC(0x118):
+        case OPC(0x119):
+        case OPC(0x11A):
+        case OPC(0x11B):
+#else
         case 0x112:
         case 0x113:
         case 0x114:
@@ -192,43 +354,99 @@ static int func_004B4EC0(MPCode* instr) {
         case 0x119:
         case 0x11A:
         case 0x11B:
+#endif
             return 2;
+#if MWCCPS2_B52
+        case OPC(0x10F):
+        case OPC(0x11D):
+        case OPC(0x11F):
+        case OPC(0x121):
+#else
         case 0x10F:
         case 0x11D:
         case 0x11F:
         case 0x121:
+#endif
             return 9;
+#if MWCCPS2_B52
+        case OPC(0x10E):
+        case OPC(0x11C):
+        case OPC(0x11E):
+        case OPC(0x120):
+#else
         case 0x10E:
         case 0x11C:
         case 0x11E:
         case 0x120:
+#endif
             return 10;
+#if MWCCPS2_B52
+        case OPC(0x123):
+#else
         case 0x123:
+#endif
             return 31;
+#if MWCCPS2_B52
+        case OPC(0x122):
+#else
         case 0x122:
+#endif
             return 59;
+#if MWCCPS2_B52
+        case OPC(0x125):
+#else
         case 0x125:
+#endif
             return 61;
+#if MWCCPS2_B52
+        case OPC(0x124):
+#else
         case 0x124:
+#endif
             return 121;
+#if MWCCPS2_B52
+        case OPC(0x174):
+        case OPC(0x175):
+        case OPC(0x176):
+#else
         case 0x174:
         case 0x175:
         case 0x176:
+#endif
         case MACRO_OP(0x60):
         case MACRO_OP(0x61):
             return 3;
+#if MWCCPS2_B52
+        case OPC(0x17C):
+        case OPC(0x17D):
+        case OPC(0x17E):
+        case OPC(0x17F):
+        case OPC(0x180):
+        case OPC(0x181):
+#else
         case 0x17C:
         case 0x17D:
         case 0x17E:
         case 0x17F:
         case 0x180:
         case 0x181:
+#endif
             return 3;
+#if MWCCPS2_B52
+        case OPC(0x184):
+        case OPC(0x185):
+#else
         case 0x184:
         case 0x185:
+#endif
             return 34;
+#if MWCCPS2_B52
+        case OPC(0x182):
+        case OPC(0x183):
+#else
         case 0x182:
         case 0x183:
+#endif
             return 68;
         default:
             return 1;
@@ -407,10 +625,17 @@ static int ps2_oplatency(MPCode* instr) {
 
     op = instr->op;
     switch (op) {
+#if MWCCPS2_B52
+        case OPC(0x7C):
+        case OPC(0x7D):
+        case OPC(0x1D3):
+        case OPC(0x1D4):
+#else
         case 0x7C:
         case 0x7D:
         case 0x1D3:
         case 0x1D4:
+#endif
         case MACRO_OP(0x35):
         case MACRO_OP(0x36):
         case MACRO_OP(0x37):
@@ -419,6 +644,16 @@ static int ps2_oplatency(MPCode* instr) {
         case MACRO_OP(0x6A):
         case MACRO_OP(0x6B):
             return 37;
+#if MWCCPS2_B52
+        case OPC(0xB6):
+        case OPC(0xB7):
+        case OPC(0x1D5):
+        case OPC(0x1D6):
+        case OPC(0x1D7):
+        case OPC(0x1D8):
+        case OPC(0x1DB):
+        case OPC(0x1DC):
+#else
         case 0xB6:
         case 0xB7:
         case 0x1D5:
@@ -427,6 +662,7 @@ static int ps2_oplatency(MPCode* instr) {
         case 0x1D8:
         case 0x1DB:
         case 0x1DC:
+#endif
         case MACRO_OP(0x5F):
         case MACRO_OP(0x64):
         case MACRO_OP(0x65):
@@ -434,6 +670,18 @@ static int ps2_oplatency(MPCode* instr) {
         case MACRO_OP(0x67):
         case MACRO_OP(0x68):
             return 4;
+#if MWCCPS2_B52
+        case OPC(0x22C):
+        case OPC(0x22D):
+        case OPC(0x231):
+        case OPC(0x232):
+        case OPC(0x233):
+        case OPC(0x23F):
+        case OPC(0x240):
+        case OPC(0x244):
+        case OPC(0x245):
+        case OPC(0x246):
+#else
         case 0x22C:
         case 0x22D:
         case 0x231:
@@ -444,23 +692,55 @@ static int ps2_oplatency(MPCode* instr) {
         case 0x244:
         case 0x245:
         case 0x246:
+#endif
             return 4;
+#if MWCCPS2_B52
+        case OPC(0x21C):
+        case OPC(0x21D):
+        case OPC(0x21E):
+#else
         case 0x21C:
         case 0x21D:
         case 0x21E:
+#endif
             return 37;
+#if MWCCPS2_B52
+        case OPC(0x10):
+        case OPC(0x11):
+        case OPC(0x12):
+        case OPC(0x13):
+#else
         case 0x10:
         case 0x11:
         case 0x12:
         case 0x13:
+#endif
             return 2;
     }
+#if MWCCPS2_B52
+    if (op > OPC(0x21E) && op <= OPC(0x2E7)) {
+#else
     if (op > 0x21E && op <= 0x2E7) {
+#endif
         switch (op) {
+#if MWCCPS2_B52
+            case OPC(0x27C):
+            case OPC(0x2D8):
+#else
             case 0x27C:
             case 0x2D8:
+#endif
                 r = 7;
                 break;
+#if MWCCPS2_B52
+            case OPC(0x281):
+            case OPC(0x282):
+            case OPC(0x283):
+            case OPC(0x288):
+            case OPC(0x28D):
+            case OPC(0x2D2):
+            case OPC(0x2D5):
+#else
             case 0x281:
             case 0x282:
             case 0x283:
@@ -468,12 +748,21 @@ static int ps2_oplatency(MPCode* instr) {
             case 0x28D:
             case 0x2D2:
             case 0x2D5:
+#endif
                 r = 1;
                 break;
+#if MWCCPS2_B52
+            case OPC(0x2D4):
+#else
             case 0x2D4:
+#endif
                 r = 13;
                 break;
+#if MWCCPS2_B52
+            case OPC(0x2E7):
+#else
             case 0x2E7:
+#endif
                 r = 3;
                 break;
             default:
@@ -489,9 +778,19 @@ static int ps2_oplatency(MPCode* instr) {
 // 0x4B51B0: latency
 int func_004B51B0(MPCode* instr) {
     if (instr->flags & 2) {
+#if MWCCPS2_B52
+        return 6;
+#else
         return 3;
+#endif
     }
     switch (instr->op) {
+#if MWCCPS2_B52
+        case OPC(0x7F):
+        case OPC(0xA5):
+        case OPC(0xAD):
+        case OPC(0xB1):
+#else
         case 0xB6:
         case 0xB7:
         case 0x400:
@@ -499,12 +798,22 @@ int func_004B51B0(MPCode* instr) {
         case 0x405:
         case 0x406:
         case MACRO_OP(0x5F):
+#endif
         case MACRO_OP(0x64):
+#if MWCCPS2_B52
+            return 2;
+        case OPC(0xA8):
+        case OPC(0xA9):
+        case OPC(0xB2):
+        case OPC(0xB3):
+            return 3;
+#else
         case MACRO_OP(0x65):
         case MACRO_OP(0x66):
         case MACRO_OP(0x67):
         case MACRO_OP(0x68):
             return 5;
+#endif
         default:
             return oplatency(instr);
     }
@@ -820,6 +1129,9 @@ void func_004B4A90(void) {
     }
 }
 
+#if MWCCPS2_B52
+#define UNIT5(pc) (((pc)->flags & 2) ? 1 : (data_006115F8[(pc)->op].unk28 & 0xFFF))
+#endif
 #else
 // 0x4B4DE0: initialize
 void func_004B4DE0(void) {
@@ -885,6 +1197,72 @@ void func_004B4A90(void) {
 #endif
 
 // 0x4B48A0: dependence; marks a (0x2000000) when it must not go in b's delay slot
+#if MWCCPS2_B52
+void ps2_initialize5(void) {
+    int i;
+
+    clock = 0;
+    for (i = 0; i < 5; i++) {
+        busy5[i] = NULL;
+        busycount5[i] = 0;
+        lastinstr5[i] = NULL;
+        finished5[i] = 0;
+    }
+    oplatency = ps2_oplatency;
+}
+
+// 0x4C2560: can_issue (five units, a load waits a cycle after a unit's flag-4 instruction)
+int ps2_can_issue5(MPCode* instr) {
+    if (busy5[UNIT5(instr)]) {
+        return 0;
+    }
+    if ((instr->flags & 2) &&
+        lastinstr5[UNIT5(instr)] &&
+        (lastinstr5[UNIT5(instr)]->flags & 4) &&
+        clock < finished5[UNIT5(instr)] + 1) {
+        return 0;
+    }
+    return 1;
+}
+
+// 0x4C2650: can_issue (the model without the dependence hook)
+int ps2_can_issue5_nodep(MPCode* instr) {
+    if (busy5[UNIT5(instr)]) {
+        return 0;
+    }
+    return 1;
+}
+
+// 0x4C2690: the same bytes (the third width-1 model)
+int ps2_can_issue5_dep(MPCode* instr) {
+    if (busy5[UNIT5(instr)]) {
+        return 0;
+    }
+    return 1;
+}
+
+// 0x4C26D0: issue (five units)
+void ps2_issue5(MPCode* instr) {
+    busy5[UNIT5(instr)] = instr;
+    busycount5[UNIT5(instr)] = oplatency(instr);
+}
+
+// 0x4C2740: advance_clock (five units)
+void ps2_advance_clock5(void) {
+    int i;
+
+    clock++;
+    for (i = 0; i < 5; i++) {
+        if (--busycount5[i] == 0) {
+            lastinstr5[i] = busy5[i];
+            finished5[i] = clock;
+            busy5[i] = NULL;
+        }
+    }
+}
+
+// 0x4B48A0: dependence; marks a (0x2000000) when it must not go in b's delay slot
+#endif
 void func_004B48A0(MPCode* a, MPCode* b) {
     UInt16 op;
     MOperand* o;
@@ -908,11 +1286,19 @@ void func_004B48A0(MPCode* a, MPCode* b) {
                     a->flags |= 0x2000000;
                     return;
                 }
+#if MWCCPS2_B52
+                if (op == OPC(0x3B) && b->args[0].reg == o->reg && (o->flags & 2)) {
+#else
                 if (op == 0x3B && b->args[0].reg == o->reg && (o->flags & 2)) {
+#endif
                     a->flags |= 0x2000000;
                     return;
                 }
+#if MWCCPS2_B52
+                if (op == OPC(0x3D) && b->args[1].reg == o->reg && (o->flags & 2)) {
+#else
                 if (op == 0x3D && b->args[1].reg == o->reg && (o->flags & 2)) {
+#endif
                     a->flags |= 0x2000000;
                     return;
                 }
@@ -921,8 +1307,13 @@ void func_004B48A0(MPCode* a, MPCode* b) {
         return;
     }
 #if MWCCPS2
+#if MWCCPS2_B52
+    if (op != OPC(0x3A)) {
+        if (op != OPC(0x39)) {
+#else
     if (op != 0x3A) {
         if (op != 0x39) {
+#endif
             for (i = 0, o = a->args; i < a->argcount; i++, o++) {
                 if (o->kind == 0 && (o->flags & 2)) {
                     for (j = 0, p = b->args; j < b->argcount; j++, p++) {
@@ -961,6 +1352,7 @@ void func_004B48A0(MPCode* a, MPCode* b) {
 #define SCHED_ISSUE_WIDTH 1
 #endif
 MachineInfo data_005D082C = {
+#if MWCCPS2_B52
     SCHED_ISSUE_WIDTH,
     0,
     func_004B51B0,
@@ -969,8 +1361,19 @@ MachineInfo data_005D082C = {
     func_004B4AE0,
     func_004B4A90,
     func_004B48A0
+#else
+    SCHED_ISSUE_WIDTH,
+    0,
+    func_004B51B0,
+    func_004B4DE0,
+    func_004B4B50,
+    func_004B4AE0,
+    func_004B4A90,
+    func_004B48A0
+#endif
 };
 MachineInfo data_005D084C = {
+#if MWCCPS2_B52
     SCHED_ISSUE_WIDTH,
     0,
     func_004B51B0,
@@ -979,5 +1382,15 @@ MachineInfo data_005D084C = {
     func_004B4AE0,
     func_004B4A90,
     NULL
+#else
+    SCHED_ISSUE_WIDTH,
+    0,
+    func_004B51B0,
+    func_004B4DE0,
+    func_004B4B50,
+    func_004B4AE0,
+    func_004B4A90,
+    NULL
+#endif
 };
 #endif

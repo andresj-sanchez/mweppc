@@ -1,5 +1,8 @@
 #ifndef COMPILER_IROEMPTYLOOP_H
 #define COMPILER_IROEMPTYLOOP_H
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,4 +14,7 @@ extern void IRO_FindEmptyLoops(void);
 }
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

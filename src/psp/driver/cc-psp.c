@@ -14,7 +14,11 @@ static CWPLUGIN_ENTRY(CWPlugin_GetDropInFlags)(const DropInFlags** flags, SInt32
         DROPINCOMPILERLINKERAPIVERSION_8,
         kGeneratescode | kCanpreprocess | kCanprecompile,
         Lang_C_CPP,
+#if MWCCPS2_B52
+        12
+#else
         13
+#endif
     };
 
     *flags = &sFlags;
@@ -144,7 +148,11 @@ static CWPLUGIN_ENTRY(Linker_GetDropInFlags)(const DropInFlags** flags, SInt32* 
         DROPINCOMPILERLINKERAPIVERSION_8,
         1,
         '****',
+#if MWCCPS2_B52
+        12
+#else
         13
+#endif
     };
 
     *flags = &lsFlags;
@@ -173,9 +181,15 @@ static CWPLUGIN_ENTRY(Linker_GetDisplayName)(const char** displayName) {
 static CWPLUGIN_ENTRY(Linker_GetPanelList)(const CWPanelList** panelList) {
 #if MWCCPS2
     // b210 0x5D9350
+#if MWCCPS2_B52
     static const char* lsPanelNames[3] = {
         "PS2 MIPS CodeGen", "MIPS Bare Linker Panel", "MIPS Bare Project"
     };
+#else
+    static const char* lsPanelNames[3] = {
+        "PS2 MIPS CodeGen", "MIPS Bare Linker Panel", "MIPS Bare Project"
+    };
+#endif
 #else
     static const char* lsPanelNames[3] = {"PSP MIPS CodeGen", "PSP Linker Panel", "PSP Project"};
 #endif
@@ -238,7 +252,11 @@ int RegisterStaticCompilerPlugin(void) {
         RegisterStaticCompilerLinkerPlugin(&lk_cb, &lk_cl_cb);
 }
 
+#if MWCCPS2_B52
+#include "cc-ps2-b69.r" // re/gen_cc_b69.py
+#else
 #include "cc-psp.r"
+#endif
 
 int RegisterCompilerResources(void) {
     return RegisterResource("Compiler Errors", 10000, STR10000) &&

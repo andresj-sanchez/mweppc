@@ -2,6 +2,9 @@
 #define PSP_BE_H
 
 #include "compiler/common.h"
+#if MWCCPS2_B52
+#include "psp/OpcodesB52.h"
+#endif
 #include <stddef.h>
 #include "psp/ObjGen.h"
 
@@ -25,6 +28,23 @@ typedef enum RegClass301 {
 
 // 1 << n as x86 computes it (the count taken mod 32; register masks shift by
 // VFPU register numbers up to 127)
+#if MWCCPS2_B52
+#include <stdio.h>
+#include <stdlib.h>
+#define BE_TRACE(args) \
+    do { \
+        if (getenv("MWCCPSP_TRACE")) { \
+            fprintf args; \
+        } \
+    } while (0)
+
+// TRACE_PCODE(label): every block's instructions after a pass (BETrace.c)
+extern void BE_TracePCode(char* label);
+#define TRACE_PCODE(label) BE_TracePCode(label)
+
+// 1 << n as x86 computes it (the count taken mod 32; register masks shift by
+// VFPU register numbers up to 127)
+#endif
 #if MWCCPSP_NATIVE
 #define BIT32(n) (1 << ((n) & 31))
 #define SHR32(x, n) ((x) >> ((n) & 31))
@@ -152,7 +172,9 @@ typedef struct MPCode {
     SInt32 unk24; // +0x24: likewise
     UInt16 op; // +0x28
     SInt16 argcount; // +0x2A
+#if !MWCCPS2_B52
     UInt8 unk2C[4];
+#endif
     UInt32 word; // +0x30: the encoded instruction
     struct Object* relobj; // +0x34: object a relocation refers to
     SInt32 unk38; // +0x38: relocation kind (1, 5 hi, 6 lo, 7/8 $gp, ...)

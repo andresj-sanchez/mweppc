@@ -32,6 +32,16 @@ struct Incls {
     char* buffer;
     struct Paths* allPaths;
 };
+#if MWCCPS2_B52
+extern SInt16* CLT_filesp;
+extern struct CPrepFileInfo** CLT_filestack;
+
+extern Boolean Incls_Initialize(Incls* incls, Target* targ);
+extern void Incls_Terminate(Incls* incls);
+extern Boolean Incls_FindFileInPaths(
+    Incls* incls, char* filename, Boolean fullsearch, OSSpec* spec, SInt32* inclidx
+);
+#else
 extern SInt16* CLT_filesp;
 extern struct CPrepFileInfo** CLT_filestack;
 
@@ -50,6 +60,7 @@ extern Boolean Incls_FindFileInPaths(
 extern Boolean Incls_FindFileInPaths(
     Incls* incls, char* filename, Boolean fullsearch, OSSpec* spec, SInt32* inclidx
 );
+#endif
 #endif
 extern Boolean Deps_Initialize(Deps* deps, Incls* incls);
 extern int Deps_ChangeSpecialAccessPath(OSSpec* srcfss, Boolean initialize);

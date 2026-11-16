@@ -56,13 +56,33 @@ void func_0048F630(MPCode* pc) {
         return;
     }
     for (i = 0; i < pc->argcount; i++) {
+#if MWCCPS2_B52
+        if (getenv("MWCCPSP_TRACE")) {
+            fprintf(
+                stderr,
+                "frame: op %x arg %d kind %d reg %d value %d value2 %lx\n",
+                pc->op,
+                i,
+                pc->args[i].kind,
+                pc->args[i].reg,
+                pc->args[i].value,
+                (long)pc->args[i].value2
+            );
+        }
+#endif
         if (pc->args[i].kind == 0) {
             if (data_00625E3E == pc->args[i].reg) {
                 data_005F0BFC = 1;
             }
+#if MWCCPS2_B52
         } else if (pc->args[i].kind == 4 &&
                    pc->args[i].value2 &&
                    ((Object*)MOP_OBJ(pc->args[i]))->datatype == DLOCAL) {
+#else
+        } else if (pc->args[i].kind == 4 &&
+                   pc->args[i].value2 &&
+                   ((Object*)MOP_OBJ(pc->args[i]))->datatype == DLOCAL) {
+#endif
             if (pc->args[i].value >= 0) {
                 pc->args[i].value += pad;
             }
@@ -80,6 +100,19 @@ void func_0048F260(Object* func) {
     MPCode* pc;
     CInt64 delta;
 
+#if MWCCPS2_B52
+    if (getenv("MWCCPSP_TRACE")) {
+        fprintf(
+            stderr,
+            "frame: locals %d outargs %d saves %d align %d interrupt %d\n",
+            data_00624650,
+            data_006242B4,
+            data_00624DB0,
+            data_0062421C,
+            copts.interrupt
+        );
+    }
+#endif
     if (!copts.interrupt) {
         data_0062597C = data_00624650 = ALIGN_FRAME(data_00624650);
     } else {
@@ -144,6 +177,11 @@ void func_0048F260(Object* func) {
         if ((data_006241D8->intregs & 0xC0FF0000) || (data_006241D8->fpregs & 0xFFF00000)) {
             data_005F0BFC = 1;
         }
+#if MWCCPS2_B52
+    }
+    if (getenv("MWCCPSP_TRACE")) {
+        fprintf(stderr, "frame: total %d needed %d\n", data_0062597C, data_005F0BFC);
+#endif
     }
     if (!data_005F0BFC) {
         data_0062597C = 0;

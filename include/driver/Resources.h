@@ -2,6 +2,23 @@
 #define DRIVER_RESOURCES_H
 
 #include "compiler/common.h"
+#if MWCCPS2_B52
+#include "driver/oslib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern Boolean OS_UsingMacResourceForkInfo(void);
+extern OSErr SystemInitResources(OSSpec* spec);
+extern void OS_RemoveMacResourceForkRef(int ref);
+extern OSSpec* OS_GetMacResourceForkFromRef(int ref);
+extern Boolean OS_SearchMacResourceForkList(const OSSpec* rspec, int* ref);
+extern int OS_SetMacResourceForkCreatorAndType(int ref, OSType creator, OSType type);
+extern int OS_GetMacResourceForkCreatorAndType(int ref, OSType* creator, OSType* type);
+extern void OS_CleanupMacResourceForkDir(const OSPathSpec* dir);
+extern Handle GetResource(OSType theType, SInt16 theID);
+#else
 #include "driver/oslib.h"
 
 #ifdef __cplusplus
@@ -26,6 +43,7 @@ extern int OS_SetMacResourceForkCreatorAndType(int ref, OSType creator, OSType t
 extern int OS_GetMacResourceForkCreatorAndType(int ref, OSType* creator, OSType* type);
 extern void OS_CleanupMacResourceForkDir(const OSPathSpec* dir);
 extern Handle GetResource(OSType theType, SInt16 theID);
+#endif
 #endif
 extern void __stdcall ReleaseResource(Handle theResource);
 

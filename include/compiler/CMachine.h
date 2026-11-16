@@ -16,6 +16,16 @@ extern TypeIntegral stunsignedshort;
 extern TypeIntegral stsignedint;
 extern TypeIntegral stunsignedint;
 extern TypeIntegral stsignedlong;
+#if MWCCPS2_B52
+extern TypeIntegral stunsignedlong;
+extern TypeIntegral stsignedlonglong;
+extern TypeIntegral stunsignedlonglong;
+// b69: long is 64-bit (CodeGen sets mips_long64), so the front end's offset,
+// size and pointer-integer constants that b210 types as (unsigned) long are int
+#define stofsulong stunsignedint
+#define stofslong stsignedint
+extern TypeIntegral stint128; // 16-byte integer (__int128), as 3.0.1
+#else
 extern TypeIntegral stunsignedlong;
 extern TypeIntegral stsignedlonglong;
 extern TypeIntegral stunsignedlonglong;
@@ -24,12 +34,15 @@ extern TypeIntegral stunsignedlonglong;
 // long in mweppc (pointer-sized on PPC), unsigned int in 3.0.1
 #define TYPE_UNSIGNED_OFFSET TYPE(&stunsignedint)
 #endif
+#endif
 extern TypeIntegral stfloat;
 extern TypeIntegral stshortdouble;
 extern TypeIntegral stdouble;
 extern TypeIntegral stlongdouble;
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern TypeIntegral stint128; // 3.0.1: 16-byte integer, integral 18 (0x5CCB44)
+#endif
 #endif
 extern TypeIntegral stwchar;
 extern TypeIntegral stvec2x32float;
@@ -64,12 +77,18 @@ extern Boolean CMach_FloatIsZero(Float fval);
 extern Boolean CMach_FloatIsOne(Float fval);
 extern Boolean CMach_FloatIsNegOne(Float fval);
 extern void CMach_InitFloatMem(Type* type, Float val, void* mem);
+#if MWCCPS2_B52
+extern void CMach_PrintFloat(char* buf, Float val);
+extern void CMach_PragmaParams(void);
+extern int CMach_GetStructAlign(TypeStruct* str);
+#else
 extern void CMach_PrintFloat(char* buf, Float val);
 extern void CMach_PragmaParams(void);
 #if MWCCPSP
 extern int CMach_GetStructAlign(TypeStruct* str);
 #else
 extern UInt16 CMach_GetStructAlign(TypeStruct* str);
+#endif
 #endif
 extern SInt16 CMach_GetClassAlign(TypeClass* tclass);
 extern SInt16 CMach_GetTypeAlign(Type* type);

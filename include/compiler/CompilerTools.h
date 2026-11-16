@@ -7,8 +7,10 @@
 #include "compiler/win32.h"
 
 struct FSSpec;
+#if !MWCCPS2_B52
 #if MWCCPSP
 struct CWFileSpec;
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -42,8 +44,10 @@ extern void (*GListErrorProc)(void);
 extern short InitGList(GList* gl, SInt32 size);
 extern void FreeGList(GList* gl);
 extern void LockGList(GList* gl);
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern void UnlockGList(GList* gl);
+#endif
 #endif
 extern void ShrinkGList(GList* gl);
 extern void AppendGListData(GList* gl, const void* data, SInt32 size);
@@ -88,6 +92,11 @@ extern char* ScanDec(char* string, UInt32* result, Boolean* overflow);
 extern short hash(char* str);
 extern void memclrw(void* ptr, SInt32 size);
 extern void CToLowercase(char* src, char* dst);
+#if MWCCPS2_B52
+extern short getbit(SInt32 mask);
+extern UInt16 CTool_EndianConvertWord16(UInt16 theword);
+extern UInt32 CTool_EndianConvertWord32(UInt32 theword);
+#else
 extern short getbit(SInt32 mask);
 extern UInt16 CTool_EndianConvertWord16(UInt16 theword);
 #if MWCCPSP
@@ -98,11 +107,17 @@ static inline UInt32 CTool_EndianConvertWord32(UInt32 theword) {
 #else
 extern UInt32 CTool_EndianConvertWord32(UInt32 theword);
 #endif
+#endif
 extern void CTool_EndianConvertMem(void* data, short len);
 static inline UInt32 CTool_EndianReadWord32(void* ptr) {
     return *(UInt32*)ptr;
 }
 extern void CTool_EndianConvertWord64(CInt64 ci, char* result);
+#if MWCCPS2_B52
+extern UInt16 CTool_EndianConvertInPlaceWord16Ptr(UInt16* x);
+extern UInt32 CTool_EndianConvertInPlaceWord32Ptr(UInt32* x);
+extern HashNameNode* CTool_GetPathName(const struct FSSpec* fss, SInt32* moddateptr);
+#else
 extern UInt16 CTool_EndianConvertInPlaceWord16Ptr(UInt16* x);
 extern UInt32 CTool_EndianConvertInPlaceWord32Ptr(UInt32* x);
 #if MWCCPSP && !MWCCPSP_MAC_FILESPEC
@@ -110,6 +125,7 @@ struct COSFileTime;
 extern char* CTool_GetPathName(const struct CWFileSpec* fss, struct COSFileTime* moddateptr);
 #else
 extern HashNameNode* CTool_GetPathName(const struct FSSpec* fss, SInt32* moddateptr);
+#endif
 #endif
 
 #ifdef __cplusplus

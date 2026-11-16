@@ -22,10 +22,16 @@ static PFrontEndC pFrontEnd;
 static Boolean using_license_manager;
 Boolean crippled;
 SInt32 license_cookie;
+#if MWCCPS2_B52
+CompilerLinkerParamBlk cparams;
+
+__declspec(dllimport) int __stdcall GetSystemDefaultLangID(void);
+#else
 CompilerLinkerParamBlk cparams;
 
 #if VERSION >= VERSION_GC_2_5
 __declspec(dllimport) int __stdcall GetSystemDefaultLangID(void);
+#endif
 #endif
 
 CWPLUGIN_ENTRY(CWPlugin_GetHelpInfo)(const CWHelpInfo** helpInfo) {
@@ -147,18 +153,26 @@ static void initialize_compiler_options(CompilerLinkerParamBlk* params) {
     CWSecretGetNamedPreferences(cparams.context, "C/C++ Compiler", &prefsdata);
     pFrontEnd = *((PFrontEndC*)*prefsdata);
 
+#if MWCCPS2_B52
+    // b69 0x420100: no Objective-C, and no little-endian reset
+#else
     copts.littleendian = FALSE;
+#endif
     copts.cplusplus = TRUE;
+#if !MWCCPS2_B52
     copts.objective_c = pFrontEnd.objective_c;
+#endif
     get_extension(params->sourcefile.name, extension);
     if (!strcmp(extension, ".c") || !strcmp(extension, ".h") || !strcmp(extension, ".pch")) {
         copts.cplusplus = pFrontEnd.cplusplus;
+#if !MWCCPS2_B52
     } else if (!strcmp(extension, ".m")) {
         copts.cplusplus = pFrontEnd.cplusplus;
         copts.objective_c = TRUE;
     } else if (!strcmp(extension, ".mm") || !strcmp(extension, ".M")) {
         copts.cplusplus = TRUE;
         copts.objective_c = TRUE;
+#endif
     }
 
     copts.checkprotos = pFrontEnd.checkprotos;
@@ -187,8 +201,13 @@ static void initialize_compiler_options(CompilerLinkerParamBlk* params) {
     copts.wchar_type = pFrontEnd.wchar_type;
     copts.ecplusplus = pFrontEnd.ecplusplus;
     copts.defer_codegen = pFrontEnd.defer_codegen;
+#if MWCCPS2_B52
+    copts.inlinemaxsize = 256;
+    copts.inlinemaxtotalsize = 10000;
+#else
     copts.inlinemaxsize = 512;
     copts.inlinemaxtotalsize = 7000;
+#endif
 
     CWSecretGetNamedPreferences(cparams.context, "C/C++ Warnings", &prefsdata);
     pWarningC = *((PWarningC*)*prefsdata);
@@ -206,7 +225,11 @@ static void initialize_compiler_options(CompilerLinkerParamBlk* params) {
     copts.warn_notinlined = pWarningC.warn_notinlined;
     copts.warn_structclass = pWarningC.warn_structclass;
 
+#if MWCCPS2_B52
+    CWSecretGetNamedPreferences(cparams.context, "PS2 Global Optimizer", &prefsdata);
+#else
     CWSecretGetNamedPreferences(cparams.context, "EPPC Global Optimizer", &prefsdata);
+#endif
     pGlobalOptimizer = *((PGlobalOptimizer*)*prefsdata);
 
     copts.optimizationlevel = pGlobalOptimizer.optimizationlevel;
@@ -220,6 +243,31 @@ static void initialize_compiler_options(CompilerLinkerParamBlk* params) {
     copts.headtype = 'MMCH';
     copts.texttype = 'TEXT';
 }
+#if MWCCPS2_B52
+
+// b69 0x43A310..0x43A3E5 (placed outside this unit): the PS2 license, "3"
+// on a Japanese system, else "1" and then "3"; crippled is left alone
+static Boolean IsJapaneseSystem(void) {
+    return (short)GetSystemDefaultLangID() == 0x411;
+}
+
+static void GetLicense(void) {
+    if (!license_cookie) {
+        if (IsJapaneseSystem()) {
+            CWCheckoutLicense(
+                cparams.context, "Win32_Plugins_MIPS_PS2", "3", 0, NULL, &license_cookie
+            );
+        } else {
+            CWCheckoutLicense(
+                cparams.context, "Win32_Plugins_MIPS_PS2", "1", 0, NULL, &license_cookie
+            );
+            if (!license_cookie) {
+                CWCheckoutLicense(
+                    cparams.context, "Win32_Plugins_MIPS_PS2", "3", 0, NULL, &license_cookie
+                );
+            }
+        }
+#else
 
 static void GetLicense(void) {
     if (!license_cookie) {
@@ -238,6 +286,7 @@ static void GetLicense(void) {
                 cparams.context, "Win32_Plugins_PPC_Nintendo", "1", 0, NULL, &license_cookie
             );
         }
+#endif
 #endif
         using_license_manager = TRUE;
     }
@@ -290,7 +339,12 @@ CWPLUGIN_ENTRY(MWC_main)(CWPluginContext context) {
             break;
     }
 
+#if MWCCPS2_B52
+    result = CWDonePluginRequest(context, result);
+    return result;
+#else
     return CWDonePluginRequest(context, result);
+#endif
 }
 
 void PrintProgressFunction(const char* str) {

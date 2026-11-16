@@ -142,6 +142,10 @@ CW_CALLBACK UCBLoadObjectData(CWPluginContext context, SInt32 whichfile, CWMemHa
 }
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (25)
+#endif
 #if MWCCPSP
 // 0x428470: UCBFindAndLoadFile with the shell's file info
 extern "C" CW_CALLBACK func_00428470(
@@ -315,6 +319,10 @@ CW_CALLBACK UCBStoreObjectData(CWPluginContext context, SInt32 whichfile, CWObje
 
     return cwNoErr;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #endif
 
 #if MWCCPSP
@@ -382,6 +390,10 @@ CW_CALLBACK UCBDisplayLines(CWPluginContext context, SInt32 nlines) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBBeginSubCompile(
     CWPluginContext context, SInt32 whichfile, CWPluginContext* subContext
 ) {
@@ -396,7 +408,15 @@ CW_CALLBACK UCBBeginSubCompile(
 #endif
     return cwErrRequestFailed;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBEndSubCompile(CWPluginContext subContext) {
     if (optsCmdLine.verbose > 3) {
         CLPrint("Callback: %s\n", "UCBEndSubCompile");
@@ -409,6 +429,10 @@ CW_CALLBACK UCBEndSubCompile(CWPluginContext subContext) {
 #endif
     return cwErrRequestFailed;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 CW_CALLBACK UCBGetPrecompiledHeaderSpec(
     CWPluginContext context, CWFileSpec* pchspec, const char* intarget
@@ -434,7 +458,11 @@ CW_CALLBACK UCBGetPrecompiledHeaderSpec(
 #if MWCCPSP
     OS_ASSERT(475, file != NULL);
 #else
+#if MWCCPS2_B52
+    OS_ASSERT(455, file != NULL);
+#else
     OS_ASSERT(420, file != NULL);
+#endif
 #endif
 
     cof = Plugin_CL_GetObjectFlags(file->compiler);
@@ -511,6 +539,10 @@ CW_CALLBACK UCBGetPrecompiledHeaderSpec(
     return cwNoErr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBGetResourceFile(CWPluginContext context, CWFileSpec* filespec) {
     if (optsCmdLine.verbose > 3) {
         CLPrint("Callback: %s\n", "UCBGetResourceFile");
@@ -523,7 +555,15 @@ CW_CALLBACK UCBGetResourceFile(CWPluginContext context, CWFileSpec* filespec) {
 #endif
     return cwErrRequestFailed;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBPutResourceFile(
     CWPluginContext context, const char* prompt, const char* name, CWFileSpec* filespec
 ) {
@@ -538,6 +578,10 @@ CW_CALLBACK UCBPutResourceFile(
 #endif
     return cwErrRequestFailed;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static int UnitNameToSBMName(OSSpec* spec, File* srcfile) {
     const CWObjectFlags* cof;
@@ -770,7 +814,11 @@ CW_CALLBACK UCBStoreUnit(
 #if MWCCPSP
         OS_ASSERT(845, srcfile != NULL);
 #else
+#if MWCCPS2_B52
+        OS_ASSERT(826, srcfile != NULL);
+#else
         OS_ASSERT(791, srcfile != NULL);
+#endif
 #endif
 
         if (optsCompiler.sbmPath[0]) {
@@ -914,6 +962,10 @@ CW_CALLBACK UCBOSErrorMessage(CWPluginContext context, const char* message, OSEr
     return cwNoErr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBGetModifiedFiles(
     CWPluginContext context, SInt32* modifiedFileCount, const SInt32** modifiedFiles
 ) {
@@ -929,6 +981,10 @@ CW_CALLBACK UCBGetModifiedFiles(
 #endif
     return cwNoErr;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 CW_CALLBACK UCBGetSuggestedObjectFileSpec(
     CWPluginContext context, SInt32 whichfile, CWFileSpec* fileSpec
@@ -962,6 +1018,10 @@ CW_CALLBACK UCBGetSuggestedObjectFileSpec(
     return cwNoErr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (35)
+#endif
 CW_CALLBACK UCBGetStoredObjectFileSpec(
     CWPluginContext context, SInt32 whichfile, CWFileSpec* fileSpec
 ) {
@@ -993,6 +1053,10 @@ CW_CALLBACK UCBGetStoredObjectFileSpec(
         return cwNoErr;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 }
 
 CWCompilerLinkerCallbacks sCompilerLinkerCallbacks = {

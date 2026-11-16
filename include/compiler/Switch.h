@@ -1,3 +1,45 @@
+#if MWCCPS2_B52
+#ifndef COMPILER_SWITCH_H
+#define COMPILER_SWITCH_H
+
+#include "compiler/common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// b69: case ranges (`case a ... b`): scancase (0x471210) and
+// CInline_UnpackSwitch (0x463D00) allocate 0x28 bytes, min at +8, max at
+// +0x18. SwitchInfo is 0xC bytes (UnpackSwitch), exprtype at +8: no
+// template-dependent case list
+struct SwitchCase {
+    struct SwitchCase* next;
+    struct CLabel* label;
+    CInt64 min;
+    CInt64 max;
+};
+
+// b52: 0x10 bytes (switch statement 0x479AB2, CInline_UnpackSwitch 0x4682A0):
+// a word at +4 the parser and the unpacker clear, defaultlabel at +8,
+// exprtype at +0xC
+struct SwitchInfo {
+    struct SwitchCase* cases;
+    void* x4;
+    struct CLabel* defaultlabel;
+    Type* exprtype;
+};
+
+extern ObjectList* switchtables;
+
+extern void switchstatement(ENode* expr, struct SwitchInfo* info);
+extern void dumpswitchtables(Object* funcobj);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+#else
 #ifndef COMPILER_SWITCH_H
 #define COMPILER_SWITCH_H
 
@@ -47,4 +89,5 @@ extern void dumpswitchtables(Object* funcobj);
 }
 #endif
 
+#endif
 #endif

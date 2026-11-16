@@ -149,6 +149,10 @@ static const char* Plugin_GetDisplayName(Plugin* pl) {
     }
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const char* Plugin_GetDropInName(Plugin* pl) {
     const char* name;
 #if MWCCPSP
@@ -167,7 +171,15 @@ const char* Plugin_GetDropInName(Plugin* pl) {
         return "(no name found)";
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const VersionInfo* Plugin_GetVersionInfo(Plugin* pl) {
     static const VersionInfo fakeversion = {0, 0, 0, 0};
     const VersionInfo* vi;
@@ -187,6 +199,10 @@ const VersionInfo* Plugin_GetVersionInfo(Plugin* pl) {
         return &fakeversion;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 char* Plugin_GetVersionInfoASCII(Plugin* pl) {
     const VersionInfo* vi;
@@ -244,6 +260,10 @@ DropInFlags* Plugin_GetDropInFlags(Plugin* pl) {
     }
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 OSType Plugin_GetPluginType(Plugin* pl) {
     DropInFlags* df;
 
@@ -260,7 +280,15 @@ OSType Plugin_GetPluginType(Plugin* pl) {
         return 'NONE';
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
     static const CWTargetList faketl = {kCurrentCWTargetListVersion, 0, NULL, 0, NULL};
     const CWTargetList* tl;
@@ -283,7 +311,15 @@ const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
         return &faketl;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
     static CWPanelList fakepnl = {kCurrentCWPanelListVersion, 0, NULL};
     const CWPanelList* pnl;
@@ -304,7 +340,15 @@ const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
         return &fakepnl;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
     static CWExtMapList fakeel = {kCurrentCWExtMapListVersion, 0, NULL};
     const CWExtMapList* el;
@@ -327,7 +371,15 @@ const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
         return &fakeel;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
     const OSFileTypeMappingList* ftml;
 
@@ -347,7 +399,15 @@ const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
         return NULL;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 const CWObjectFlags* Plugin_CL_GetObjectFlags(Plugin* pl) {
     static const CWObjectFlags fake = {2, 0, "", "", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     const CWObjectFlags* cof;
@@ -372,6 +432,10 @@ const CWObjectFlags* Plugin_CL_GetObjectFlags(Plugin* pl) {
         return &fake;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 Boolean Plugin_MatchesName(Plugin* pl, const char* name) {
     const char* pname = Plugin_GetDropInName(pl);
@@ -448,6 +512,10 @@ Boolean Plugin_MatchesType(Plugin* pl, OSType type, OSType lang, Boolean exact) 
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, OSType os) {
     Boolean isSupported;
 
@@ -468,7 +536,15 @@ Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, 
         return FALSE;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-1)
+#endif
 Boolean Plugin_Pr_MatchesPanels(Plugin* pl, int numPanels, const char** panelNames) {
     Boolean isSupported;
 
@@ -489,6 +565,10 @@ Boolean Plugin_Pr_MatchesPanels(Plugin* pl, int numPanels, const char** panelNam
         return FALSE;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 #if MWCCPSP
 // 3.0.1: the plugin writes the object itself if it can (given copies of the
@@ -638,7 +718,13 @@ static Boolean SupportedPlugin(Plugin* pl, const char** reason) {
             (cof->flags & 0x3FFFFFFF) ||
             (cof->flags & 0xC0000000) == 0xC0000000) {
 #else
+#if MWCCPS2_B52
+        if (cof->version < 2 ||
+            cof->flags & 0x3FFFFFFF ||
+            (cof->flags & 0xC0000000) == 0xC0000000) {
+#else
         if (cof->version < 2 || cof->flags & 0x7FFFFFFF) {
+#endif
 #endif
             *reason = "The object flags data is out-of-date or invalid";
             return FALSE;
@@ -1188,6 +1274,10 @@ Plugin* Plugins_GetParserForPlugin(
     return pick;
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (22)
+#endif
 int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginInfo) {
     Plugin* scan;
     int idx;
@@ -1216,8 +1306,13 @@ int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginIn
         OS_ASSERT(1295, df != NULL);
         OS_ASSERT(1296, vi != NULL);
 #else
+#if MWCCPS2_B52
+        OS_ASSERT(1273, df != NULL);
+        OS_ASSERT(1274, vi != NULL);
+#else
         OS_ASSERT(1270, df != NULL);
         OS_ASSERT(1271, vi != NULL);
+#endif
 #endif
         (*pluginInfo)[idx].plugintype = df->dropintype;
         (*pluginInfo)[idx].language = df->edit_language;
@@ -1230,6 +1325,10 @@ int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginIn
 
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 int Plugins_GetPrefPanelUnion(Plugin* list, int* numPanels, const char*** panelNames) {
     Plugin* scan;

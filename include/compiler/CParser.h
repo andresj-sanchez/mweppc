@@ -1,3 +1,648 @@
+#if MWCCPS2_B52
+#ifndef COMPILER_CPARSER_H
+#define COMPILER_CPARSER_H
+
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#include "compiler/tokens.h"
+#include "driver/CWPlugins.h"
+#include "driver/oslib.h"
+#include <setjmp.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+enum {
+    AlignMode0_Mac68k,
+    AlignMode1_Mac68k4byte,
+    AlignMode2_PPC,
+    AlignMode3_1Byte,
+    AlignMode4_2Byte,
+    AlignMode5_4Byte,
+    AlignMode6_8Byte,
+    AlignMode7_16Byte,
+    AlignMode8_Packed
+};
+enum {
+    CPU_PPC401,
+    CPU_PPC403,
+    CPU_PPC505,
+    CPU_PPC509,
+    CPU_PPC555,
+    CPU_PPC601,
+    CPU_PPC602,
+    CPU_PPC603,
+    CPU_PPC603e,
+    CPU_PPC604,
+    CPU_PPC604e,
+    CPU_PPC740,
+    CPU_PPC750,
+    CPU_PPC801,
+    CPU_PPC821,
+    CPU_PPC823,
+    CPU_PPC850,
+    CPU_PPC860,
+    CPU_PPC8240,
+    CPU_PPC8260,
+    CPU_Generic,
+    CPU_PPC7400,
+    CPU_PPCGEKKO,
+    CPU_PPCELF,
+    CPU_PPC7450,
+    CPU_PPC556,
+    CPU_PPC565
+};
+
+/* The MIPS back end (src/psp/backend, from the 3.0.1 tree) reads b210-only
+   fields through these; b69, like b145, has none of them (no
+   late_conditional_move, debug_1..5, int_multiply_add, mwabi_bitfields). */
+#define COPTS_B210_FIELDS 0
+#define COPTS_LATE_CONDITIONAL_MOVE conditional_move
+#define COPTS_FIELD(f, absent) (absent)
+#define COPTS_B210_OPTION(name, f)
+#define COPTS_B210_SET(f, v) ((void)0)
+
+struct CompilerLinkerOptions {
+    UInt8 littleendian;
+    // mwccps2 2.4.5 b69 (MIPS) head: the compileroptions table in b69
+    // (tools/mwccps2/re/b69/pragmas.txt) fixes the #pragma fields; the other
+    // names follow tools/mwccpsp's 3.0.1 layout shifted like b145 (unverified).
+    UInt8 mips_option01; // 0x001
+    SInt16 mips_flags02; // 0x002
+    SInt16 mips_option04; // 0x004
+    char fp_library; // 0x006 #pragma fp_library
+    UInt8 mips_option07; // 0x007
+    UInt8 mips_option08; // 0x008
+    UInt8 unknown09[1]; // 0x009
+    SInt16 mips_option0A; // 0x00a
+    SInt16 mips_isa; // 0x00c
+    UInt8 unknown0E[1]; // 0x00e
+    UInt8 mips_option0F; // 0x00f
+    UInt8 mips_option10; // 0x010
+    UInt8 mips_option11; // 0x011
+    UInt8 inline_intrinsics; // 0x012 #pragma inline_intrinsics
+    unsigned char debuglisting; // 0x013 #pragma debug_listing
+    UInt8 interrupt; // 0x014 #pragma interrupt
+    UInt8 mips_long64; // 0x015
+    UInt8 mips_option16; // 0x016
+    UInt8 mips_option17; // 0x017
+    char cats; // 0x018 #pragma cats
+    UInt8 mips_option19; // 0x019
+    UInt8 mips_option1A; // 0x01a
+    UInt8 warn_inlineasm; // 0x01b #pragma warn_inlineasm
+    UInt8 conditional_move; // 0x01c #pragma conditional_move
+    UInt8 gencvtcheck; // 0x01d #pragma gencvtcheck
+    UInt8 far_call; // 0x01e #pragma far_call
+    UInt8 prefetch; // 0x01f #pragma prefetch
+    UInt8 trunc; // 0x020 #pragma trunc
+    UInt8 sqrt; // 0x021 #pragma sqrt
+    UInt8 mips_option23; // 0x022
+    UInt8 floatsp32; // 0x023 #pragma floatsp32
+    UInt8 mips_option25; // 0x024
+    UInt8 mips_option26; // 0x025
+    UInt8 no_branch_likely; // 0x026
+    UInt8 no_load_delay_nops; // 0x027
+    UInt8 mips_option2F; // 0x028
+    UInt8 mips_option30; // 0x029
+    UInt8 mips_option31; // 0x02a
+    UInt8 nofpregforblkmv; // 0x02b #pragma nofpregforblkmv
+    UInt8 mips_option33; // 0x02c
+    UInt8 schedule; // 0x02d #pragma schedule
+    UInt8 tailcall; // 0x02e #pragma tailcall
+    UInt8 unknown36[1]; // 0x02f
+    UInt8 divbyzerocheck; // 0x030 #pragma divbyzerocheck
+    UInt8 nomacro; // 0x031 #pragma nomacro
+    UInt8 mips_option39; // 0x032
+    UInt8 mips_option3A; // 0x033
+    UInt8 dividefix; // 0x034 #pragma dividefix
+    UInt8 usefloatacc; // 0x035 #pragma usefloatacc
+    UInt8 padloop; // 0x036 #pragma padloop
+    UInt8 mips_option41; // 0x037
+    UInt8 fast_fptosi; // 0x038 #pragma fast_fptosi
+    UInt8 irocseglobaladdresses; // 0x039 #pragma irocseglobaladdresses
+    UInt8 enable_vu0_registers; // 0x03a #pragma enable_vu0_registers
+    UInt8 fastmath; // 0x03b #pragma fastmath
+    UInt8 vu0_register_number; // 0x03c NOPRAGMA entry
+    UInt8 unknown3D[1]; // 0x03d
+    Boolean asmsemicolcomment;
+    Boolean asmpoundcomment;
+    // b52: inline_bottom_up at 0x052 (re/b52/pragmas.txt); where the two
+    // extra bytes sit before it is unverified
+    UInt8 unknown66[4];
+    StringPtr oldprefixname;
+    SInt16 inlinelevel;
+    SInt32 inlinemaxsize;
+    SInt32 inlinemaxtotalsize;
+    UInt8 inline_bottom_up;
+    UInt8 inline_bottom_up_once; // b52 0x053
+    UInt8 cplusplus;
+    UInt8 ecplusplus;
+    char ARMscoping;
+    Boolean checkprotos;
+    char trigraphs;
+    UInt8 onlystdkeywords;
+    UInt8 enumsalwaysint;
+    UInt8 ANSIstrict;
+    UInt8 mpwc_relax;
+    UInt8 mpwc_newline;
+    Boolean ignore_oldstyle;
+    Boolean cpp_extensions;
+    UInt8 pointercast_lvalue;
+    char RTTI;
+    UInt8 delete_exception;
+    Boolean test_dummy;
+    Boolean oldalignment;
+    UInt8 unsigned_char;
+    char multibyteaware;
+    UInt8 auto_inline;
+    UInt8 defer_codegen;
+    UInt8 direct_to_som;
+    UInt8 som_env_check;
+    UInt8 som_call_optimize;
+    UInt8 booltruefalse; // b52 0x06c: bool and _Bool
+    UInt8 longlong;
+    UInt8 longlong_enums;
+    Boolean no_tfuncinline;
+    UInt8 always_vdispatch;
+    char flat_include;
+    char syspath_once;
+    char always_import;
+    UInt8 simple_class_byval;
+    char wchar_type;
+    UInt8 vbase_ctor_offset;
+    char vbase_abi_v2;
+    char def_inherited;
+    UInt8 template_patch;
+    UInt8 template_friends;
+    Boolean faster_pch_gen;
+    UInt8 array_new_delete;
+    UInt8 dollar_identifiers;
+    Boolean def_inline_tfuncs;
+    UInt8 arg_dep_lookup;
+    char simple_prepdump;
+    char line_prepdump;
+    UInt8 fullpath_prepdump;
+    UInt8 unknown83_b52; // b52 0x083: no pragma
+    Boolean old_mtemplparser;
+    UInt8 suppress_init_code;
+    Boolean reverse_bitfields;
+    UInt8 c9x;
+    Boolean float_constants;
+    Boolean no_static_dtors;
+    Boolean longlong_prepeval;
+    UInt8 const_strings;
+    Boolean dumpir;
+    UInt8 experimental;
+    UInt8 late_fixes; // b52 0x08e
+    UInt8 gcc_extensions;
+    Boolean stdc_fp_contract;
+    Boolean stdc_fenv_access;
+    Boolean stdc_cx_limitedr;
+    UInt8 old_argmatch;
+    char optEH;
+    Boolean optEH2;
+    Boolean new_mangler;
+    UInt8 parse_func_templ; // b52 0x097
+    UInt8 parse_mfunc_templ;
+    UInt8 old_depfunc_lookup;
+    UInt8 show_error_filestack;
+    UInt8 defer_defarg_parsing;
+    UInt8 reg_class_allocs;
+    UInt8 old_pragma_once;
+    UInt8 new_calldeduction; // b52 0x09e
+    Boolean fullpath_file;
+    UInt8 opt_classresults; // b52 0x0a0
+    UInt8 ushort_wchar_t; // b52 0x0a1 (RECONF)
+    UInt8 thread_safe_init; // b52 0x0a2
+    Boolean microsoft_EH;
+    // b52 0x0a4: no pragma (b69's stdc_libfuncname_redefined/no-ansi-lib-builtin
+    // are gone from b52's table); the field is kept here, unverified
+    Boolean no_ansi_lib_builtin;
+    char warningerrors;
+    UInt8 access_errors; // b52 0x0a6
+    char pedantic;
+    UInt8 checkprecompflags;
+    Boolean supress_warnings;
+    Boolean warn_illpragma;
+    UInt8 warn_emptydecl;
+    Boolean warn_possunwant;
+    char warn_unusedvar;
+    char warn_unusedarg;
+    UInt8 warn_extracomma;
+    Boolean warn_hidevirtual;
+    char warn_largeargs;
+    Boolean warn_implicitconv;
+    UInt8 warn_impl_i2f_conv; // b52 0x0b3
+    UInt8 warn_impl_f2i_conv;
+    UInt8 warn_impl_s2u_conv;
+    UInt8 warn_notinlined;
+    SInt8 warn_structclass;
+    Boolean warn_padding;
+    Boolean warn_no_side_effect;
+    Boolean warn_resultnotused;
+    UInt8 warn_ptr_int_conv;
+    UInt8 warn_no_typename; // b52 0x0bc
+    UInt8 warn_filenamecaps;
+    UInt8 warn_filenamecaps_system;
+    UInt8 warn_no_explicit_virtual;
+    UInt8 warn_pch_portability; // b52 0x0c0
+    UInt8 warn_uninitializedvar;
+    UInt8 warn_illunionmembers; // b52 0x0c2
+    UInt8 warn_undefmacro;
+    signed char structalignment;
+    UInt8 alignarraymembers;
+    SInt8 dont_reuse_strings;
+    UInt8 poolstrings;
+    UInt8 explicit_zero_data;
+    UInt8 readonly_strings;
+    UInt8 exceptions;
+    Boolean dddummy;
+    UInt8 dontinline;
+    UInt8 alwaysinline;
+    char peephole;
+    Boolean globaloptimizer;
+    UInt8 sideeffects;
+    UInt8 cfm_internal;
+    UInt8 cfm_import;
+    UInt8 cfm_export;
+    UInt8 cfm_lib_export;
+    char nosyminline;
+    char force_active;
+    unsigned char block_assign;
+    Boolean has8bytebitfields;
+    SInt8 optimizationlevel;
+    UInt8 optimizesize;
+    UInt8 optimizewithasm;
+    UInt8 crippled;
+    UInt8 commonsubs;
+    UInt8 loopinvariants;
+    UInt8 propagation;
+    UInt8 deadstore;
+    UInt8 strengthreduction;
+    UInt8 strengthreductionstrict;
+    UInt8 deadcode;
+    UInt8 logopts; // b52 0x0e4: no pragma; b69 has logopts after lifetimes (unverified)
+    UInt8 lifetimes; // b52 0x0e5
+    UInt8 unrolling;
+    Boolean vectorizeloops;
+    UInt8 multiplepasses;
+    UInt8 opt_pointer_analysis;
+    UInt8 opt_pointer_analysis_mode;
+    signed char unrollfactor;
+    SInt8 unrollinstrfactor;
+    UInt8 unknownED_b52; // b52 0x0ed: no pragma
+    // b52 0x0ee..0x120: the 3.0 optimizer switches (b69 has none), as in
+    // tools/mwccpsp's 3.0.1 tree and in b52's pragma table order
+    UInt8 opt_scalarize;
+    UInt8 opt_prelinearize;
+    UInt8 opt_treetransformation;
+    UInt8 opt_arithtransformation;
+    UInt8 opt_rebuildconditionals;
+    UInt8 opt_rebuildlogicals;
+    UInt8 opt_generateconditionalassignments;
+    UInt8 opt_removeemptyloops;
+    UInt8 opt_alwaysdumpopts;
+    UInt8 opt_rotateloops;
+    UInt8 opt_optimizenonregaccess;
+    UInt8 opt_movepostops;
+    UInt8 opt_findoptimalunrollfactor;
+    UInt8 opt_findoptimalvectorunrollfactor;
+    UInt8 opt_unrollpostloop;
+    UInt8 opt_unrollvectorpostloop;
+    UInt8 opt_createvectortemps;
+    UInt8 opt_unpromotetypes;
+    UInt8 opt_dumptypes;
+    UInt8 opt_scalarizebitfields;
+    UInt8 opt_propagatemultiplydivideassignments;
+    UInt8 opt_moveinvariantsinaddressexpr;
+    UInt8 opt_convertfpconsts;
+    UInt8 opt_markcounterloops;
+    UInt8 opt_markvariablecounterloops;
+    UInt8 opt_pulloutconstants;
+    UInt8 opt_defineargorder;
+    UInt8 opt_useexpressioncostswhenlinearizingassignments;
+    UInt8 opt_intelcompareoplinearizationhack;
+    UInt8 opt_rearrangemultiplesubscripts;
+    UInt8 opt_returnloopdepthinstatementvalue;
+    UInt8 opt_marknonregtemps;
+    UInt8 opt_addgotounrolledlooptest;
+    UInt8 opt_addtogetherconstantpartsoftreeexpressions;
+    UInt8 opt_propagateequivalentscalartypes;
+    UInt8 opt_unpromoteenumtointconversions;
+    UInt8 opt_unpromotemultipliestochartype;
+    UInt8 opt_dospecialmultiplyunpromotion;
+    UInt8 opt_docrossconversionofinductionreference;
+    UInt8 opt_intrinsicfunctioncallscanhavesideeffects;
+    UInt8 opt_collapselogicalselectionintobittest;
+    UInt8 opt_collapselogicalselectionintobittest_uselonglong;
+    UInt8 opt_reverseloops;
+    UInt8 opt_foldconstants;
+    UInt8 opt_optimizecontrolflow;
+    UInt8 opt_serializeassignments;
+    UInt8 opt_branchlessexpensivethandiv;
+    UInt8 opt_repositioncode;
+    UInt8 opt_decomposeaggregates;
+    UInt8 opt_recomposeaggregates;
+    UInt8 opt_scalarizeliveranges; // b52 0x120
+    UInt8 filesyminfo;
+    UInt8 symstringtypes; // b52 0x122
+    UInt8 unknownfd;
+    char dwarf_siblings;
+    UInt8 dwarf_relocations;
+    Boolean absolutepath;
+    CWDataType appltype;
+    CWDataType headtype;
+    CWDataType texttype;
+    struct HashNameNode* cursegmentname;
+    // fields b52's pragma table no longer places: an unverified tail
+    char ARMconform;
+    Boolean old_enum_mangler;
+};
+
+/* b69's copts ends here: 0xEA bytes (initialize_compiler_options' memclrw,
+   C_Compiler's copy at 0x43CB00). The fields below are named by the shared
+   GC front end and the 3.0.1 back end but have no place in b69's copts, so
+   they live in a separate COptsX (coptsx, ours alone) and are read through
+   COPTS_X rather than aliasing whatever follows copts in b69's image. */
+typedef struct COptsX {
+    // GC (PowerPC) fields the shared front end still names
+    SInt16 processor;
+    SInt8 scheduling;
+    UInt8 schedule_factor;
+    char profile;
+    Boolean traceback;
+    char disable_registers;
+    UInt8 fp_contract;
+    UInt8 no_register_save_helpers;
+    Boolean unroll_speculative;
+    SInt16 unroll_instr_limit;
+    SInt16 unroll_factor_limit;
+    UInt8 altivec_model;
+    UInt8 altivec_vrsave;
+    UInt8 function_align;
+    char force_cats;
+    SInt32 sdata_threshold;
+    int sdata2_threshold;
+    UInt8 pool_data;
+    UInt8 common;
+    char use_fp;
+    Boolean soft_float;
+    UInt8 codegen_pic;
+    UInt8 full_dwarf;
+    char no_comment_records;
+    SInt8 rel109_offset;
+    struct ObjGenSection* textSection;
+    struct ObjGenSection* dataSection;
+    struct ObjGenSection* constSection;
+    struct ObjGenSection* sdataSection;
+    struct ObjGenSection* sconstSection;
+    SInt32 sectionHeaderTableSize;
+    struct SectionSymbolAttributes** sectionHeaderTable;
+    struct InterruptList* interruptList;
+    struct InterruptGenerationRecord* interruptOptions;
+    UInt8 incompatible_return_small_structs;
+    Boolean create_file_object;
+    UInt8 incompatible_sfpe_double_params;
+    UInt8 ibm_stackframe;
+    UInt8 gen_isel;
+    UInt8 gen_fsel;
+    UInt8 gecko_float_typecons;
+    UInt8 disable_vector_frame;
+    UInt8 opt_bcc_lr_ctr;
+    UInt8 use_lmw_stmw;
+    char report_heap_info;
+    UInt8 misaligned_mem_access;
+    UInt8 switch_tables;
+    UInt8 prepare_compress;
+    char min_struct_alignment;
+    UInt8 unsafe_global_reg_vars;
+    UInt8 ignore_global_reg_vars;
+    UInt32 bc_range;
+    UInt8 gprfloatcopy;
+    UInt8 objective_c;
+    SInt8 objc_strict;
+    // MIPS fields the 3.0.1 back end names that b69's pragma table does not
+    // place (no pragma in b69: cse_hard_reg_*, cse_vector_type, volatileasm,
+    // ushort_wchar_t); placement unverified
+    UInt8 cse_hard_reg_gpr;
+    UInt8 cse_hard_reg_fpr;
+    UInt8 cse_hard_reg_special;
+    UInt8 cse_hard_reg_vu0;
+    UInt8 cse_vector_type;
+    UInt8 function_align16;
+    UInt8 mips_option3B;
+    UInt8 mips_option3C;
+    UInt8 mips_option3D;
+    UInt8 mips_option43;
+    UInt8 mips_option47;
+    UInt8 volatileasm;
+    UInt8 ushort_wchar_t;
+    UInt8 mips_option132;
+} COptsX;
+#pragma pack(pop)
+
+struct ParserTryBlock {
+    struct ParserTryBlock* next;
+    jmp_buf jmpbuf;
+    NameSpace* cscope_current;
+    struct TypeClass* cscope_currentclass;
+    Object* cscope_currentfunc;
+    TemplStack* ctempl_curinstance;
+    struct TStreamElement* cerror_locktoken;
+    Boolean cscope_is_member_func;
+};
+
+typedef struct CallbackAction {
+    struct CallbackAction* next;
+    Object* obj;
+    struct TypeClass* tclass;
+} CallbackAction;
+
+extern FileOffsetInfo cparser_fileoffset;
+extern struct TStreamElement symdecltoken;
+extern ParserTryBlock* trychain;
+extern TypeStruct ptmstruct;
+extern TypeStruct catchinfostruct;
+extern Boolean in_assembler;
+extern Boolean illegalimplicitconversion;
+extern Boolean in_func_arglist;
+extern NameSpaceName* newp_fobj;
+extern NameSpaceName* newa_fobj;
+extern NameSpaceName* delp_fobj;
+extern NameSpaceName* dela_fobj;
+extern Object* newh_func;
+extern Object* delh_func;
+extern Object* copy_func;
+extern Object* clear_func;
+extern Object* Rgtid_func;
+extern Object* Rdync_func;
+extern Object* rt_ptmf_cast;
+extern Object* rt_ptmf_cmpr;
+extern Object* rt_ptmf_test;
+extern Object* rt_ptmf_call;
+extern Object* rt_ptmf_scall;
+extern Object* rt_ptmf_call4;
+extern Object* rt_ptmf_scall4;
+extern Object* rt_ptmf_null;
+extern Object* rt_builtin_next_arg;
+extern Object* rt_som_new;
+extern Object* rt_som_newcheck;
+extern Object* rt_som_check;
+extern Object* rt_som_glue1;
+extern Object* rt_som_glue2;
+extern Object* rt_som_glue3;
+extern Object* carr_func;
+extern Object* cnar_func;
+extern Object* darr_func;
+extern Object* dnar_func;
+extern Object* dnar3_func;
+extern Object* Xgreg_func;
+extern Object* Xthrw_func;
+extern Object* Xicth_func;
+extern Object* Xecth_func;
+extern Object* Xunex_func;
+extern CompilerLinkerOptions copts;
+extern COptsX coptsx;
+#define COPTS_X coptsx
+// ushort_wchar_t: b52's copts has it (0x0a1, re/b52/pragmas.txt); b69's has not
+#define COPTS_WCHAR copts
+extern GList name_mangle_list;
+extern HashNameNode* no_name_node;
+extern HashNameNode* temp_argument_name;
+extern HashNameNode* this_name_node;
+extern HashNameNode* self_name_node;
+extern HashNameNode* vptr_name_node;
+extern CallbackAction* callbackactions;
+extern Boolean fatalerrors;
+extern Boolean anyerrors;
+extern jmp_buf errorreturn;
+extern char string[256];
+
+extern Type sttemplexpr;
+extern Type stillegal;
+extern Type stvoid;
+extern TypePointer void_ptr;
+extern TypeFunc rt_func;
+
+#ifdef __MWERKS__
+#define ORIGINAL_ADDRESS(ptr) ((UInt32)(ptr))
+#define TYPE_INTEGRAL_UNCHECKED(ty) (TYPE_INTEGRAL(ty)->integral)
+#else
+#define ORIGINAL_ADDRESS(ptr) CParser_OriginalAddress(ptr)
+#define TYPE_INTEGRAL_UNCHECKED(ty) CParser_UncheckedIntegral(TYPE(ty))
+extern UInt32 CParser_OriginalAddress(const void* ptr);
+extern UInt8 CParser_UncheckedIntegral(Type* type);
+#endif
+
+enum {
+    ATOM_VOID = 1,
+    ATOM_CHAR,
+    ATOM_UCHAR,
+    ATOM_WCHAR,
+    ATOM_SHORT,
+    ATOM_USHORT,
+    ATOM_INT,
+    ATOM_UINT,
+    ATOM_LONG,
+    ATOM_ULONG,
+    ATOM_LONGLONG,
+    ATOM_ULONGLONG,
+    ATOM_INT128, // b69 atomtype 0x42EFC0: 13 is the 16-byte integer (0x536128), floats 14..17
+    ATOM_FLOAT,
+    ATOM_SHORTDOUBLE,
+    ATOM_DOUBLE,
+    ATOM_LONGDOUBLE
+};
+
+extern Object* CParser_NewRTFunc(Type* rettype, HashNameNode* name, UInt8 kind, int argcount, ...);
+extern Boolean CParser_IsPublicRuntimeObject(Object* obj);
+extern Boolean CParser_ReInitRuntimeObjects(Boolean is_precompiler);
+extern void CParser_Setup(void);
+extern void CParser_Cleanup(void);
+extern short GetPrec(short token);
+extern Boolean CParser_ParseOperatorName(
+    short* token, Boolean allowConversion, Boolean parseConversionType
+);
+extern SInt32 CParser_GetUniqueID(void);
+extern void CParser_PrintUniqueID(char* buf);
+extern void CParser_SetUniqueID(SInt32 id);
+extern HashNameNode* CParser_GetUniqueName(void);
+extern HashNameNode* CParser_NameConcat(const char* a, const char* b);
+extern HashNameNode* CParser_AppendUniqueName(char* prefix);
+extern HashNameNode* CParser_AppendUniqueNameFile(char* prefix);
+extern Boolean IsTempName(HashNameNode* name);
+extern void CParser_UpdateObject(Object* object, DeclInfo* declinfo);
+extern Object* CParser_NewObject(DeclInfo* declinfo);
+extern Object* CParser_NewLocalDataObject(DeclInfo* declinfo, Boolean add_to_locals);
+extern Object* CParser_NewGlobalDataObject(DeclInfo* declinfo);
+extern Object* CParser_NewCompilerDefDataObject(void);
+extern Object* CParser_NewFunctionObject(DeclInfo* declinfo);
+extern Object* CParser_NewCompilerDefFunctionObject(void);
+extern Object* CParser_NewAliasObject(Object* object, SInt32 offset);
+extern FuncArg* CParser_NewFuncArg(void);
+extern Type* atomtype(void);
+extern Object* CParser_FindDeallocationObject(
+    Type* type, FuncArg* args, Boolean isArray, Boolean isGlobal, Boolean* includeSize
+);
+extern short is_memberpointerequal(Type* a, Type* b);
+extern short is_typeequal(Type* a, Type* b);
+extern short iscpp_typeequal(Type* a, Type* b);
+extern short CParser_CompareArgLists(FuncArg* a, FuncArg* b);
+extern Boolean is_arglistsame(FuncArg* a, FuncArg* b);
+extern short is_typesame(Type* a, Type* b);
+extern Type* CParser_GetBoolType(void);
+extern Type* CParser_GetWCharType(void);
+extern short CParser_GetOperator(ENodeType t);
+extern Boolean CParser_IsMoreCVQualified(UInt32 a, UInt32 b);
+extern Boolean CParser_IsSameOrMoreCVQualified(UInt32 a, UInt32 b);
+extern Boolean is_unsigned(Type* type);
+extern StructMember* ismember(TypeStruct* tstruct, HashNameNode* name);
+extern void appendmember(TypeStruct* tstruct, StructMember* member);
+extern Boolean isdeclaration(
+    UInt8 scanDeclarator, UInt8 requireName, UInt8 isNewExpression, short token
+);
+extern Boolean islookaheaddeclaration(void);
+extern Type* CParser_ParseTypeID(UInt32* qual, Boolean* isTemplateName);
+extern Boolean CParser_TryParamList(Boolean stopAtComma);
+extern Type* CParser_RemoveTopMostQualifiers(Type* type, UInt32* qual);
+extern UInt32 CParser_GetTypeQualifiers(Type* type, UInt32 qual);
+extern UInt32 CParser_GetCVTypeQualifiers(Type* type, UInt32 qual);
+// prototype a caller tests all of eax)
+extern Boolean CParser_IsReadOnly(Type* type, UInt32 qual);
+extern Boolean CParser_IsConst(Type* type, UInt32 qual);
+extern Boolean CParser_IsVolatile(Type* type, UInt32 qual);
+extern Boolean is_const_object(Object* obj);
+extern Boolean is_volatile_object(Object* obj);
+extern Boolean CParserIsConstExpr(ENode* expr);
+extern Boolean CParserIsVolatileExpr(ENode* expr);
+extern Boolean CParser_HasInternalLinkage(const Object* obj);
+extern Boolean CParser_HasInternalLinkage2(const Object* obj);
+extern Boolean CParser_IsVirtualFunction(Object* obj, TypeClass** tclass, SInt32* index);
+extern Boolean is_pascal_object(Object* obj);
+extern void CParser_ParseAttribute(Type* type, DeclInfo* declinfo);
+extern void CParser_ParseDeclSpec(DeclInfo* declinfo, Boolean unused);
+extern Boolean CParser_CheckTemplateClassUsage(TemplClass* tmclass, Boolean reportError);
+extern void CParser_GetDeclSpecs(DeclInfo* di, Boolean resolveMembers);
+extern void CParser_RegisterNonGlobalClass(TypeClass* tclass);
+extern void CParser_RegisterSingleExprFunction(Object* func, ENode* expr);
+extern void CParser_RegisterDummyCtorFunction(Object* func, Object* obj);
+extern Boolean CParser_IsAnonymousUnion(DeclInfo* di, Boolean allowStruct);
+extern void CParser_CheckAnonymousUnion(DeclInfo* di, Boolean isLocal);
+extern void CParser_NewCallBackAction(Object* obj, TypeClass* tclass);
+extern void CParser_NewClassAction(TypeClass* tclass);
+extern void CParser_CallBackAction(Object* obj);
+extern Object* CParser_ParseObject(void);
+extern void CParser_ParseGlobalDeclaration(void);
+extern void cparser(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+#else
 #ifndef COMPILER_CPARSER_H
 #define COMPILER_CPARSER_H
 
@@ -912,4 +1557,5 @@ extern void cparser(void);
 }
 #endif
 
+#endif
 #endif

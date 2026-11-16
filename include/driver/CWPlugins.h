@@ -386,6 +386,24 @@ typedef struct BasePluginCallbacks {
     CWPLUGIN_ENTRY (*GetFamilyList)(const struct CWFamilyList** familyList);
     CWPLUGIN_ENTRY (*GetHelpInfo)(const CWHelpInfo** helpInfo);
     CWPLUGIN_ENTRY (*GetVersionInfo)(const VersionInfo** versionInfo);
+#if MWCCPS2_B52
+    CWPLUGIN_ENTRY (*GetFileTypeMappings)(const OSFileTypeMappingList** mappingList);
+} BasePluginCallbacks;
+
+typedef struct CompilerLinkerPluginCallbacks {
+    CWPLUGIN_ENTRY (*GetTargetList)(const struct CWTargetList** targetList);
+    CWPLUGIN_ENTRY (*GetDefaultMappingList)(const CWExtMapList** mappings);
+    CWPLUGIN_ENTRY (*Unmangle)(struct CWUnmangleInfo* unmangleInfo);
+    CWPLUGIN_ENTRY (*BrSymbolEntryPoint)(struct CWCompilerBrSymbolInfo* symbolInfo);
+    CWPLUGIN_ENTRY (*GetObjectFlags)(const CWObjectFlags** objectFlags);
+    CWPLUGIN_ENTRY (*WriteObjectFile)(
+        const CWFileSpec* srcfss,
+        const CWFileSpec* outfss,
+        CWDataType creator,
+        CWDataType type,
+        Handle data
+    );
+#else
     CWPLUGIN_ENTRY (*GetFileTypeMappings)(const OSFileTypeMappingList** mappingList);
 } BasePluginCallbacks;
 
@@ -412,6 +430,7 @@ typedef struct CompilerLinkerPluginCallbacks {
         CWDataType type,
         Handle data
     );
+#endif
 #endif
 } CompilerLinkerPluginCallbacks;
 

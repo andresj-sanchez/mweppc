@@ -233,6 +233,39 @@ Every unit of the Persona 4 decompilation (1,008 C files, RenderWare at `-O4,p`)
 `g_data.c`, which the original itself doesn't reproduce from its captured inputs. C++ the corpus never reaches stops
 with "not implemented" or an internal error.
 
+## PlayStation 2 3.0 build 52 (`mwccps2.exe`, Monster Hunter)
+
+Build 52 (2003-07-22, the compiler Monster Hunter was built with) is older than both: its front end and much of its
+optimizer are the GameCube 2.x code this repository started from, its IRO optimizer is 3.0.1's with eight passes not
+there yet, and its MIPS back end is mwccps2's. It is built from the same sources with `-DMWCCPS2_B52=1`: where b52
+differs, the code is under `#if MWCCPS2_B52`, and with `MWCCPS2_B52` undefined every file is exactly what the other
+builds compile. `tools/mwccps2/b52/units.txt` lists its units with the defines each takes (no `MWCCPSP` for the
+GameCube-era units; `MWCCPSP MWCCPS2 MWCCPS2_BUILD=69` for the back end; `MWCCPSP` for the IRO optimizer). Units
+only b52 has are in `src/native/b52/` (native replacements) or excluded from the PSP build in
+`config/PSP_3_0_1/psp-exclude.txt`.
+
+```sh
+python3 tools/mwccps2/b52/get_orig.py   # orig/PS2_3_0_b52/ and orig/PS2_3_0_1_b145/, from decomp.me's public images, checked by digest
+python3 tools/mwccps2/b52/native_b52.py -o build/PS2_3_0_b52/mwccps2
+```
+
+or in Docker:
+
+```sh
+docker build -f tools/mwccps2/b52/Dockerfile -t mwccps2-b52 .
+docker run --rm -v "$PWD/build:/out" mwccps2-b52
+```
+
+What the units leave undefined is resolved from `tools/mwccps2/b52/glue/` and the b52 addresses in
+`tools/mwccps2/b52/symbols*.txt` (parser tables and strings from b52, the copied back end's data tables from b145).
+Pushing a tag named `mwccps2-b52-*` attaches `mwccps2-b52-native64-<os>-<arch>.tar.gz` to a release
+(`.github/workflows/mwccps2-b52-release.yml`).
+
+Every unit of the Monster Hunter corpus (4,607 cases: the mh1-xbox decompilation's PS2 units for each version, and the
+Persona 4 units replayed through b52) gives identical objects. The same holds for 3,836 of 3,838 cases recaptured with
+b52 from Silent Hill 3, Persona 4, Yu-Gi-Oh! Duelists of the Roses and Persona 3 FES. Code no corpus reaches stops with
+"not implemented"; C++ is largely untested.
+
 ## Where the PSP and PS2 compilers come from
 
 Both are developed in the [Castlevania: Symphony of the Night decompilation](https://github.com/Xeeynamo/sotn-decomp),

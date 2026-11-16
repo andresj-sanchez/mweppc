@@ -1,0 +1,321 @@
+// Hand-placed b52 addresses, with the evidence. Loaded after symbols.txt and
+// symbols.derived.txt (and wins over both).
+// copts: functions identical in b69 and b52 (pair.py, re/b52/addrmap69.csv) map
+// b69's copts+0x02..+0x2c (0x57DB2A..) to 0x5A5C5A.. with one constant delta, so
+// b52's copts is b69's 0x57DB28 + 0x28130; the head (0x000..0x03f) has the same
+// pragma offsets in both tables (re/b52/pragmas.txt).
+copts = 0x005A5C58;
+CExpr_CopyENode = 0x004E4410; // b52 only: lalloc(0x36) + struct copy (3.0.1's CExpr_CopyENode)
+init_cgdispatch = 0x0044D080; // b69's anchor (0x0044AC20) through addrmap69 (identical bytes); resolves the PPC CodeGen_InitCompiler's reference so build_b69.py exits 0
+CClass_Init = 0x00461BE0; // clears cclass_thunklist (CClass .bss +0x42); pair.py identical twin at 0x451F20 clears another global
+IRO_WalkTree = 0x004FADA0; // four byte-matching callers (0x4FAC40, 0x4FBBA0, 0x4FC710, 0x502430) call it; pair.py twin at 0x4A0AF0 is another function
+CABI.c/CABI_MakeVArgExpr = 0x00456D40; // calls CABI_VArg then create_objectnode; pair.py put it at 0x404270, inside __destroy_new_array
+// SchedMachine.c: b52's MachineInfo tables (0x5675F0..0x56768F: three width-1
+// models, two width-2) name every function of the unit; ps2_oplatency
+// (stored by both initializers) calls 0x4C2060 and func_004B4EC0 (0x4C21A0);
+// issue/can_issue (0x4C2BA0/0x4C2F20) call ps2_UnitMask (0x4C3220).
+func_004B51B0 = 0x004C1FF0;
+SchedMachine.c/ps2_oplatency = 0x004C20D0;
+SchedMachine.c/func_004B4EC0 = 0x004C21A0;
+ps2_initialize5 = 0x004C2480;
+ps2_can_issue5 = 0x004C2560;
+ps2_can_issue5_nodep = 0x004C2650;
+ps2_can_issue5_dep = 0x004C2690;
+ps2_issue5 = 0x004C26D0;
+ps2_advance_clock5 = 0x004C2740;
+func_004B48A0 = 0x004C2790;
+func_004B4A90 = 0x004C2960;
+func_004B4DE0 = 0x004C2A30;
+func_004B4AE0 = 0x004C2BA0;
+func_004B4B50 = 0x004C2F20;
+SchedMachine.c/ps2_UnitMask = 0x004C3220;
+// IroUtil.c: 0x4FAC40 is IRO_NopOut (IRO_WalkTree(linear, ActNop, 0)); ActNop
+// (0x4FAC20) sets type Nop (+0x00) and clears +0x18 on exit, which DumpAct
+// (DumpLinearNode) does not. The IRO_DumpIntTree/DumpAct pair had identical
+// bytes; pair.py's 0x404910 for IRO_NopOut is strerror.
+IRO_NopOut = 0x004FAC40;
+IroUtil.c/ActNop = 0x004FAC20;
+IroUtil.c/NotNoppable = 0x004FAC60;
+IroUtil.c/ActNopNonSideEffects = 0x004FAD30;
+IRO_NopNonSideEffects = 0x004FAD80; // IRO_WalkTree_ps2(linear, ActNopNonSideEffects, &level)
+CClass_AddFriend = 0x00461C00; // 3.0.1's friend list (cclass_friends 0x5B6D48), after CClass_Init
+// source-only: the driver records b69's symbols.manual.txt/symbols.txt name.
+// parser_dispatch follows parser_gcc by 0xA8 as in b69 (0x51D120 -> 0x51D1C8;
+// both are "Compc++ mipspsx2" ParserTool records, PreParse/MidParse/PostParse
+// at the same offsets); pCmdLineCompiler follows pCmdLine by 0x1C as in b69
+// (version words 0x1002 / 0x1005, identical bytes)
+parser_dispatch = 0x005505B0;
+pCmdLineCompiler = 0x00542D04;
+// ParserHelpers/ToolHelpers option callbacks b52's option lists point at
+// (functions.csv merges them): Opt_FindAndAddFile (arg ? arg : opt, numfiles
+// 0x5A6374 incremented, 0x208-byte path buffer); Opt_SavePrefs,
+// Opt_MaybeMoveAccessPaths and Opt_HandleOutputName in b69's order
+// (0x40D3FA/0x40D40A/0x40D425, Opt_HandleOutputName running up to
+// ValidateToolState); after Opt_AddStringToDefines: Opt_DefineSymbol
+// (0x400-byte buffer, pTool->LANG 'c++ '/'Asm '), Opt_UndefineSymbol (0x130),
+// Opt_AddPrefixFile (definesHandle 0x5B6DE0 when handle is NULL)
+Opt_FindAndAddFile = 0x0040FBB5;
+Opt_SavePrefs = 0x0040FE57;
+Opt_MaybeMoveAccessPaths = 0x0040FE67;
+Opt_HandleOutputName = 0x0040FE82;
+Opt_DefineSymbol = 0x00410389;
+Opt_UndefineSymbol = 0x00410451;
+Opt_AddPrefixFile = 0x004104F2;
+// more option callbacks: Opt_AddAccessPath (arg ? arg : opt, 0x104-byte limit,
+// OS_MakePathSpec 0x408D10, AddAccessPath 0x411C19 with namingSysPaths
+// 0x5B7F88; b52 warns about a missing path only with -v, pCmdLine.verbose
+// 0x542CF4); DisplayWarningOptions / DisplayOptimizationOptions at b69's
+// distances from SetWarningFlags / SetOptFlags ("Command-line warning
+// options:", "speed"/"size"); 3.0's Opt_PragmaOnOff/Opt_PragmaOffOn
+// (*var = flags & 8 ? 2 : 1 and the reverse) and Opt_SetPragma ("no-",
+// "#pragma ", " on"/" off" through Opt_AddStringToDefines) as tools/mwccpsp's;
+// the parser callback table (0x558900) in CLParserCallbacks_v1.cpp's order
+Opt_AddAccessPath = 0x0040F833;
+DisplayWarningOptions = 0x00410990;
+DisplayOptimizationOptions = 0x00410E10;
+Opt_PragmaOnOff = 0x004105D5;
+Opt_PragmaOffOn = 0x004105EE;
+Opt_SetPragma = 0x00410723;
+UCBParserAddAccessPath = 0x00418200;
+UCBParserSwapAccessPaths = 0x00418390;
+UCBParserSetNamedPreferences = 0x00418400;
+UCBParserSetOutputFileDirectory = 0x00418560;
+// Alias.c statics as b69's manual entry has them (b69 0x552634; the derived
+// 0x552630 is worst_case_ptr, which b52 keeps at 0x589D18): b52's
+// initialize_aliases (0x4BA6B0) clears aliases 0x58ACB8, n_aliases 0x58ACB4,
+// n_gathered_aliases 0x58ACB0 and alias_hash[997] from 0x589D1C
+Alias.c/_b69sec.bss = 0x00589D1C;
+// IRO_RemoveUnreachable (0x503570) pushes "Removing unreachable code at: %d\n"
+IroJump.c/_b69at185 = 0x0056DADB;
+// literals and one global, each read from the original at the relocation of an otherwise byte-identical function
+BE_schedule.c/_b69at798 = 0x00567976; // derived from a byte-identical use (bindrefs.py)
+CExprConvMatch.c/_b69at1756 = 0x0056C291; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at1541 = 0x0055C6E5; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3092 = 0x0055CFAB; // derived from a byte-identical use (bindrefs.py)
+IroCSE.c/_b69at1339 = 0x005703B8; // derived from a byte-identical use (bindrefs.py)
+IroLinearForm.c/_b69at1323 = 0x0056D5C9; // derived from a byte-identical use (bindrefs.py)
+IroUtil.c/_b69at223 = 0x0056CFD5; // derived from a byte-identical use (bindrefs.py)
+dashIMinusMovesPaths = 0x005B7F8F; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3093 = 0x0055CFB4; // derived from a byte-identical use (bindrefs.py)
+IroLinearForm.c/_b69at276 = 0x0056D588; // derived from a byte-identical use (bindrefs.py)
+usedDashIMinus = 0x005B7F9F; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3094 = 0x0055CFC2; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3095 = 0x0055CFD0; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3096 = 0x0055CFDE; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3097 = 0x0055CFEE; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3098 = 0x0055CFFE; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3099 = 0x0055D006; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3100 = 0x0055D010; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3101 = 0x0055D01A; // derived from a byte-identical use (bindrefs.py)
+CodeGen.c/_b69at3102 = 0x0055D024; // derived from a byte-identical use (bindrefs.py)
+// remapped (bindrefs.py --remap, then checked by comparing our compile of the
+// named function at both addresses): CSOM_GetFuncSig and DisposeHandle compile
+// much closer at the address their byte-identical callers use; IroMalloc's
+// private Block_link/Block_unlink sit beside their callers (MSL's identical
+// copies are at 0x4036E0/0x403760)
+CSOM.c/CSOM_GetFuncSig = 0x00453B70;
+DisposeHandle = 0x0041B880;
+IroMalloc.c/Block_link = 0x004A05F0;
+IroMalloc.c/Block_unlink = 0x004A0670;
+// IroMalloc's private copies of MSL's alloc.c statics (MSL's at 0x4035F0..),
+// found by comparing our compile across IroMalloc's range: only relocations differ
+IroMalloc.c/Block_construct = 0x004A0500;
+IroMalloc.c/SubBlock_construct = 0x004A06D0;
+IroMalloc.c/SubBlock_merge_prev = 0x004A07A0;
+IroMalloc.c/SubBlock_merge_next = 0x004A0820;
+// found by searching b52 for our compile (relocations wildcarded): one exact hit each (b52-work/tools/findhome.py)
+time_g.c/time_g_clear_tm = 0x00421850; // was 00414280 (64 B, findhome.py)
+CWUnlockMemHandle = 0x00414140; // was 0041f590 (55 B, findhome.py)
+CWCheckinLicense = 0x004141E0; // was 0041fcc0 (58 B, findhome.py)
+sscanf = 0x0042A3E0; // was 00421a20 (51 B, findhome.py)
+FreeIncludeFile = 0x004298B0; // was 0042a3e0 (45 B, findhome.py)
+CPrep.c/CPrep_GetQuotedEnvVar = 0x0043F200; // was 0043f140 (222 B, findhome.py)
+CScope.c/CScope_FindQualifiedTag = 0x0044ECF0; // was 0044ee20 (299 B, findhome.py)
+IRO_RenumberInts = 0x00501760; // was 00459020 (54 B, findhome.py)
+CInit.c/CInit_InitConcat = 0x0045D520; // was 0045ec40 (163 B, findhome.py)
+CExpr.c/CExpr_ConstPointerCheck = 0x0046C270; // was 0046b1e0 (215 B, findhome.py)
+CFunc.c/CFunc_IsInObjList = 0x00476A30; // was 00476a00 (41 B, findhome.py)
+CFunc.c/DestructorIfTransform = 0x00477560; // was 00477360 (102 B, findhome.py)
+CPrepTokenizer.c/tiden = 0x00481590; // was 00481210 (54 B, findhome.py)
+CTemplTool_IsTemplate = 0x00484830; // was 004858c0 (84 B, findhome.py)
+func_0049B8D0 = 0x004B2030; // was 004b2070 (52 B, findhome.py)
+add_alias_member = 0x004BA9C0; // was 004ba7c0 (44 B, findhome.py)
+CPrec.c/CPrec_PointerHash = 0x004D6BE0; // was 004d6c00 (168 B, findhome.py)
+IroUtil.c/UseAction301 = 0x004FC9A0; // was 004e1200 (37 B, findhome.py)
+CABI.c/CABI_ClassInitLoopCallBack = 0x00457F10; // was 004e9960 (116 B, findhome.py)
+func_005512E0 = 0x004FD0F0; // was 004f5320 (38 B, findhome.py)
+IroLinearForm.c/MarkArgs = 0x004FEBA0; // was 004febc0 (201 B, findhome.py)
+IroLinearForm.c/FindCatchObject = 0x005008F0; // was 005008d0 (32 B, findhome.py)
+func_00561320 = 0x00502610; // was 005025a0 (103 B, findhome.py)
+func_00561390 = 0x005025A0; // was 00502610 (103 B, findhome.py)
+func_005886C0 = 0x00506620; // was 00506500 (49 B, findhome.py)
+func_00588690 = 0x00506660; // was 005065b0 (33 B, findhome.py)
+func_00588740 = 0x005065B0; // was 00506660 (33 B, findhome.py)
+func_004C46C0 = 0x00405990; // was 0050c4f0 (24 B, findhome.py)
+IroTransform.c/ReplaceExprWithMonaminLeft301 = 0x00520020; // was 0051ffc0 (87 B, findhome.py)
+IroTransform.c/ReplaceExprWithMonaminRight301 = 0x0051FFC0; // was 00520020 (87 B, findhome.py)
+IRO_ConstantFolding = 0x0052A900; // was 00529820 (37 B, findhome.py)
+CurStat = 0x005B66E0; // derived from a byte-identical use (bindrefs.py)
+func_0049B930 = 0x004B1AB0; // derived from a byte-identical use (bindrefs.py)
+DisableDueToAsm = 0x005B7F7D; // derived from a byte-identical use (bindrefs.py)
+data_00625ECA = 0x005B7F84; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/CheckChain = 0x0052B5D0; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/_b69at281 = 0x00570875; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/_b69at282 = 0x0057088F; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/_b69at55 = 0x00570860; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/_b69at283 = 0x005708B2; // derived from a byte-identical use (bindrefs.py)
+IroJump.c/_b69at284 = 0x005708D5; // derived from a byte-identical use (bindrefs.py)
+CError.c/_b69at99 = 0x0055FED0; // derived from a byte-identical use (bindrefs.py)
+CInt64_Add = 0x004D2D50; // derived from a byte-identical use (bindrefs.py)
+CMangler.c/_b69at337 = 0x0055FAB8; // derived from a byte-identical use (bindrefs.py)
+CPrep.c/_b69at481 = 0x0055E943; // derived from a byte-identical use (bindrefs.py)
+CTemplateNew.c/_b69at175 = 0x005626D0; // derived from a byte-identical use (bindrefs.py)
+cprep_strconcat = 0x005B7F8C; // derived from a byte-identical use (bindrefs.py)
+data_00625EAE = 0x005B7F9D; // derived from a byte-identical use (bindrefs.py)
+func_0047B6A0 = 0x004A31F0; // derived from a byte-identical use (bindrefs.py)
+CInt64_Sub = 0x004D2ED0; // derived from a byte-identical use (bindrefs.py)
+data_005F0BDC = 0x0059D04C; // derived from a byte-identical use (bindrefs.py)
+func_0047B480 = 0x004A3240; // derived from a byte-identical use (bindrefs.py)
+CInt64_LessU = 0x004D3AA0; // derived from a byte-identical use (bindrefs.py)
+func_0048F7C0 = 0x004BE2B0; // derived from a byte-identical use (bindrefs.py)
+CInt64_LessEqualU = 0x004D3B60; // derived from a byte-identical use (bindrefs.py)
+CInt64_GreaterEqualU = 0x004D3BC0; // derived from a byte-identical use (bindrefs.py)
+// our functions that had no address, each found once in b52 by its compiled bytes (unmapped.py)
+bitvectorcopy = 0x00511D20; // 49 B, found by its compiled bytes (unmapped.py)
+bitvectorchanged = 0x00511D60; // 59 B, found by its compiled bytes (unmapped.py)
+bitvectorintersect = 0x00511DD0; // 49 B, found by its compiled bytes (unmapped.py)
+bitvectorunion = 0x00511E10; // 49 B, found by its compiled bytes (unmapped.py)
+bitvectorintersectionisempty = 0x00511ED0; // 66 B, found by its compiled bytes (unmapped.py)
+CDecl.c/CDecl_FuncRedeclCheck = 0x00446B20; // 141 B, found by its compiled bytes (unmapped.py)
+CDecl.c/CDecl_FindUnderlyingType = 0x00448380; // 777 B, found by its compiled bytes (unmapped.py)
+CDecl.c/CDecl_DefineStruct = 0x00449740; // 117 B, found by its compiled bytes (unmapped.py)
+CFunc.c/defarg_name_obj_check = 0x00476B20; // 68 B, found by its compiled bytes (unmapped.py)
+CInit.c/CInit_ClassInitLoopCallBack = 0x0045EF60; // 32 B, found by its compiled bytes (unmapped.py)
+CPrep.c/CPrep_PragmaInlineMaxSize = 0x00440ED0; // 151 B, found by its compiled bytes (unmapped.py)
+CLMain.c/special_license_file = 0x00406CB0; // 30 B, found by its compiled bytes (unmapped.py)
+CLMain.c/UpdatePCmdLineLinkerFromVersion = 0x004076F0; // 150 B, found by its compiled bytes (unmapped.py)
+CWPluginsPrivate.cpp/IsVCSContext = 0x004135E0; // 25 B, found by its compiled bytes (unmapped.py)
+CWGetTargetName = 0x00413850; // 78 B, found by its compiled bytes (unmapped.py)
+CWGetProjectFileCount = 0x004138A0; // 79 B, found by its compiled bytes (unmapped.py)
+CWGetAccessPathListInfo = 0x00413AD0; // 133 B, found by its compiled bytes (unmapped.py)
+CWReleaseFileText = 0x00413C40; // 64 B, found by its compiled bytes (unmapped.py)
+CWAllocMemHandle = 0x00414000; // 90 B, found by its compiled bytes (unmapped.py)
+CWFreeMemHandle = 0x00414060; // 55 B, found by its compiled bytes (unmapped.py)
+CWLockMemHandle = 0x004140E0; // 90 B, found by its compiled bytes (unmapped.py)
+OS_GetDirName = 0x00406120; // 121 B, found by its compiled bytes (unmapped.py)
+PPCLibImport_GetDropInFlags = 0x00420470; // 25 B, found by its compiled bytes (unmapped.py)
+_DisposeThreadDataIndex = 0x00401480; // 36 B, found by its compiled bytes (unmapped.py)
+alloc_g.c/alloc_g_SubBlock_construct = 0x004037C0; // 55 B, found by its compiled bytes (unmapped.py)
+alloc_g.c/alloc_g_SubBlock_merge_next = 0x00403910; // 120 B, found by its compiled bytes (unmapped.py)
+GetHandle = 0x0040EA40; // 67 B, found by its compiled bytes (unmapped.py)
+__FileWrite = 0x00403340; // 40 B, found by its compiled bytes (unmapped.py)
+scanf.c/scanf_parse_format = 0x004298E0; // 687 B, found by its compiled bytes (unmapped.py)
+strncat = 0x00404610; // 52 B, found by its compiled bytes (unmapped.py)
+__leap_year = 0x00421490; // 77 B, found by its compiled bytes (unmapped.py)
+time_g.c/time_g_leap_days = 0x004214E0; // 159 B, found by its compiled bytes (unmapped.py)
+time_g.c/__tm2time = 0x004216E0; // 361 B, found by its compiled bytes (unmapped.py)
+time_g.c/time_g_ISO8601NewYear = 0x00421AB0; // 158 B, found by its compiled bytes (unmapped.py)
+ps2_IsQuadwordClassLocal = 0x004D4820; // 73 B, found by its compiled bytes (unmapped.py)
+CodeGen_PropagateIntoAsm = 0x0043B400; // 195 B, found by its compiled bytes (unmapped.py)
+BE_binary.c/BE_CountInstruction = 0x004C67F0; // 54 B, found by its compiled bytes (unmapped.py)
+func_0048F750 = 0x004BE4B0; // 94 B, found by its compiled bytes (unmapped.py)
+BE_schedule.c/feeds = 0x004C6F30; // 116 B, found by its compiled bytes (unmapped.py)
+BE_schedule.c/b69_blockhasmem = 0x004C7590; // 66 B, found by its compiled bytes (unmapped.py)
+BE_schedule.c/b69_blockuses = 0x004C7510; // 128 B, found by its compiled bytes (unmapped.py)
+CMach_SetBackEndOptions = 0x0045CE00; // 402 B, found by its compiled bytes (unmapped.py)
+CMach_GetBackEndOptions = 0x0045CC60; // 412 B, found by its compiled bytes (unmapped.py)
+func_004385E0 = 0x004350B0; // 86 B, found by its compiled bytes (unmapped.py)
+func_00531730 = 0x0050F6F0; // 147 B, found by its compiled bytes (unmapped.py)
+func_004A4070 = 0x004CE7A0; // 49 B, found by its compiled bytes (unmapped.py)
+func_0049C060 = 0x004B1A80; // 33 B, found by its compiled bytes (unmapped.py)
+func_004C3460 = 0x004BB480; // 62 B, found by its compiled bytes (unmapped.py)
+func_00549640 = 0x005133A0; // 84 B, found by its compiled bytes (unmapped.py)
+func_005494B0 = 0x005134B0; // 42 B, found by its compiled bytes (unmapped.py)
+func_00548060 = 0x00515630; // 34 B, found by its compiled bytes (unmapped.py)
+func_00548030 = 0x00515660; // 34 B, found by its compiled bytes (unmapped.py)
+MultByConst.c/MultCost = 0x0050FDF0; // 90 B, found by its compiled bytes (unmapped.py)
+func_004A4530 = 0x004A0E40; // 75 B, found by its compiled bytes (unmapped.py)
+func_004A4A20 = 0x004BA430; // 28 B, found by its compiled bytes (unmapped.py)
+PCode.c/findlink = 0x004AE7C0; // 92 B, found by its compiled bytes (unmapped.py)
+func_004AFE40 = 0x004BDF10; // 123 B, found by its compiled bytes (unmapped.py)
+func_004AFDD0 = 0x004BDF90; // 123 B, found by its compiled bytes (unmapped.py)
+func_004AFD20 = 0x004BE0A0; // 37 B, found by its compiled bytes (unmapped.py)
+func_004A4660 = 0x004A0D30; // 54 B, found by its compiled bytes (unmapped.py)
+StructMoves.c/func_0052F250 = 0x005107E0; // 677 B, found by its compiled bytes (unmapped.py)
+StructMoves.c/ps2_move8_53E8F0 = 0x00510A90; // 917 B, found by its compiled bytes (unmapped.py)
+StructMoves.c/func_0052EC70 = 0x00510E30; // 1029 B, found by its compiled bytes (unmapped.py)
+func_004C3D90 = 0x004ADEC0; // 52 B, found by its compiled bytes (unmapped.py)
+_rt_divu64 = 0x00405460; // 111 B, found by its compiled bytes (unmapped.py)
+__destroy_global_chain = 0x00404420; // 45 B, found by its compiled bytes (unmapped.py)
+setupargs.c/_FreeCommandLine = 0x00401780; // 58 B, found by its compiled bytes (unmapped.py)
+CDecl.c/CDecl_MergeArrayArgFlags = 0x00446AC0; // derived from a byte-identical use (bindrefs.py)
+CFunc.c/_b69sec.bss = 0x00584E2C; // derived from a byte-identical use (bindrefs.py)
+CInit.c/_b69sec.bss = 0x00584D22; // derived from a byte-identical use (bindrefs.py)
+CWPluginsPrivate.cpp/EnsureCachedAccessPaths = 0x00413A90; // derived from a byte-identical use (bindrefs.py)
+MIPS_Peephole.c/func_00548090 = 0x00515550; // derived from a byte-identical use (bindrefs.py)
+StructMoves.c/func_0052FAC0 = 0x005103D0; // derived from a byte-identical use (bindrefs.py)
+ThreadLocalData.c/_gThreadDataIndex = 0x00541120; // derived from a byte-identical use (bindrefs.py)
+_HandPtr = 0x005B6398; // derived from a byte-identical use (bindrefs.py)
+__global_destructor_chain = 0x005B4D38; // derived from a byte-identical use (bindrefs.py)
+__mod = 0x00443660; // derived from a byte-identical use (bindrefs.py)
+data_005F0F10 = 0x0059BEB8; // derived from a byte-identical use (bindrefs.py)
+data_00603F70 = 0x0059D278; // derived from a byte-identical use (bindrefs.py)
+data_0062421C = 0x005B4784; // derived from a byte-identical use (bindrefs.py)
+data_00624650 = 0x005B63A8; // derived from a byte-identical use (bindrefs.py)
+data_00624FCC = 0x005B66C4; // derived from a byte-identical use (bindrefs.py)
+data_0062541C = 0x005B67A0; // derived from a byte-identical use (bindrefs.py)
+data_00625EA9 = 0x005B7F90; // derived from a byte-identical use (bindrefs.py)
+div = 0x00443480; // derived from a byte-identical use (bindrefs.py)
+func_0047ECC0 = 0x004A2010; // derived from a byte-identical use (bindrefs.py)
+fwrite = 0x00405AE0; // derived from a byte-identical use (bindrefs.py)
+in_func_arglist = 0x005B7F7F; // derived from a byte-identical use (bindrefs.py)
+libimp-eabi-ppc.c/sFlags$30 = 0x00558FBC; // derived from a byte-identical use (bindrefs.py)
+licenseFile = 0x005B4D3C; // derived from a byte-identical use (bindrefs.py)
+ps2_IsQuadwordClass = 0x004D4780; // derived from a byte-identical use (bindrefs.py)
+scanf.c/_b69at33 = 0x0055AEE8; // derived from a byte-identical use (bindrefs.py)
+setupargs.c/_b69sec.bss = 0x00581020; // derived from a byte-identical use (bindrefs.py)
+time_g.c/_b69at187 = 0x005593A8; // derived from a byte-identical use (bindrefs.py)
+time_g.c/time_g_adjust = 0x00421580; // derived from a byte-identical use (bindrefs.py)
+__div = 0x004435F0; // derived from a byte-identical use (bindrefs.py)
+__lmul = 0x00443580; // derived from a byte-identical use (bindrefs.py)
+_imp__TlsFree = 0x0057E1F4; // derived from a byte-identical use (bindrefs.py)
+data_005F0E68 = 0x00567280; // derived from a byte-identical use (bindrefs.py)
+data_00625208 = 0x005B63E4; // derived from a byte-identical use (bindrefs.py)
+data_0062597C = 0x005B6D90; // derived from a byte-identical use (bindrefs.py)
+func_00479870 = 0x004A3D00; // derived from a byte-identical use (bindrefs.py)
+mktime = 0x004218C0; // derived from a byte-identical use (bindrefs.py)
+__add = 0x004434E0; // derived from a byte-identical use (bindrefs.py)
+__ladd = 0x00443530; // derived from a byte-identical use (bindrefs.py)
+func_00479710 = 0x004A3E90; // derived from a byte-identical use (bindrefs.py)
+__month_to_days = 0x00559218; // derived from a byte-identical use (bindrefs.py)
+time_g.c/__time2tm = 0x004215C0; // derived from a byte-identical use (bindrefs.py)
+CInline.c/CInline_RefArgTransform = 0x00466D80; // was 00466db0 (263 B, findhome.py)
+func_00497420 = 0x004B51B0; // was 004b5200 (66 B, findhome.py)
+GCCInlineAsm.c/gcc_copy_expression = 0x00518B60; // was 00518bf0 (300 B, findhome.py)
+// remapped where our compile diffs far better (b52-work/tools/findhome2.py)
+alloc_g.c/alloc_g_Block_unlink = 0x00403760; // was 004043f0, diff 53 -> 8 (84 B, findhome2.py)
+c2pstr = 0x0041C8D0; // was 00414330, diff 33 -> 10 (58 B, findhome2.py)
+CError_OverloadedFunctionError2 = 0x0045AAF0; // was 0045ac70, diff 45 -> 13 (83 B, findhome2.py)
+CTemplTool_EqualArgs = 0x00485070; // was 00485640, diff 126 -> 15 (181 B, findhome2.py)
+CTemplateTools.c/CTemplTool_DeduceBitfieldCopy = 0x00487160; // was 004871e0, diff 121 -> 35 (281 B, findhome2.py)
+IroUtil.c/SideEffectAction301 = 0x004FCA20; // was 0049f510, diff 33 -> 11 (59 B, findhome2.py)
+func_00479540 = 0x004A4080; // was 004a3c50, diff 67 -> 25 (208 B, findhome2.py)
+func_00479430 = 0x004A4150; // was 004a4080, diff 62 -> 25 (225 B, findhome2.py)
+func_004C3E70 = 0x004ADE00; // was 004adf30, diff 30 -> 12 (61 B, findhome2.py)
+func_0049D530 = 0x004B0D00; // was 004b0da0, diff 135 -> 17 (447 B, findhome2.py)
+PPCError_ErrorTerm = 0x00511C70; // was 004da380, diff 53 -> 23 (106 B, findhome2.py)
+CException.c/CExcept_DtorTransform = 0x004E0990; // was 004df070, diff 96 -> 25 (239 B, findhome2.py)
+IroVars.c/KillExceptionObject = 0x0051E9F0; // was 004e13f0, diff 53 -> 18 (114 B, findhome2.py)
+func_00575AF0 = 0x00524F30; // was 004e1650, diff 92 -> 37 (178 B, findhome2.py)
+IROUseDef301.c/UseOfVarIsInsideASimpleDefOfVar301 = 0x00529530; // was 005079e0, diff 89 -> 17 (149 B, findhome2.py)
+func_00576350 = 0x00503700; // was 005135d0, diff 76 -> 19 (79 B, findhome2.py)
+IroCSE.c/DependsOnExceptionObject = 0x0051DEB0; // was 0052ef50, diff 57 -> 21 (145 B, findhome2.py)
+// func_0055CFC0 (byte-identical) calls it there; our compile fits there too (0x506620 is func_005886C0)
+func_005887E0 = 0x00506500;
+// two identical wrappers of 0x4A0B30: IRO_free 0x4A0AD0, IRO_free2 0x4A0AE0
+IRO_free = 0x004A0AD0;
+LocalCSE.c/matchvalues = 0x004BD000; // derived from a byte-identical use (bindrefs.py)
+func_00497480 = 0x004B4EA0; // derived from a byte-identical use (bindrefs.py)
+func_004C5940 = 0x00511C70; // derived from a byte-identical use (bindrefs.py)
+illegalimplicitconversion = 0x005B7F9A; // derived from a byte-identical use (bindrefs.py)
+LocalCSE.c/_b69at231 = 0x00567348; // derived from a byte-identical use (bindrefs.py)

@@ -58,6 +58,10 @@ void PPCError_Message(char* format, ...) {
     va_end(list);
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-28)
+#endif
 void PPCError_ErrorTerm(VarArgShort code, ...) {
     va_list list;
 
@@ -75,3 +79,7 @@ void PPCError_ErrorTerm(VarArgShort code, ...) {
 
     longjmp(errorreturn, 1);
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif

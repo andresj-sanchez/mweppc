@@ -664,7 +664,11 @@ Boolean SendTargetInfoRequest(Target* targ, Plugin* linker, SInt32 dropinflags) 
         if (optsCmdLine.verbose > 1) {
             CLReport(CLStr50, Plugin_GetDropInName(linker));
         }
+#if MWCCPS2_B52
+        OS_ASSERT(313, Plugin_GetPluginType(linker) == CWDROPINLINKERTYPE);
+#else
         OS_ASSERT(298, Plugin_GetPluginType(linker) == CWDROPINLINKERTYPE);
+#endif
 
         if (!Plugin_VerifyPanels(linker)) {
             return FALSE;

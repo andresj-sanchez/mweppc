@@ -10,13 +10,18 @@
 // MWCCPS2_BUILD=145 gen_opcode_table_ps2.py, differs only in the
 // MWCCPS2_BUILD < 210 blocks and the absent late_conditional_move.)
 
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 typedef struct OpcodeDef {
     char* name;
     char* alias;
     char* format;
     UInt8 nargs;
     UInt8 size;
+#if !MWCCPS2_B52
     UInt8 pad0E[2];
+#endif
     UInt32 unk10;
     UInt8 pad14[4];
     UInt32 flags;
@@ -26,10 +31,14 @@ typedef struct OpcodeDef {
     SInt32 unk28;
     UInt16 unk2C;
 } OpcodeDef;
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 
 extern OpcodeDef data_006115F8[];
 extern SInt32 data_005EFC18;
 extern void func_00478E30(int op, char* name, char* format, UInt16 real, UInt16 alt, UInt16 unk2C);
+#if MWCCPS2_B52
 extern void func_00478ED0(
     int op,
     char* name,
@@ -40,6 +49,18 @@ extern void func_00478ED0(
     SInt32 unk28,
     UInt16 unk2C
 );
+#else
+extern void func_00478ED0(
+    int op,
+    char* name,
+    char* format,
+    UInt32 unk10,
+    UInt32 flags,
+    char* intrinsic,
+    SInt32 unk28,
+    UInt16 unk2C
+);
+#endif
 
 void func_0046FFB0(void) {
     UInt32 r_eax, r_ecx, r_edx, r_edi;
@@ -304,10 +325,18 @@ L15a0:
     func_00478ED0(0x66, "cfc1", "=t,S;1", 0x44400000, 0x8000000, "__I_cfc1", 0x400000, 1);
     func_00478ED0(0x67, "ctc1", "t,S;=1", 0x44c00000, 0x8000100, "__I_ctc1", 0x400003, 1);
     func_00478ED0(0xa4, "mfc0", "=t,G", 0x40000000, 0x9000000, "__I_mfc0", 0x40000, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0xa5, "mfc1", "=t,S", 0x44000000, 0x9000000, "__I_mfc1", 0x400003, 2);
+#else
     func_00478ED0(0xa5, "mfc1", "=t,S", 0x44000000, 0x9000000, "__I_mfc1", 0x8003, 2);
+#endif
     func_00478ED0(0xa7, "mfc3", "=t,G", 0x4c000000, 0x9000000, "__I_mfc3", 0, 1);
     func_00478ED0(0xac, "mtc0", "t,=G", 0x40800000, 0x89000100, "__I_mtc0", 0x40000, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0xad, "mtc1", "t,=S", 0x44800000, 0x89004000, "__I_mtc1", 0x400003, 2);
+#else
     func_00478ED0(0xad, "mtc1", "t,=S", 0x44800000, 0x89004000, "__I_mtc1", 0x8003, 2);
+#endif
     func_00478ED0(0xaf, "mtc3", "t,=G", 0x4c800000, 0x89000100, "__I_mtc3", 0, 1);
     func_00478ED0(0x91, "lb", "=t,o(s)", 0x80000000, 0x4002, "__I_lb", 0x8000, 7);
     func_00478ED0(0x92, "lbu", "=t,o(s)", 0x90000000, 0x4002, "__I_lbu", 0x8000, 7);
@@ -428,18 +457,32 @@ L25b8:
     func_00478ED0(0x368, "neg.s", "+D", 0x46000007, 0, 0, 0x4003, 1);
     func_00478ED0(0x369, "sub.s", "+D,T", 0x46000001, 0, 0, 0x4003, 4);
     func_00478ED0(0x42, "cop2", "C", 0x4a000000, 0x8000100, "__I_c2", 0, 4);
+#if MWCCPS2_B52
+    func_00478ED0(0x68, "cfc2", "=t,2d", 0x48400000, 0x8000000, "__I_cfc2", 0x800004, 1);
+    func_00478ED0(0x69, "cfc2", "=t,2+d", 0x48400000, 0x8000000, 0, 0x800004, 1);
+    func_00478ED0(0x6a, "ctc2", "t,=2d", 0x48c00000, 0x88000100, "__I_ctc2", 0x800004, 1);
+    func_00478ED0(0x6b, "ctc2", "t,=2+d", 0x48c00000, 0x88000100, 0, 0x800004, 1);
+#else
     func_00478ED0(0x68, "cfc2", "=t,2d;K", 0x48400000, 0x8000000, "__I_cfc2", 0x800004, 1);
     func_00478ED0(0x69, "cfc2", "=t,2+d;K", 0x48400000, 0x8000000, 0, 0x800004, 1);
     func_00478ED0(0x6a, "ctc2", "t,=2d;=K", 0x48c00000, 0x88000100, "__I_ctc2", 0x800004, 1);
     func_00478ED0(0x6b, "ctc2", "t,=2+d;=K", 0x48c00000, 0x88000100, 0, 0x800004, 1);
+#endif
     func_00478ED0(0xa6, "mfc2", "=t,2S", 0x48000000, 0x9000000, "__I_mfc2", 0x800000, 1);
     func_00478ED0(0xae, "mtc2", "t,=2S", 0x48800000, 0x89000100, "__I_mtc2", 0x800000, 1);
     func_00478ED0(0xa2, "lwc2", "=2T,o(s)", 0xc8000000, 0x4002, "__I_lwc2", 0x808000, 7);
     func_00478ED0(0xce, "swc2", "2T,o(s)", 0xe8000000, 4, "__I_swc2", 0x808000, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x1cd, "cfc2.i", "=t,2d", 0x48400001, 0x8000000, 0, 0x800000, 1);
+    func_00478ED0(0x1cf, "cfc2.i", "=t,2+d", 0x48400001, 0x8000000, 0, 0x800000, 1);
+    func_00478ED0(0x1ce, "ctc2.i", "t,=2d", 0x48c00001, 0x88000100, 0, 0x800000, 1);
+    func_00478ED0(0x1d0, "ctc2.i", "t,=2+d", 0x48c00001, 0x88000100, 0, 0x800000, 1);
+#else
     func_00478ED0(0x1cd, "cfc2.i", "=t,2d;K", 0x48400001, 0x8000000, 0, 0x800000, 1);
     func_00478ED0(0x1cf, "cfc2.i", "=t,2+d;K", 0x48400001, 0x8000000, 0, 0x800000, 1);
     func_00478ED0(0x1ce, "ctc2.i", "t,=2d;=K", 0x48c00001, 0x88000100, 0, 0x800000, 1);
     func_00478ED0(0x1d0, "ctc2.i", "t,=2+d;=K", 0x48c00001, 0x88000100, 0, 0x800000, 1);
+#endif
     r_ecx = 0x48200000; // 01001000001000000000000000000000
     goto L2bf0;
 L2b70:
@@ -699,10 +742,18 @@ L4320:
     func_00478ED0(0x173, "suxc1.ps", "!D,t(s)", 0x4c00000d, 4, 0, 3, 1);
     goto L2edd;
 L4868:
+#if MWCCPS2_B52
+    func_00478ED0(0x1d1, "lq", "=t,o(s)", r_edx, 0x4002, 0, 0x8000, 7);
+#else
     func_00478ED0(0x1d1, "lq", "=$t,o(s)", r_edx, 0x4002, 0, 0x8000, 7);
+#endif
     r_ecx = 0x7c000000; // 01111100000000000000000000000000
 L48b4:
+#if MWCCPS2_B52
+    func_00478ED0(0x1d2, "sq", "t,o(s)", r_ecx, 4, 0, 0x8000, 1);
+#else
     func_00478ED0(0x1d2, "sq", "$t,o(s)", r_ecx, 4, 0, 0x8000, 1);
+#endif
     r_edi = 0x42000039; // 01000010000000000000000000111001
 L48f9:
     func_00478ED0(0x108, "di", "", r_edi, 0x100, 0, 0x40000, 1);
@@ -774,7 +825,11 @@ L5159:
     func_00478ED0(0x1ff, "mtsa", "s;=Y", 0x29, 0x100, 0, 0x10000, 1);
     func_00478ED0(0x200, "mtsab", "s,j;=Y", 0x4180000, 0x100, 0, 0x10000, 1);
     func_00478ED0(0x201, "mtsah", "s,j;=Y", 0x4190000, 0x100, 0, 0x10000, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x1cc, "qmove", "=d,s", 0x70000628, 0x4010, 0, 0x1000000, 1);
+#else
     func_00478ED0(0x1cc, "qmove", "=$d,$s", 0x70000628, 0x4010, 0, 0x1000000, 1);
+#endif
     func_00478ED0(0x206, "pabsh", "=d,t", 0x70000168, 0x4000, 0, 0x1000000, 1);
     func_00478ED0(0x207, "pabsw", "=d,t", 0x70000068, 0x4000, 0, 0x1000000, 1);
     func_00478ED0(0x219, "pcpyh", "=d,t", 0x700006e9, 0x4000, 0, 0x1000000, 1);
@@ -927,15 +982,25 @@ L5159:
     func_00478ED0(0x21e, "pdivw", "=s,t;=h", 0x70000349, 0x4000, 0, 0x1000000, 1);
     func_00478ED0(0x269, "vabs", "&+2T,2S", 0x4a0001fd, 0, 0, 4, 1);
     func_00478ED0(0x26a, "vadd", "&+2D,2S,2T", 0x4a000028, 0x2000, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x26b, "vaddi", "&+2D,2S,2I", 0x4a000022, 0x2000, 0, 4, 1);
+    func_00478ED0(0x26c, "vaddq", "&+2D,2S,2Q", 0x4a000020, 0x2000, 0, 4, 1);
+#else
     func_00478ED0(0x26b, "vaddi", "&+2D,2S,2I;K", 0x4a000022, 0x2000, 0, 4, 1);
     func_00478ED0(0x26c, "vaddq", "&+2D,2S,2Q;K", 0x4a000020, 0x2000, 0, 4, 1);
+#endif
     func_00478ED0(0x26d, "vaddw", "&+2D,2S,2N", 0x4a000003, 0x2000, 0, 4, 1);
     func_00478ED0(0x26e, "vaddx", "&+2D,2S,2N", 0x4a000000, 0x2000, 0, 4, 1);
     func_00478ED0(0x26f, "vaddy", "&+2D,2S,2N", 0x4a000001, 0x2000, 0, 4, 1);
     func_00478ED0(0x270, "vaddz", "&+2D,2S,2N", 0x4a000002, 0x2000, 0, 4, 1);
     func_00478ED0(0x271, "vadda", "&+2A,2T,2S", 0x4a0002bc, 0x2000, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x272, "vaddai", "&+2A,2S,2I", 0x4a00023e, 0x2000, 0, 4, 1);
+    func_00478ED0(0x273, "vaddaq", "&+2A,2S,2Q", 0x4a00023c, 0x2000, 0, 4, 1);
+#else
     func_00478ED0(0x272, "vaddai", "&+2A,2S,2I;K", 0x4a00023e, 0x2000, 0, 4, 1);
     func_00478ED0(0x273, "vaddaq", "&+2A,2S,2Q;K", 0x4a00023c, 0x2000, 0, 4, 1);
+#endif
     func_00478ED0(0x274, "vaddaw", "&+2A,2S,2N", 0x4a00003f, 0x2000, 0, 4, 1);
     func_00478ED0(0x275, "vaddax", "&+2A,2S,2N", 0x4a00003c, 0x2000, 0, 4, 1);
     func_00478ED0(0x276, "vadday", "&+2A,2S,2N", 0x4a00003d, 0x2000, 0, 4, 1);
@@ -945,9 +1010,17 @@ L5159:
     r_ecx = 0x4a00d839; // 01001010000000001101100000111001
 L6cec:
     func_00478ED0(0x27a, "vcallmsr", "9", r_ecx, 0x8000009, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x27b, "vclipw", "=2S,2T", 0x4bc001ff, 0x100, 0, 4, 1);
+#else
     func_00478ED0(0x27b, "vclipw", "2S,2T", 0x4bc001ff, 0x100, 0, 4, 1);
+#endif
     data_006115F8[0x27b].alias = (char*)"vclipw.xyz";
+#if MWCCPS2_B52
+    func_00478ED0(0x27c, "vdiv", "2Q,2'S,2'T", 0x4a0003bc, 0, 0, 4, 1);
+#else
     func_00478ED0(0x27c, "vdiv", "=2Q,2'S,2'T;=K", 0x4a0003bc, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x27d, "vftoi0", "&+2T,2S", 0x4a00017c, 0, 0, 4, 1);
     func_00478ED0(0x27e, "vftoi4", "&+2T,2S", 0x4a00017d, 0, 0, 4, 1);
     func_00478ED0(0x27f, "vftoi12", "&+2T,2S", 0x4a00017e, 0, 0, 4, 1);
@@ -971,6 +1044,18 @@ L6cec:
     func_00478ED0(0x291, "vitof15", "&+2T,2S", 0x4a00013f, 0, 0, 4, 1);
     func_00478ED0(0x292, "vlqd", "&+2T,(-2d)", 0x4a00037e, 0, 0, 4, 7);
     func_00478ED0(0x293, "vlqi", "&+2T,(2d|)", 0x4a00037c, 0, 0, 4, 7);
+#if MWCCPS2_B52
+    func_00478ED0(0x294, "vmadd", "&+2D,2S,2T", 0x4a000029, 0, 0, 4, 1);
+    func_00478ED0(0x295, "vmaddi", "&+2D,2S,2I", 0x4a000023, 0, 0, 4, 1);
+    func_00478ED0(0x296, "vmaddq", "&+2D,2S,2Q", 0x4a000021, 0, 0, 4, 1);
+    func_00478ED0(0x297, "vmaddw", "&+2D,2S,2N", 0x4a00000b, 0, 0, 4, 1);
+    func_00478ED0(0x298, "vmaddx", "&+2D,2S,2N", 0x4a000008, 0, 0, 4, 1);
+    func_00478ED0(0x299, "vmaddy", "&+2D,2S,2N", 0x4a000009, 0, 0, 4, 1);
+    func_00478ED0(0x29a, "vmaddz", "&+2D,2S,2N", 0x4a00000a, 0, 0, 4, 1);
+    func_00478ED0(0x29b, "vmadda", "&+2A,2S,2T", 0x4a0002bd, 0, 0, 4, 1);
+    func_00478ED0(0x29c, "vmaddai", "&+2A,2S,2I", 0x4a00023f, 0, 0, 4, 1);
+    func_00478ED0(0x29d, "vmaddaq", "&+2A,2S,2Q", 0x4a00023d, 0, 0, 4, 1);
+#else
     func_00478ED0(0x294, "vmadd", "&+2D,2S,2T;2A", 0x4a000029, 0, 0, 4, 1);
     func_00478ED0(0x295, "vmaddi", "&+2D,2S,2I;2A;K", 0x4a000023, 0, 0, 4, 1);
     func_00478ED0(0x296, "vmaddq", "&+2D,2S,2Q;2A;K", 0x4a000021, 0, 0, 4, 1);
@@ -981,12 +1066,17 @@ L6cec:
     func_00478ED0(0x29b, "vmadda", "&+2A,2S,2T;2A", 0x4a0002bd, 0, 0, 4, 1);
     func_00478ED0(0x29c, "vmaddai", "&+2A,2S,2I;2A;K", 0x4a00023f, 0, 0, 4, 1);
     func_00478ED0(0x29d, "vmaddaq", "&+2A,2S,2Q;2A;K", 0x4a00023d, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x29e, "vmaddaw", "&+2A,2S,2N", 0x4a0000bf, 0, 0, 4, 1);
     func_00478ED0(0x29f, "vmaddax", "&+2A,2S,2N", 0x4a0000bc, 0, 0, 4, 1);
     func_00478ED0(0x2a0, "vmadday", "&+2A,2S,2N", 0x4a0000bd, 0, 0, 4, 1);
     func_00478ED0(0x2a1, "vmaddaz", "&+2A,2S,2N", 0x4a0000be, 0, 0, 4, 1);
     func_00478ED0(0x2a2, "vmax", "&+2D,2S,2T", 0x4a00002b, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2a3, "vmaxi", "&+2D,2S,2I", 0x4a00001d, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2a3, "vmaxi", "&+2D,2S,2I;K", 0x4a00001d, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2a4, "vmaxw", "&+2D,2S,2N", 0x4a000013, 0, 0, 4, 1);
     func_00478ED0(0x2a5, "vmaxx", "&+2D,2S,2N", 0x4a000010, 0, 0, 4, 1);
     func_00478ED0(0x2a6, "vmaxy", "&+2D,2S,2N", 0x4a000011, 0, 0, 4, 1);
@@ -1000,6 +1090,15 @@ L6cec:
     func_00478ED0(0x2ae, "vminiz", "&+2D,2S,2N", 0x4a000016, 0, 0, 4, 1);
     func_00478ED0(0x2af, "vmove", "&=2T,2S", 0x4a00033c, 0x4010, 0, 4, 1);
     func_00478ED0(0x2b0, "vmr32", "&=2T,2S", 0x4a00033d, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2b1, "vmsub", "&+2D,2S,2T", 0x4a00002d, 0, 0, 4, 1);
+    func_00478ED0(0x2b2, "vmsubi", "&+2D,2S,2I", 0x4a000027, 0, 0, 4, 1);
+    func_00478ED0(0x2b3, "vmsubq", "&+2D,2S,2Q", 0x4a000025, 0, 0, 4, 1);
+    func_00478ED0(0x2b4, "vmsubw", "&+2D,2S,2N", 0x4a00000f, 0, 0, 4, 1);
+    func_00478ED0(0x2b5, "vmsubx", "&+2D,2S,2N", 0x4a00000c, 0, 0, 4, 1);
+    func_00478ED0(0x2b6, "vmsuby", "&+2D,2S,2N", 0x4a00000d, 0, 0, 4, 1);
+    func_00478ED0(0x2b7, "vmsubz", "&+2D,2S,2N", 0x4a00000e, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2b1, "vmsub", "&+2D,2S,2T;2A", 0x4a00002d, 0, 0, 4, 1);
     func_00478ED0(0x2b2, "vmsubi", "&+2D,2S,2I;2A;K", 0x4a000027, 0, 0, 4, 1);
     func_00478ED0(0x2b3, "vmsubq", "&+2D,2S,2Q;2A;K", 0x4a000025, 0, 0, 4, 1);
@@ -1007,24 +1106,40 @@ L6cec:
     func_00478ED0(0x2b5, "vmsubx", "&+2D,2S,2N;2A", 0x4a00000c, 0, 0, 4, 1);
     func_00478ED0(0x2b6, "vmsuby", "&+2D,2S,2N;2A", 0x4a00000d, 0, 0, 4, 1);
     func_00478ED0(0x2b7, "vmsubz", "&+2D,2S,2N;2A", 0x4a00000e, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2b8, "vmsuba", "&+2A,2T,2S", 0x4a0002fd, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2b9, "vmsubai", "&+2A,2S,2I", 0x4a00027f, 0, 0, 4, 1);
+    func_00478ED0(0x2ba, "vmsubaq", "&+2A,2S,2Q", 0x4a00027d, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2b9, "vmsubai", "&+2A,2S,2I;K", 0x4a00027f, 0, 0, 4, 1);
     func_00478ED0(0x2ba, "vmsubaq", "&+2A,2S,2Q;K", 0x4a00027d, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2bb, "vmsubaw", "&+2A,2S,2N", 0x4a0000ff, 0, 0, 4, 1);
     func_00478ED0(0x2bc, "vmsubax", "&+2A,2S,2N", 0x4a0000fc, 0, 0, 4, 1);
     func_00478ED0(0x2bd, "vmsubay", "&+2A,2S,2N", 0x4a0000fd, 0, 0, 4, 1);
     func_00478ED0(0x2be, "vmsubaz", "&+2A,2S,2N", 0x4a0000fe, 0, 0, 4, 1);
     func_00478ED0(0x2bf, "vmtir", "=2t,2'S", 0x4a0003fc, 0, 0, 4, 1);
     func_00478ED0(0x2c0, "vmul", "&+2D,2S,2T", 0x4a00002a, 0x2000, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2c1, "vmuli", "&+2D,2S,2I", 0x4a00001e, 0, 0, 4, 1);
+    func_00478ED0(0x2c2, "vmulq", "&+2D,2S,2Q", 0x4a00001c, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2c1, "vmuli", "&+2D,2S,2I;K", 0x4a00001e, 0, 0, 4, 1);
     func_00478ED0(0x2c2, "vmulq", "&+2D,2S,2Q;K", 0x4a00001c, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2c3, "vmulw", "&+2D,2S,2N", 0x4a00001b, 0x2000, 0, 4, 1);
     func_00478ED0(0x2c4, "vmulx", "&+2D,2S,2N", 0x4a000018, 0x2000, 0, 4, 1);
     func_00478ED0(0x2c5, "vmuly", "&+2D,2S,2N", 0x4a000019, 0x2000, 0, 4, 1);
     func_00478ED0(0x2c6, "vmulz", "&+2D,2S,2N", 0x4a00001a, 0x2000, 0, 4, 1);
     func_00478ED0(0x2c7, "vmula", "&+2A,2S,2T", 0x4a0002be, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2c8, "vmulai", "&+2A,2S,2I", 0x4a0001fe, 0, 0, 4, 1);
+    func_00478ED0(0x2c9, "vmulaq", "&+2A,2S,2Q", 0x4a0001fc, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2c8, "vmulai", "&+2A,2S,2I;K", 0x4a0001fe, 0, 0, 4, 1);
     func_00478ED0(0x2c9, "vmulaq", "&+2A,2S,2Q;K", 0x4a0001fc, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2ca, "vmulaw", "&+2A,2S,2N", 0x4a0001bf, 0, 0, 4, 1);
     func_00478ED0(0x2cb, "vmulax", "&+2A,2S,2N", 0x4a0001bc, 0, 0, 4, 1);
     func_00478ED0(0x2cc, "vmulay", "&+2A,2S,2N", 0x4a0001bd, 0, 0, 4, 1);
@@ -1034,24 +1149,48 @@ L6cec:
     data_006115F8[0x2cf].alias = (char*)"vopmula.xyz";
     func_00478ED0(0x2d0, "vopmsub", "=2D,2S,2T;2A", 0x4bc0002e, 0, 0, 4, 1);
     data_006115F8[0x2d0].alias = (char*)"vopmsub.xyz";
+#if MWCCPS2_B52
+    func_00478ED0(0x2d1, "vrget", "&+2T,2R", 0x4a00043d, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2d1, "vrget", "&+2T,2R;K", 0x4a00043d, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2d2, "vrinit", "=2R,2'S", 0x4a00043e, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2d3, "vrnext", "&+2T,2R", 0x4a00043c, 0, 0, 4, 1);
+    func_00478ED0(0x2d4, "vrsqrt", "=2Q,2'S,2'T", 0x4a0003be, 0, 0, 4, 1);
+    func_00478ED0(0x2d5, "vrxor", "+2R,2'S", 0x4a00043f, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2d3, "vrnext", "&+2T,2R;K", 0x4a00043c, 0, 0, 4, 1);
     func_00478ED0(0x2d4, "vrsqrt", "=2Q,2'S,2'T;=K", 0x4a0003be, 0, 0, 4, 1);
     func_00478ED0(0x2d5, "vrxor", "+2R,2'S;=K", 0x4a00043f, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2d6, "vsqd", "&2S,(-2t)", 0x4a00037f, 0, 0, 4, 1);
     func_00478ED0(0x2d7, "vsqi", "&2S,(2t|)", 0x4a00037d, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2d8, "vsqrt", "=2Q,2'T", 0x4a0003bd, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2d8, "vsqrt", "=2Q,2'T;=K", 0x4a0003bd, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2d9, "vsub", "&+2D,2S,2T", 0x4a00002c, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2da, "vsubi", "&+2D,2S,2I", 0x4a000026, 0, 0, 4, 1);
+    func_00478ED0(0x2db, "vsubq", "&+2D,2S,2Q", 0x4a000024, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2da, "vsubi", "&+2D,2S,2I;K", 0x4a000026, 0, 0, 4, 1);
     func_00478ED0(0x2db, "vsubq", "&+2D,2S,2Q;K", 0x4a000024, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2dc, "vsubw", "&+2D,2S,2N", 0x4a000007, 0, 0, 4, 1);
     func_00478ED0(0x2dd, "vsubx", "&+2D,2S,2N", 0x4a000004, 0, 0, 4, 1);
     func_00478ED0(0x2de, "vsuby", "&+2D,2S,2N", 0x4a000005, 0, 0, 4, 1);
     func_00478ED0(0x2df, "vsubz", "&+2D,2S,2N", 0x4a000006, 0, 0, 4, 1);
     func_00478ED0(0x2e0, "vsuba", "&+2A,2S,2T", 0x4a0002fc, 0, 0, 4, 1);
+#if MWCCPS2_B52
+    func_00478ED0(0x2e1, "vsubai", "&+2A,2S,2I", 0x4a00027e, 0, 0, 4, 1);
+    func_00478ED0(0x2e2, "vsubaq", "&+2A,2S,2Q", 0x4a00027c, 0, 0, 4, 1);
+#else
     func_00478ED0(0x2e1, "vsubai", "&+2A,2S,2I;K", 0x4a00027e, 0, 0, 4, 1);
     func_00478ED0(0x2e2, "vsubaq", "&+2A,2S,2Q;K", 0x4a00027c, 0, 0, 4, 1);
+#endif
     func_00478ED0(0x2e3, "vsubaw", "&+2A,2S,2N", 0x4a00007f, 0, 0, 4, 1);
     func_00478ED0(0x2e4, "vsubax", "&+2A,2S,2N", 0x4a00007c, 0, 0, 4, 1);
     func_00478ED0(0x2e5, "vsubay", "&+2A,2S,2N", 0x4a00007d, 0, 0, 4, 1);
@@ -1224,9 +1363,17 @@ L7d45:
     func_00478E30(0x495, "sgtu", "=d,s,t", 0xd7, 0, 1);
     func_00478E30(0x48f, "sge", "=d,s,t", 0x497, 0, 1);
     func_00478E30(0x491, "sgeu", "=d,s,t", 0x499, 0, 1);
+#if MWCCPS2_B52
+    func_00478E30(0x467, "lq", "=t,A", 0x1d1, 0, 7);
+#else
     func_00478E30(0x467, "lq", "=$t,A", 0x1d1, 0, 7);
+#endif
     func_00478E30(0x468, "lqc2", "=2T,A", 0x263, 0, 7);
+#if MWCCPS2_B52
+    func_00478E30(0x489, "sq", "=t,A", 0x1d2, 0, 1);
+#else
     func_00478E30(0x489, "sq", "=$t,A", 0x1d2, 0, 1);
+#endif
     func_00478E30(0x48a, "sqc2", "=2T,A", 0x268, 0, 1);
     func_00478E30(0x4a2, ".restoreGP", "", 0, 0, 1);
     func_00478E30(0x4a3, "fcopy", "=D,S", 0, 0, 1);

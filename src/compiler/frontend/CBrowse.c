@@ -198,6 +198,10 @@ static void AppendGList(GList* dst, GList* src) {
     memcpy(*dst->data + offset, *src->data, src->size);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-1)
+#endif
 static void RecordName(GList* gl, const char* str, SInt32 id) {
     HashNameNode* name;
 
@@ -227,6 +231,10 @@ static void RecordName(GList* gl, const char* str, SInt32 id) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CBrowse_BeginClass(DeclInfo* di, GList* gl) {
     ClassList* base;
@@ -556,6 +564,10 @@ void CBrowse_EndStruct(SInt32 offset, GList* gl) {
     gClassData = *gl;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (12)
+#endif
 static void EmitStandardData(
     enum EBrowserItem item,
     int fileID1,
@@ -587,7 +599,15 @@ static void EmitStandardData(
         AppendGListWord(&gBrowseData, 0);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (12)
+#endif
 void CBrowse_NewTypedef(
     NameSpace* nspace,
     HashNameNode* name,
@@ -616,7 +636,15 @@ void CBrowse_NewTypedef(
         );
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (12)
+#endif
 void CBrowse_NewEnum(
     NameSpace* nspace,
     HashNameNode* name,
@@ -645,7 +673,15 @@ void CBrowse_NewEnum(
         );
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (12)
+#endif
 void CBrowse_NewEnumConstant(
     NameSpace* nspace,
     HashNameNode* name,
@@ -678,6 +714,10 @@ void CBrowse_NewEnumConstant(
         );
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static HashNameNode* CBrowse_GetLinkName(Object* object) {
 #if MWCCPS2
@@ -830,6 +870,10 @@ void CBrowse_NewFunction(
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (62)
+#endif
 void CBrowse_NewData(
     Object* object, CPrepFileInfo* file1, CPrepFileInfo* file2, SInt32 startOffset, SInt32 endOffset
 ) {
@@ -879,7 +923,15 @@ void CBrowse_NewData(
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (62)
+#endif
 void CBrowse_NewMacro(Macro* macro, CPrepFileInfo* file, SInt32 startOffset, SInt32 endOffset) {
 #if MWCCPSP
     CError_ASSERT(1013, !file || (file->recordbrowseinfo && !macro->is_special));
@@ -901,6 +953,10 @@ void CBrowse_NewMacro(Macro* macro, CPrepFileInfo* file, SInt32 startOffset, SIn
         );
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CBrowse_NewTemplateClass(
     TemplClass* tmclass, CPrepFileInfo* file, SInt32 startOffset, SInt32 endOffset

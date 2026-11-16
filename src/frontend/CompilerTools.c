@@ -7,6 +7,10 @@
 #include "driver/COSToolsCLT.h"
 #include <ctype.h>
 #include <string.h>
+#if MWCCPS2_B52
+extern void IRO_InitializeAllocator(void* (*heap)(SInt32 size));
+extern void IRO_TerminateAllocator(void* (*heap)(SInt32 size));
+#endif
 
 // clang-format off
 UInt32 bit_masks[32] = {
@@ -338,10 +342,17 @@ SInt16 CHash(const char* string) {
     SInt16 i;
     SInt16 hashval;
     UInt8 u;
+#if MWCCPS2_B52
+    UInt8 b69_dead;
+#endif
 
     if ((hashval = (strlen(string) & 0xFF))) {
         i = hashval;
+#if MWCCPS2_B52
+        b69_dead = u = 0;
+#else
         u = 0;
+#endif
         while (i > 0) {
             u = (u >> 3) | (u << 5);
             u += *(string++);
@@ -990,6 +1001,11 @@ void freeoheap(void) {
         blockp->blockfree = blockp->blocksize - sizeof(HeapBlock);
         blockp = blockp->next;
     }
+#if MWCCPS2_B52
+    // b52 (0x4343D4): the 3.0 optimizer's pools on oheap go with it
+    IRO_TerminateAllocator(oalloc);
+    IRO_InitializeAllocator(oalloc);
+#endif
 }
 #endif
 
@@ -1382,6 +1398,18 @@ void CTool_EndianConvertWord64(CInt64 ci, char* result) {
     buf[1] = ci.mid[1];
     memcpy(result, buf, 8);
 #else
+#if MWCCPS2_B52
+    UInt32 hi;
+    UInt32 lo;
+    UInt32 b69_dead;
+
+    hi = ci.mid[1];
+    b69_dead = hi;
+    lo = ci.lo;
+    b69_dead = lo;
+    buf[0] = lo;
+    buf[1] = hi;
+#else
     if (!copts.littleendian) {
         buf[0] = CTool_EndianConvertWord32(ci.hi);
         buf[1] = CTool_EndianConvertWord32(ci.lo);
@@ -1389,6 +1417,7 @@ void CTool_EndianConvertWord64(CInt64 ci, char* result) {
         buf[0] = CTool_EndianConvertWord32(ci.lo);
         buf[1] = CTool_EndianConvertWord32(ci.hi);
     }
+#endif
     memcpy(result, buf, 8);
 #endif
 }

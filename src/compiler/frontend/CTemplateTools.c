@@ -105,6 +105,10 @@ void CTemplTool_PushInstance(TemplStack* stack, TypeClass* tmclass, Object* func
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (51)
+#endif
 void CTemplTool_PopInstance(TemplStack* stack) {
     CError_ASSERT(53, ctempl_curinstance == stack);
 
@@ -113,6 +117,10 @@ void CTemplTool_PopInstance(TemplStack* stack) {
         ctempl_instdepth = 0;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #endif
 
 #if MWCCPSP
@@ -344,7 +352,14 @@ TemplArg* CTemplTool_MakeTemplArgList(DeduceInfo* info) {
     return args;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (339)
+#endif
 Boolean CTemplTool_IsIdenticalTemplArgList(TemplArg* args, TemplParam* params) {
+#if MWCCPS2_B52
+    TemplParam* b69_dead;
+#endif
     while (args) {
         if (!params) {
             return FALSE;
@@ -390,11 +405,19 @@ Boolean CTemplTool_IsIdenticalTemplArgList(TemplArg* args, TemplParam* params) {
         }
 
         args = args->next;
+#if MWCCPS2_B52
+        b69_dead = params = params->next;
+#else
         params = params->next;
+#endif
     }
 
     return params == NULL;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 Type* CTemplTool_GetSelfRefTemplate(Type* type) {
     TemplClass* target;
@@ -464,6 +487,10 @@ Type* CTemplTool_GetSelfRefTemplate(Type* type) {
     return NULL;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-243)
+#endif
 TemplateFunction* CTemplTool_GetFuncTempl(Object* object) {
     while (object->datatype == DALIAS) {
         object = object->u.alias.object;
@@ -476,7 +503,15 @@ TemplateFunction* CTemplTool_GetFuncTempl(Object* object) {
 #endif
     return object->u.func.u.templ;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (333)
+#endif
 void CTemplTool_MergeDefaultArgs(TemplParam* dest, TemplParam* src) {
     while (1) {
         if (!dest) {
@@ -511,7 +546,15 @@ void CTemplTool_MergeDefaultArgs(TemplParam* dest, TemplParam* src) {
         src = src->next;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (333)
+#endif
 static FuncArg* CTemplTool_GetFirstRealArg(TypeFunc* tfunc) {
     FuncArg* arg = tfunc->args;
 
@@ -535,7 +578,15 @@ static FuncArg* CTemplTool_GetFirstRealArg(TypeFunc* tfunc) {
 
     return arg;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (333)
+#endif
 void CTemplTool_MergeArgNames(TypeFunc* src, TypeFunc* dest) {
     FuncArg* destArg;
     FuncArg* srcArg;
@@ -575,7 +626,15 @@ void CTemplTool_MergeArgNames(TypeFunc* src, TypeFunc* dest) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (333)
+#endif
 Boolean CTemplTool_EqualParams(TemplParam* a, TemplParam* b, Boolean copyNames) {
     while (1) {
         if (!a) {
@@ -616,10 +675,17 @@ Boolean CTemplTool_EqualParams(TemplParam* a, TemplParam* b, Boolean copyNames) 
         b = b->next;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 NameSpace* CTemplTool_SetupTemplateArgumentNameSpace(
     TemplParam* params, TemplArg* args, Boolean is_global
 ) {
+#if MWCCPS2_B52
+    TemplArg* b69_dead;
+#endif
     NameSpace* nspace;
     Boolean clear_global;
     ObjType* objType;
@@ -718,7 +784,11 @@ NameSpace* CTemplTool_SetupTemplateArgumentNameSpace(
         }
 
         params = params->next;
+#if MWCCPS2_B52
+        b69_dead = args = args->next;
+#else
         args = args->next;
+#endif
     }
 
 #if MWCCPSP
@@ -780,6 +850,10 @@ void CTemplTool_RemoveTemplateArgumentNameSpace(
     CScope_RestoreScope(save);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (301)
+#endif
 Boolean CTemplTool_IsTemplateArgumentDependentType(Type* type) {
     FuncArg* arg;
 
@@ -824,6 +898,10 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type* type) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 Boolean CTemplTool_IsTemplateArgumentDependentExpression(ENode* expr) {
 #if MWCCPSP
@@ -841,6 +919,10 @@ Boolean CTemplTool_IsTemplateArgumentDependentExpression(ENode* expr) {
     return IS_TYPE_TEMPLDEPEXPR(expr->rtype);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (766)
+#endif
 Boolean CTemplTool_IsSameTemplate(TemplParam* params, TemplArg* args) {
     while (1) {
         if (!args) {
@@ -893,6 +975,10 @@ Boolean CTemplTool_IsSameTemplate(TemplParam* params, TemplArg* args) {
         params = params->next;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 TemplClass* CTemplTool_IsTemplate(TypeTemplDep* ttd) {
     if (ttd->dtype == TEMPLDEP_QUALNAME && ttd->u.qual.type->dtype == TEMPLDEP_TEMPLATE) {
@@ -1123,6 +1209,9 @@ void CTemplTool_CheckTemplArgType(Type* type) {
 }
 
 Boolean CTemplTool_EqualArgs(TemplArg* a, TemplArg* b) {
+#if MWCCPS2_B52
+    TemplArg* b69_dead;
+#endif
     while (a) {
         if (!b || a->pid.type != b->pid.type) {
             return FALSE;
@@ -1154,7 +1243,11 @@ Boolean CTemplTool_EqualArgs(TemplArg* a, TemplArg* b) {
         }
 
         a = a->next;
+#if MWCCPS2_B52
+        b69_dead = b = b->next;
+#else
         b = b->next;
+#endif
     }
 
     if (b) {
@@ -1222,6 +1315,12 @@ Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep* a, TypeTemplDep* b) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (0)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1426)
+#endif
 Type* CTemplTool_DeduceArgDepType(TemplArg* args, Type* type, UInt32 qual, UInt32* resultQual) {
     TemplArg* arg;
 
@@ -1249,16 +1348,33 @@ Type* CTemplTool_DeduceArgDepType(TemplArg* args, Type* type, UInt32 qual, UInt3
 
     return NULL;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (809)
+#endif
 static TemplClassInst* CTemplTool_FindNestedClassInstance(
     TemplClass* templ, TemplClass* outer, TemplClassInst* outerInst
 ) {
+#if MWCCPS2_B52
+    int b69_dead;
+#endif
     TemplClass* array[32];
     TemplClassInst* inst;
     int i;
 
     array[0] = templ;
+#if MWCCPS2_B52
+    b69_dead = i = 0;
+#else
     i = 0;
+#endif
     while (1) {
         CError_ASSERT(1338, i < 32);
         CError_ASSERT(1339, templ = templ->templ_parent);
@@ -1295,6 +1411,10 @@ static TemplClassInst* CTemplTool_FindNestedClassInstance(
 
     return inst;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static TemplClassInst* CTemplTool_FindNestedClass(TemplClass* a, TemplClassInst* b, TemplClass* c) {
     TemplClass* scan;
@@ -1323,6 +1443,10 @@ static Type* CTemplTool_FindTemplateInstance(TypeDeduce* deduce, TemplClass* tem
     TemplClass* dtempl;
     TemplClassInst* scaninst;
     TemplClassInst* dinst;
+#if MWCCPS2_B52
+    TemplClassInst* b69_dead;
+    TemplClassInst* nested;
+#endif
 
     dtempl = deduce->tmclass;
     CError_ASSERT(1393, dtempl);
@@ -1338,7 +1462,11 @@ static Type* CTemplTool_FindTemplateInstance(TypeDeduce* deduce, TemplClass* tem
     }
 
     scantempl = dtempl;
+#if MWCCPS2_B52
+    b69_dead = scaninst = dinst;
+#else
     scaninst = dinst;
+#endif
     while (1) {
         if (scantempl == templ) {
             return TYPE(scaninst);
@@ -1375,8 +1503,13 @@ static Type* CTemplTool_FindTemplateInstance(TypeDeduce* deduce, TemplClass* tem
         }
     }
 
+#if MWCCPS2_B52
+    if (!templ->templ__params && (nested = CTemplTool_FindNestedClass(dtempl, dinst, templ))) {
+        return TYPE(nested);
+#else
     if (!templ->templ__params && (scaninst = CTemplTool_FindNestedClass(dtempl, dinst, templ))) {
         return TYPE(scaninst);
+#endif
     }
 
     CError_FATAL(1477);
@@ -1423,8 +1556,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
         newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+        newExpr = CExpr_CopyENode(expr);
+#else
         newExpr = lalloc(sizeof(ENode));
         *newExpr = *expr;
+#endif
 #endif
         return newExpr;
     }
@@ -1438,8 +1575,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                         newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+                        newExpr = CExpr_CopyENode(expr);
+#else
                         newExpr = lalloc(sizeof(ENode));
                         *newExpr = *expr;
+#endif
 #endif
                         return newExpr;
                     }
@@ -1453,8 +1594,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                             newExpr = CEXPR_COPYENODE(arg->data.paramdecl.expr);
 #else
+#if MWCCPS2_B52
+                            newExpr = CExpr_CopyENode(arg->data.paramdecl.expr);
+#else
                             newExpr = lalloc(sizeof(ENode));
                             *newExpr = *arg->data.paramdecl.expr;
+#endif
 #endif
                             return newExpr;
                         }
@@ -1470,8 +1615,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                                 newExpr = CEXPR_COPYENODE(arg->data.paramdecl.expr);
 #else
+#if MWCCPS2_B52
+                                newExpr = CExpr_CopyENode(arg->data.paramdecl.expr);
+#else
                                 newExpr = lalloc(sizeof(ENode));
                                 *newExpr = *arg->data.paramdecl.expr;
+#endif
 #endif
                                 return newExpr;
                             }
@@ -1516,8 +1665,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                         newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+                        newExpr = CExpr_CopyENode(expr);
+#else
                         newExpr = lalloc(sizeof(ENode));
                         *newExpr = *expr;
+#endif
 #endif
                         newExpr->data.templdep.u.typeexpr.type = type;
                         return newExpr;
@@ -1536,8 +1689,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                         newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+                        newExpr = CExpr_CopyENode(expr);
+#else
                         newExpr = lalloc(sizeof(ENode));
                         *newExpr = *expr;
+#endif
 #endif
                         newExpr->data.templdep.u.typeexpr.type = type;
                         return newExpr;
@@ -1576,8 +1733,12 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
                         newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+                        newExpr = CExpr_CopyENode(expr);
+#else
                         newExpr = lalloc(sizeof(ENode));
                         *newExpr = *expr;
+#endif
 #endif
                         newExpr->data.templdep.u.qual.type = TYPE_TEMPLATE(type);
                         return newExpr;
@@ -1667,13 +1828,21 @@ ENode* CTemplTool_DeduceExpr(TypeDeduce* deduce, ENode* expr) {
 #if MWCCPSP
             newExpr = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+            newExpr = CExpr_CopyENode(expr);
+#else
             newExpr = lalloc(sizeof(ENode));
             *newExpr = *expr;
+#endif
 #endif
             return newExpr;
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1588)
+#endif
 ENode* CTemplTool_DeduceDefaultArg(Object* func, ENode* expr) {
     TypeDeduce deduce;
 
@@ -1692,6 +1861,10 @@ ENode* CTemplTool_DeduceDefaultArg(Object* func, ENode* expr) {
 
     return CTemplTool_DeduceExpr(&deduce, expr);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static TemplClass* CTemplTool_FindNestedTemplateInstance(TypeDeduce* deduce, TemplClass* templ) {
     TemplClass* dtempl;
@@ -1925,6 +2098,10 @@ static Type* CTemplTool_DeduceArrayCopy(
     return type;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-2)
+#endif
 static Type* CTemplTool_DeduceBitfieldCopy(
     TypeDeduce* deduce, Type* type, ENode* size, UInt32* resultQual
 ) {
@@ -1984,6 +2161,10 @@ static Type* CTemplTool_DeduceBitfieldCopy(
 
     return TYPE(tbitfield);
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static Type* CTemplTool_DeduceTemplDepType(
     TypeDeduce* deduce, TypeTemplDep* tdt, UInt32* resultQual

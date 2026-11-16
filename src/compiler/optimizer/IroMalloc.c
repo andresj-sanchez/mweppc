@@ -56,14 +56,29 @@ typedef struct FixSubBlock {
 #define fix_pool_sizes IRO_fix_pool_sizes
 
 static const size_t fix_pool_sizes[] = {0xC, 0x14, 0x24, 0x44};
+#if MWCCPS2_B52
+// b52's .bss (0x587B58..0x587B98, IRO_InitializeAllocator 0x4A0B90) holds
+// initialized_galloc, initialized_other, fix_start, start_other, start_galloc
+// in that order; start_ and initialized are not in it
+Block* start_;
+int initialized;
+#else
 static Block* start_;
 static FixStart fix_start[4];
 static int initialized;
+#endif
 #if MWCCPSP
 static Block* start_galloc;
 static Block* start_other;
+#if MWCCPS2_B52
+static FixStart fix_start[4];
+#else
 static int initialized_galloc;
+#endif
 static int initialized_other;
+#if MWCCPS2_B52
+static int initialized_galloc;
+#endif
 #endif
 
 static void Block_link(Block* block, SubBlock* subblock);

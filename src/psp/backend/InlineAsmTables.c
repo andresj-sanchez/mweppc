@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #endif
 
+#if !MWCCPS2_B52
 // a mnemonic and the opcodes with that name (0x1C bytes)
 typedef struct AsmMnemonic {
     struct AsmMnemonic* next;
@@ -34,25 +35,33 @@ static AsmRegister* asm_registers[0x200]; // 0x606070
 
 // the mnemonic's record (from its name field), or NULL
 void* func_0053E980(char* name) {
+#endif
 #if MWCCPS2
+#if !MWCCPS2_B52
     int h;
 #endif
+#endif
+#if !MWCCPS2_B52
     AsmMnemonic* m;
 
+#endif
 #if MWCCPS2
+#if !MWCCPS2_B52
     h = CHash(name);
     for (m = asm_mnemonics[(UInt8)h]; m; m = m->next) {
         if (!strcmp(m->name, name)) {
             return &m->name;
         }
     }
-#else
-    for (m = asm_mnemonics[CHash(name) & 0xFF]; m; m = m->next) {
-        if (!strcmp(m->name, name)) {
-            return &m->name;
-        }
-    }
 #endif
+#else
+for (m = asm_mnemonics[CHash(name) & 0xFF]; m; m = m->next) {
+    if (!strcmp(m->name, name)) {
+        return &m->name;
+    }
+}
+#endif
+#if !MWCCPS2_B52
     return NULL;
 }
 
@@ -104,7 +113,9 @@ void func_0053EB40(void) {
 // the register's record (from its name field), or NULL
 void* func_0053EBB0(char* name) {
     AsmRegister* r;
+#endif
 #if MWCCPS2
+#if !MWCCPS2_B52
     char** pname;
 
     for (r = asm_registers[CHash(name) & 0x1FF]; r != NULL; r = r->next) {
@@ -114,15 +125,17 @@ void* func_0053EBB0(char* name) {
         }
     }
     return NULL;
+#endif
 #else
 
-    for (r = asm_registers[CHash(name) & 0x1FF]; r; r = r->next) {
-        if (!strcmp(r->name, name)) {
-            return &r->name;
-        }
+for (r = asm_registers[CHash(name) & 0x1FF]; r; r = r->next) {
+    if (!strcmp(r->name, name)) {
+        return &r->name;
     }
-    return NULL;
+}
+return NULL;
 #endif
+#if !MWCCPS2_B52
 }
 
 void func_0053EC00(char* name, SInt16 rclass, SInt16 num, void* extra) {
@@ -146,3 +159,4 @@ void func_0053EC50(void) {
         asm_registers[i] = NULL;
     }
 }
+#endif

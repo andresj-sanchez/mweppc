@@ -8,6 +8,9 @@
 #include "driver/Targets.h"
 #include <stdio.h>
 #include <string.h>
+#if MWCCPS2_B52
+#include "driver/option_system.h"
+#endif
 #if MWCCPSP
 #include "driver/option_system.h"
 #endif
@@ -101,6 +104,28 @@ int Opt_AddPrefixFile(const char* opt, void* handle, const char* filename, int f
     return TRUE;
 }
 
+#if MWCCPS2_B52
+// b52 (0x4105D5, 0x4105EE), 3.0.1's (tools/mwccpsp): an option that sets a
+// pragma variable, and its reverse (b52's option lists point at them)
+int Opt_PragmaOnOff(const char* opt, void* var, const char* arg, int flags) {
+    if (flags & PARAMPARSEFLAGS_NEGATED) {
+        *(char*)var = PR_OFF;
+    } else {
+        *(char*)var = PR_ON;
+    }
+    return TRUE;
+}
+
+int Opt_PragmaOffOn(const char* opt, void* var, const char* arg, int flags) {
+    if (flags & PARAMPARSEFLAGS_NEGATED) {
+        *(char*)var = PR_ON;
+    } else {
+        *(char*)var = PR_OFF;
+    }
+    return TRUE;
+}
+
+#endif
 #if MWCCPSP
 // 3.0.1 (0x411CE9, 0x411D03): an option that sets a pragma variable, and its
 // reverse
@@ -169,6 +194,32 @@ int SetupPragmas(const Pragma* pragmas) {
     }
 
     return TRUE;
+#if MWCCPS2_B52
+}
+
+// b52 (0x410723), 3.0.1's: -pragma "name" or "no-name" becomes
+// "#pragma name on|off" in the prefix text
+int Opt_SetPragma(const char* opt, void* var, const char* arg, int flags) {
+    const char* name;
+    int on;
+    int skip;
+
+    name = arg ? arg : (const char*)var;
+    if (!name) {
+        return FALSE;
+    }
+    if (!strncmp(name, "no-", 3)) {
+        on = (flags & PARAMPARSEFLAGS_NEGATED) != 0;
+        skip = 3;
+    } else {
+        on = (flags & PARAMPARSEFLAGS_NEGATED) == 0;
+        skip = 0;
+    }
+    if (!Opt_AddStringToDefines(opt, "#pragma ", name + skip, flags)) {
+        return FALSE;
+    }
+    return Opt_AddStringToDefines(opt, on ? " on\n" : " off\n", NULL, flags);
+#endif
 }
 #if MWCCPSP
 

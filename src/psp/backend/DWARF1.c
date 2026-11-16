@@ -102,7 +102,11 @@ typedef struct DwSavedRegs {
 static SInt32 dw_active; // 0x604840 set up for this file
 #if MWCCPS2 && MWCCPS2_BUILD < 210
 #define DW_ACTIVE 1 // b145 has no dw_active: every test of it is gone
+#if MWCCPS2_B52
 #define DW_SET_ACTIVE() ((void)0)
+#else
+#define DW_SET_ACTIVE() ((void)0)
+#endif
 #else
 #define DW_ACTIVE dw_active
 #define DW_SET_ACTIVE() (dw_active = 1)
@@ -172,7 +176,11 @@ void func_00531730(Object* obj) {
     DwFuncRef* prev;
     DwFuncRef* ref;
 
+#if MWCCPS2_B52
+    if (COPTS_X.mips_option132 != 1) {
+#else
     if (copts.mips_option132 != 1) {
+#endif
         return;
     }
     if (!copts.filesyminfo || !DW_ACTIVE) {
@@ -297,7 +305,11 @@ void func_00531A60(void) {
     if (copts.absolutepath) {
         COS_FileGetPathName(dw_filename, &cparamblkptr->sourcefile, NULL);
     } else {
+#if MWCCPS2_B52
+        COS_FileGetFSSpecInfo(&cparamblkptr->sourcefile, NULL, NULL, (StringPtr)dw_filename);
+#else
         COS_FileGetFSSpecInfo(&cparamblkptr->sourcefile, NULL, 0x104, dw_filename, 0x100);
+#endif
     }
 
     for (i = 0; i < 0x400; i++) {
@@ -340,10 +352,17 @@ void func_00531C10(Object* obj, Boolean global, ELFSymbol* sym, SInt32 size) {
         Boolean inreg;
 
         a2 = addr;
+#if MWCCPS2_B52
+        if (a2.basereg == -1 &&
+            COPTS_X.mips_option43 &&
+            obj->datatype == DDATA &&
+            (vi = obj->u.data.info) != NULL &&
+#else
         if (a2.basereg == -1 &&
             copts.mips_option43 &&
             obj->datatype == DDATA &&
             (vi = obj->u.data.info) != NULL &&
+#endif
             (vi->reg != 0 || vi->unk24[2] == 5 || (vi->unk24[3] != 0 && vi->unk24[2] == 0))) {
             inreg = TRUE;
         } else {
@@ -480,10 +499,17 @@ void func_00531D90(Object* obj, Boolean global, ELFSymbol* sym, SInt32 size) {
     debugname = galloc(strlen(((HashNameNode*)func->f24)->name) + 9);
     strcpy(debugname, ".debug_");
     strcpy(debugname + 7, ((HashNameNode*)func->f24)->name);
+#if MWCCPS2_B52
     dw_current->f24 =
         ELF_NewUndefinedSymbol(debugname, ((ELFSection*)dw_current->f14)->index, 0, 3, 0, 0);
     dw_current->f28 =
         ELF_NewUndefinedSymbol(linename, ((ELFSection*)dw_current->f1C)->index, 0, 3, 0, 0);
+#else
+    dw_current->f24 =
+        ELF_NewUndefinedSymbol(debugname, ((ELFSection*)dw_current->f14)->index, 0, 3, 0, 0);
+    dw_current->f28 =
+        ELF_NewUndefinedSymbol(linename, ((ELFSection*)dw_current->f1C)->index, 0, 3, 0, 0);
+#endif
 
     argoffset = 0;
     numparams = 0;
@@ -595,8 +621,13 @@ void func_00535220(int kind) {
         ELF_SetRelSection(unit->f1C, unit->f20);
         ((ELFSection*)unit->f1C)->shdr.sh_addralign = 0;
     } else {
+#if MWCCPS2_B52
         unit->f24 =
             ELF_NewUndefinedSymbol(".debug", (UInt16)((ELFSection*)unit->f14)->index, 0, 3, 0, 0);
+#else
+        unit->f24 =
+            ELF_NewUndefinedSymbol(".debug", (UInt16)((ELFSection*)unit->f14)->index, 0, 3, 0, 0);
+#endif
     }
     DW_PTR(unit, 0x34) = data_006245BC;
     if (dw_unit) {
@@ -647,8 +678,13 @@ void* func_00535110(Type* type) {
             break;
         case TYPEFUNC:
             func_00535110(TYPE_FUNC(type)->functype);
+#if MWCCPS2_B52
             for (arg = TYPE_FUNC(type)->args; arg && arg != &elipsis && arg != &oldstyle;
                  arg = arg->next) {
+#else
+            for (arg = TYPE_FUNC(type)->args; arg && arg != &elipsis && arg != &oldstyle;
+                 arg = arg->next) {
+#endif
                 func_00535110(arg->type);
             }
             break;
@@ -984,9 +1020,15 @@ SInt32 func_005342D0(DwTypeDesc* desc) {
 }
 
 // fundamental type codes of the integral types (IT_*)
+#if MWCCPS2_B52
 static const UInt16 dw_fundtypes[20] = {3,   1,   2,   3,   8,      5,      6,
                                         8,   9,   0xB, 0xC, 0x8108, 0x8208, 0xE,
                                         0xF, 0xF, 0xF, 0xE, 0xA510, 0xA408};
+#else
+static const UInt16 dw_fundtypes[20] = {3,   1,   2,   3,   8,      5,      6,
+                                        8,   9,   0xB, 0xC, 0x8108, 0x8208, 0xE,
+                                        0xF, 0xF, 0xF, 0xE, 0xA510, 0xA408};
+#endif
 
 // 0x534F60: describe a type as an attribute: pointers and references become
 // modifiers of their target, a function's pointer refers to the function
@@ -1374,6 +1416,7 @@ SInt32 func_005331C0(DwNode* node) {
             }
             for (oec = DW_PTR(node, 0x2C); oec; oec = oec->next) {
                 switch (elemsize) {
+#if MWCCPS2_B52
                     case 1:
                         func_005314F0(sec, oec->val.lo);
                         break;
@@ -1383,6 +1426,17 @@ SInt32 func_005331C0(DwNode* node) {
                     default:
                         func_00531580(sec, oec->val.lo);
                         break;
+#else
+                    case 1:
+                        func_005314F0(sec, oec->val.lo);
+                        break;
+                    case 2:
+                        func_00531520(sec, oec->val.lo);
+                        break;
+                    default:
+                        func_00531580(sec, oec->val.lo);
+                        break;
+#endif
                 }
                 ELF_AddString(sec, oec->name->name);
                 size += strlen(oec->name->name) + elemsize + 1;
@@ -1598,12 +1652,21 @@ typedef struct DwUnk605C64 {
 // for none
 static inline SInt32 DW_LocAddrPos(DwNode* node) {
     switch (DW_S16(node, 0x2C)) {
+#if MWCCPS2_B52
         case 3:
             return 5;
         case 4:
             return 10;
         default:
             return 0;
+#else
+        case 3:
+            return 5;
+        case 4:
+            return 10;
+        default:
+            return 0;
+#endif
     }
 }
 
@@ -1714,9 +1777,15 @@ void func_00532990(DwNode* node) {
                 for (u = DW_PTR(dw_current, 0x30); u; u = u->next) {
                     at = size + 0x1C + i;
                     DW_ENTRY_WORD(node, at) = u->offset;
+#if MWCCPS2_B52
                     ELF_AddReloc(
                         2, node->parent->f24, node->offset + at, DW_PTR(dw_unk605C5C, 0x30), 0
                     );
+#else
+                    ELF_AddReloc(
+                        2, node->parent->f24, node->offset + at, DW_PTR(dw_unk605C5C, 0x30), 0
+                    );
+#endif
                     i += 6;
                 }
             }

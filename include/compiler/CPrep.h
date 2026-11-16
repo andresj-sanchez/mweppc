@@ -6,11 +6,22 @@
 #include "driver/CWPlugins.h"
 #include "driver/DropInCompilerLinker.h"
 #include "driver/Files.h"
+#if !MWCCPS2_B52
 #if MWCCPSP
 #include "driver/COSToolsCLT.h"
 #endif
+#endif
 #include <stddef.h>
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+extern SInt16 tk;
+extern GList pplist;
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,6 +31,7 @@ extern "C" {
 #endif
 extern SInt16 tk;
 extern GList pplist;
+#endif
 #define OPT_OFFSET(optname) ((short)offsetof(CompilerLinkerOptions, optname))
 #define OPT_OFFSET_MASK 0x1FFF
 enum {
@@ -58,6 +70,14 @@ struct CompilerLinkerParamBlk {
     char* idetargetname;
 };
 struct Macro {
+#if MWCCPS2_B52
+    struct Macro* next;
+    struct HashNameNode* name;
+    char* text;
+    UInt16 nargs;
+    Boolean is_special;
+    UInt8 isExpanding;
+#else
     struct Macro* next;
     struct HashNameNode* name;
     char* text;
@@ -71,12 +91,21 @@ struct Macro {
     Boolean is_special;
     UInt8 isExpanding;
 #endif
+#endif
     struct HashNameNode* names[1];
 };
 struct TokenStack {
     char* pos;
     char* macrostart;
     struct Macro* macro;
+#if MWCCPS2_B52
+    Boolean macrocheck;
+};
+struct CPrepFileInfo {
+    CWFileSpec textfile;
+    struct HashNameNode* nameNode;
+    SInt32 fileModDate;
+#else
     Boolean macrocheck;
 };
 struct CPrepFileInfo {
@@ -92,6 +121,7 @@ struct CPrepFileInfo {
     SInt32 fileModDate;
     SInt32 linedelta;
 #endif
+#endif
     char* textbuffer;
     SInt32 textlength;
     SInt32 linenumber;
@@ -102,10 +132,16 @@ struct CPrepFileInfo {
     Boolean unkfield123;
     Boolean unkfield124;
     Boolean unkfield125;
+#if MWCCPS2_B52
+    Boolean isSystemInclude;
+};
+#pragma pack(pop)
+#else
     Boolean isSystemInclude;
 };
 #if !MWCCPSP
 #pragma pack(pop)
+#endif
 #endif
 extern CompilerLinkerParamBlk* cparamblkptr;
 extern CInt64 tkintconst;
@@ -119,12 +155,18 @@ extern SInt32 lines;
 extern UInt8 spaceskip;
 extern struct Macro** macrohashtable;
 extern UInt8 cprep_nomem_exit;
+#if MWCCPS2_B52
+extern UInt8 cprep_nostring;
+extern UInt8 cprep_eoltokens;
+extern TokenStack tokenstack[128];
+#else
 extern UInt8 cprep_nostring;
 extern UInt8 cprep_eoltokens;
 #if MWCCPSP && !MWCCPS2
 extern TokenStack tokenstack[256]; // 3.0.1 nests macros 256 deep
 #else
 extern TokenStack tokenstack[128];
+#endif
 #endif
 extern SInt16 tokenstacklevel;
 extern char* pos;

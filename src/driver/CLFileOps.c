@@ -946,7 +946,11 @@ static int CompileEntry(File* file, Boolean* compiled) {
 #if MWCCPS2
     OS_ASSERT(1169, file->compiler);
 #else
+#if MWCCPS2_B52
+    OS_ASSERT(1010, file->compiler);
+#else
     OS_ASSERT(835, file->compiler);
+#endif
 #endif
 
     *compiled = TRUE;
@@ -1026,7 +1030,11 @@ static void DumpFileAndPathInfo(void) {
 #if MWCCPSP
             OS_ASSERT(1358, path != NULL);
 #else
+#if MWCCPS2_B52
+            OS_ASSERT(1199, path != NULL);
+#else
             OS_ASSERT(1024, path != NULL);
+#endif
 #endif
 
             CLReport(
@@ -1045,7 +1053,11 @@ static void DumpFileAndPathInfo(void) {
 #if MWCCPSP
                     OS_ASSERT(1373, sub);
 #else
+#if MWCCPS2_B52
+                    OS_ASSERT(1214, sub);
+#else
                     OS_ASSERT(1039, sub);
+#endif
 #endif
                     CLReport(CLStr85, "\t", OS_PathSpecToString(sub->spec, STSbuf, sizeof(STSbuf)));
                 }
@@ -1066,7 +1078,11 @@ static void DumpFileAndPathInfo(void) {
 #if MWCCPSP
         OS_ASSERT(1388, path != NULL);
 #else
+#if MWCCPS2_B52
+        OS_ASSERT(1229, path != NULL);
+#else
         OS_ASSERT(1054, path != NULL);
+#endif
 #endif
 
         CLReport(
@@ -1085,7 +1101,11 @@ static void DumpFileAndPathInfo(void) {
 #if MWCCPSP
                 OS_ASSERT(1403, sub);
 #else
+#if MWCCPS2_B52
+                OS_ASSERT(1244, sub);
+#else
                 OS_ASSERT(1069, sub);
+#endif
 #endif
                 CLReport(CLStr85, "\t", OS_PathSpecToString(sub->spec, STSbuf, sizeof(STSbuf)));
             }

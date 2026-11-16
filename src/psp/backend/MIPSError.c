@@ -13,9 +13,15 @@ static void MIPSError_GetErrorString(char* str, short code) {
     COS_GetString(str, 10001, code + 500);
 }
 
+#if MWCCPS2_B52
 static void MIPSError_VAErrorMessage(
     int code, va_list list, Boolean isTerminal, Boolean isWarning
 ) {
+#else
+static void MIPSError_VAErrorMessage(
+    int code, va_list list, Boolean isTerminal, Boolean isWarning
+) {
+#endif
     char format[256];
 
     MIPSError_GetErrorString(format, code);

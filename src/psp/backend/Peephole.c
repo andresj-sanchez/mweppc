@@ -72,10 +72,17 @@ int func_004AFDD0(MPCode* a, MPCode* b, MOperand* reg) {
 
     for (pc = a->prev; pc != b; pc = pc->prev) {
         for (op = pc->args, n = pc->argcount; n--; op++) {
+#if MWCCPS2_B52
             if (op->kind == reg->kind &&
                 op->reg == reg->reg &&
                 op->rclass == reg->rclass &&
                 (op->flags & 1)) {
+#else
+            if (op->kind == reg->kind &&
+                op->reg == reg->reg &&
+                op->rclass == reg->rclass &&
+                (op->flags & 1)) {
+#endif
                 return 1;
             }
         }
@@ -91,10 +98,17 @@ int func_004AFE40(MPCode* a, MPCode* b, MOperand* reg) {
 
     for (pc = a->prev; pc != b; pc = pc->prev) {
         for (op = pc->args, n = pc->argcount; n--; op++) {
+#if MWCCPS2_B52
             if (op->kind == reg->kind &&
                 op->reg == reg->reg &&
                 op->rclass == reg->rclass &&
                 (op->flags & 2)) {
+#else
+            if (op->kind == reg->kind &&
+                op->reg == reg->reg &&
+                op->rclass == reg->rclass &&
+                (op->flags & 2)) {
+#endif
                 return 1;
             }
         }
@@ -169,7 +183,37 @@ void func_004AFBE0(Object* func) {
     freeoheap();
 }
 
+#if MWCCPS2_B52
+extern void gather_alias_info(void);
+#endif
 // 0x4AFF90..0x4AFFE0: listing hooks, empty in the release build.
+#if MWCCPS2_B52
+// b69 0x4A8250: the peephole pass. b69 has no global optimizer in the back
+// end, so the pass gathers the alias information itself, and it runs every
+// block with instructions (no 0x180 test).
+void BE_Peephole69(Object* func) {
+    int i;
+    MPCodeBlock* block;
+
+    ps2_peepinit_4BBC10();
+    for (i = 0; i < BE_NUM_OPDEFS; i++) {
+        data_005F0F10[i] = NULL;
+    }
+    func_005469C0();
+    func_004C34A0();
+    gather_alias_info();
+    for (block = data_00624FD0; block; block = block->next) {
+        if (!(block->flags2E & 0x180) && block->pcodecount) {
+            do {
+                func_004AFEB0(block);
+            } while (func_004AFD50(block));
+        }
+    }
+    freeoheap();
+}
+
+// 0x4AFF90..0x4AFFE0: listing hooks, empty in the release build.
+#endif
 int func_004AFF90() {
     return 0;
 }
@@ -178,10 +222,26 @@ int func_004AFFA0() {
     return 0;
 }
 
+#if MWCCPS2_B52
 void func_004AFFB0() {}
+#else
+void func_004AFFB0() {}
+#endif
 
+#if MWCCPS2_B52
 void func_004AFFC0() {}
+#else
+void func_004AFFC0() {}
+#endif
 
+#if MWCCPS2_B52
 void func_004AFFD0() {}
+#else
+void func_004AFFD0() {}
+#endif
 
+#if MWCCPS2_B52
 void func_004AFFE0() {}
+#else
+void func_004AFFE0() {}
+#endif

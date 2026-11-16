@@ -29,6 +29,13 @@
 #include "compiler/InlineAsmPPC.h"
 #include "compiler/objects.h"
 
+#if MWCCPS2_B52
+// debug: the linear IR after each phase (src/psp/optimizer/IroTrace301.c)
+extern void IRO_TraceLinear(char* phase);
+#define IRO_DumpAfterPhase(str, graph) (IRO_TraceLinear(str), IRO_DumpAfterPhase(str, graph))
+#define IRO_TRACE(str) IRO_TraceLinear(str)
+
+#endif
 Boolean DoScalarize;
 Boolean DoLinearize;
 Boolean EarlyReturn;
@@ -64,6 +71,10 @@ static void CountRefToObject(Object* object, int depth) {
     object->u.var.info->used = TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1032)
+#endif
 static void CountARef(IROLinear* node, int depth) {
     Object* object;
 
@@ -81,6 +92,10 @@ static void CountARef(IROLinear* node, int depth) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void CountDoubleInd(IROLinear* node, int depth) {
     if (IRO_IsVariable(node)) {
@@ -216,6 +231,9 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
     }
 
     IRO_Linearize(statements);
+#if MWCCPS2_B52
+    IRO_TRACE("IRO_Linearize");
+#endif
 
     CurStat = NULL;
     IRO_FirstExpr = NULL;
@@ -237,20 +255,27 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
     if (copts.opt_arithtransformation) {
         IRO_DoTransformations301(IRO_FirstLinear);
     }
+#if MWCCPS2_B52
+    IRO_TRACE("IRO_DoTransformations");
+#endif
 
     IRO_BuildFlowgraph(IRO_FirstLinear);
     IRO_DumpAfterPhase("IRO_BuildflowGraph", FALSE);
+#if !MWCCPS2_B52
     IRO_EvaluateStandardFunctionCalls(IRO_FirstLinear);
     IRO_DumpAfterPhase("IRO_EvaluateStandardFunctionCalls", FALSE);
+#endif
 
     if (copts.opt_serializeassignments) {
         IRO_SerializeAllAssignments();
         IRO_DumpAfterPhase("IRO_SerializeAllAssignments", FALSE);
     }
+#if !MWCCPS2_B52
     if (copts.opt_decomposeaggregates) {
         IRO_DecomposeAssignments();
         IRO_DumpAfterPhase("IRO_DecomposeAssignments", FALSE);
     }
+#endif
 
     IRO_FindAllVars();
     if (copts.warn_uninitializedvar) {
@@ -286,6 +311,28 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
     }
 
     if (!DisableDueToAsm &&
+#if MWCCPS2_B52
+        (copts.opt_arithtransformation ||
+         copts.commonsubs ||
+         copts.deadcode ||
+         copts.deadstore ||
+         copts.opt_foldconstants ||
+         copts.logopts /* 3.0.1 unknownEE */
+         ||
+         copts.loopinvariants ||
+         copts.opt_markcounterloops ||
+         copts.opt_marknonregtemps ||
+         copts.opt_optimizecontrolflow ||
+         copts.opt_optimizenonregaccess ||
+         copts.propagation ||
+         copts.opt_removeemptyloops ||
+         copts.opt_reverseloops ||
+         copts.opt_rotateloops ||
+         copts.opt_scalarize ||
+         copts.lifetimes ||
+         (copts.unrolling && !copts.optimizesize) ||
+         (copts.strengthreduction && !copts.optimizesize))) {
+#else
         (copts.opt_arithtransformation ||
          copts.commonsubs ||
          copts.deadcode ||
@@ -305,6 +352,7 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
          copts.lifetimes ||
          (copts.unrolling && !copts.optimizesize) ||
          (copts.strengthreduction && !copts.optimizesize))) {
+#endif
         passCount = copts.multiplepasses ? 2 : 1;
         IRO_DumpBeforePhase("IRO pass loop", FALSE);
         for (pass = 0; pass < passCount; pass++) {
@@ -324,7 +372,9 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
                 IRO_DumpAfterPhase("IRO_CopyAndConstantPropagation", FALSE);
                 IRO_ExpressionPropagation();
                 IRO_DumpAfterPhase("IRO_ExpressionPropagation", FALSE);
+#if !MWCCPS2_B52
                 IRO_RangePropagateInFNodes(0);
+#endif
                 IRO_DumpAfterPhase("IRO_RangePropagateInFNodes", FALSE);
                 IRO_UpdateFlagsOnInts(IRO_FirstLinear);
             }
@@ -391,17 +441,30 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
                     IRO_LoopUnroller();
                     IRO_DumpAfterPhase("IRO_LoopUnroller", FALSE);
                 }
+#if MWCCPS2_B52
                 if (copts.loopinvariants ||
                     copts.opt_markcounterloops ||
                     copts.opt_marknonregtemps ||
                     copts.opt_optimizenonregaccess ||
                     copts.opt_rotateloops ||
+#else
+                if (copts.loopinvariants ||
+                    copts.opt_markcounterloops ||
+                    copts.opt_marknonregtemps ||
+                    copts.opt_optimizenonregaccess ||
+                    copts.opt_rotateloops ||
+#endif
                     (copts.strengthreduction && !copts.optimizesize)) {
                     IRO_DoCommonLoopTransformations();
                     IRO_SetLoopDepth();
                     IRO_DumpAfterPhase("IRO_DoCommonLoopTransformations", FALSE);
+#if MWCCPS2_B52
                 } else if (copts.opt_removeemptyloops ||
                            copts.opt_reverseloops ||
+#else
+                } else if (copts.opt_removeemptyloops ||
+                           copts.opt_reverseloops ||
+#endif
                            (copts.unrolling && !copts.optimizesize)) {
                     IRO_SetLoopDepth();
                 }
@@ -414,7 +477,9 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
                 }
                 if (copts.opt_optimizecontrolflow) {
                     IRO_EvaluateConditionals();
+#if !MWCCPS2_B52
                     IRO_SetLoopDepth();
+#endif
                 }
                 IRO_DumpAfterPhase(
                     "Second pass:IRO_CopyAndConstantPropagation, IRO_ConstantFolding, IRO_EvaluateConditionals",
@@ -499,7 +564,11 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
             IRO_SplitLifetimes();
             IRO_DumpAfterPhase("IRO_SplitLifetimes", FALSE);
         }
+#if MWCCPS2_B52
+        if (copts.logopts /* 3.0.1 unknownEE */) {
+#else
         if (copts.unknownEE[0]) {
+#endif
             IRO_ComputeSuccPred();
             func_00594C60();
         }
@@ -514,6 +583,7 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
         IRO_DumpAfterPhase("IRO_RewriteBitFieldTemps", FALSE);
     }
 
+#if !MWCCPS2_B52
     if (copts.opt_recomposeaggregates) {
         IRO_RecomposeAssignments();
         IRO_DumpAfterPhase("IRO_RecomposeAssignments", FALSE);
@@ -528,6 +598,7 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
             IRO_DumpAfterPhase("IRO_DeadStore", FALSE);
         }
     }
+#endif
 
     if (!DisableDueToAsm && copts.opt_pointer_analysis && func) {
         IRO_AnalyzePointers(func);
@@ -548,15 +619,19 @@ Statement* IRO_Optimizer(Object* func, Statement* statements) {
         IRO_DumpAfterPhase("IRO_DoTransformations", FALSE);
     }
 
+#if !MWCCPS2_B52
     if (copts.opt_optimizecontrolflow && copts.opt_repositioncode && !DisableDueToAsm) {
         IRO_BuildFlowgraph(IRO_FirstLinear);
         IRO_RepositionCode();
         IRO_DumpAfterPhase("IRO_RepositionCode", FALSE);
     }
+#endif
 
     IRO_TransformSelfAssignmentsToAssignments(IRO_FirstLinear);
     IRO_CountUsage();
+#if !MWCCPS2_B52
     IRO_SetLoopDepth();
+#endif
     IRO_DumpBeforePhase("IRO_Delinearize", FALSE);
 
     statements = IRO_Delinearize(IRO_FirstNode, NULL);
@@ -993,8 +1068,13 @@ void IRO_UpdateOptimizerOptions(void) {
     copts.propagation = copts.commonsubs;
     copts.deadstore = copts.commonsubs;
     copts.strengthreduction = copts.loopinvariants;
+#if MWCCPS2_B52
+    copts.strengthreductionstrict = 0;
+    copts.logopts /* 3.0.1 unknownEE */ = 0;
+#else
     copts.strengthreductionstrict = 1;
     copts.unknownEE[0] = 0;
+#endif
     copts.lifetimes = copts.loopinvariants;
     copts.unrolling = copts.loopinvariants;
     copts.vectorizeloops = copts.loopinvariants;

@@ -10,11 +10,21 @@
 
 #if MWCCPSP_NATIVE
 // the native build has no exe data: the same records, from 0x5C6A42..
+#if MWCCPS2_B52
+// (b69: 0x52DC8C..0x52DDCC, the same with DROPINCOMPILERLINKERAPIVERSION 12)
+static const DropInFlags ELFImport_sFlags = {2, 'Comp', 9, 0x80400000, '????', 12};
+#else
 static const DropInFlags ELFImport_sFlags = {2, 'Comp', 9, 0x80400000, '????', 13};
+#endif
 static const char* const ELFImport_sDropInName = "ELF Importer";
 static const char* const ELFImport_sDisplayName = "ELF Importer";
+#if MWCCPS2_B52
+static SInt32 ELFImport_sCPU = '****'; // GC's CWTargetList: SInt32 lists
+static SInt32 ELFImport_sOS = '****';
+#else
 static CWDataType ELFImport_sCPU = '****';
 static CWDataType ELFImport_sOS = '****';
+#endif
 static const CWTargetList ELFImport_sTargetList = {1, 1, &ELFImport_sCPU, 1, &ELFImport_sOS};
 // clang-format off
 static CWExtensionMapping ELFImport_sMappings[6] = {
@@ -38,6 +48,9 @@ extern const CWPanelList ELFImport_sPanelList; // 0x5C6B7A
 #endif
 
 extern void COS_SetPluginContext(CWPluginContext context);
+#if MWCCPS2_B52
+typedef SInt16 COSFileRef; // the GC driver's COSToolsCLT.h: file refs are SInt16
+#endif
 extern CW_CALLBACK CWSetPluginAPI(CWPluginContext context, SInt32 api);
 
 // The shell's (newer, packed) CWObjectData: this unit's CWObjectData is the
@@ -204,9 +217,15 @@ static void ELFImport_ReadSection(const UInt8* data, ELFSection* sec) {
 }
 
 // 0x424230: sums the allocated sections' sizes
+#if MWCCPS2_B52
 static int ELFImport_ScanObject(
     const UInt8* data, SInt32* codesize, SInt32* udatasize, SInt32* idatasize
 ) {
+#else
+static int ELFImport_ScanObject(
+    const UInt8* data, SInt32* codesize, SInt32* udatasize, SInt32* idatasize
+) {
+#endif
     ELFHeader hdr;
     ELFSection sec;
     int i;
@@ -303,13 +322,25 @@ static void ELFImport_ImportFile(const CWFileSpec* spec, ELFObjectData* object) 
     } else {
         CWLockMemHandle(ELFImport_sContext, h, FALSE, &ptr);
         if (ELFImport_IsELF(ptr)) {
+#if MWCCPS2_B52
             ok = ELFImport_ScanObject(
                 ptr, &object->codesize, &object->udatasize, &object->idatasize
             );
+#else
+            ok = ELFImport_ScanObject(
+                ptr, &object->codesize, &object->udatasize, &object->idatasize
+            );
+#endif
         } else if (ELFImport_IsArchive(ptr)) {
+#if MWCCPS2_B52
             ok = ELFImport_ScanArchive(
                 ptr, size, &object->codesize, &object->udatasize, &object->idatasize
             );
+#else
+            ok = ELFImport_ScanArchive(
+                ptr, size, &object->codesize, &object->udatasize, &object->idatasize
+            );
+#endif
             CWResizeMemHandle(ELFImport_sContext, h, 8);
         }
         CWUnlockMemHandle(ELFImport_sContext, h);
@@ -372,19 +403,29 @@ CWPLUGIN_ENTRY(ELFImport_main)(CWPluginContext context) {
     CWGetPluginRequest(context, &request);
     switch (request) {
         case reqInitialize:
+#if !MWCCPS2_B52
             CWSetPluginAPI(context, 2);
+#endif
             break;
         case reqTerminate:
             break;
         case reqCompile:
+#if !MWCCPS2_B52
             COS_SetPluginContext(context);
+#endif
             CWGetMainFileSpec(context, &spec);
             CWGetMainFileNumber(context, &fileNumber);
             ELFImport_ImportFile(&spec, &object);
             result = CWDonePluginRequest(
+#if MWCCPS2_B52
                 context,
                 object.objectdata ? CWStoreObjectData(context, fileNumber, (CWObjectData*)&object)
                                   : cwErrRequestFailed
+#else
+                context,
+                object.objectdata ? CWStoreObjectData(context, fileNumber, (CWObjectData*)&object)
+                                  : cwErrRequestFailed
+#endif
             );
             break;
     }

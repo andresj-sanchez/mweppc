@@ -36,6 +36,10 @@ FileOffsetInfo member_fileoffset;
 static void scandirectdecl1(DeclInfo* declinfo);
 void CheckDefaultArgs(FuncArg* args);
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (30)
+#endif
 Type* CDecl_NewStructType(SInt32 size, SInt16 align) {
     TypeStruct* tstruct = galloc(sizeof(TypeStruct));
     memclrw(tstruct, sizeof(TypeStruct));
@@ -47,7 +51,15 @@ Type* CDecl_NewStructType(SInt32 size, SInt16 align) {
 
     return (Type*)tstruct;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (34)
+#endif
 #if MWCCPSP
 Type* CDecl_NewArrayType(Type* type, SInt32 size) {
     TypeArray301* tarray = galloc(sizeof(TypeArray301));
@@ -72,30 +84,60 @@ Type* CDecl_NewArrayType(Type* type, SInt32 size) {
 
     return (Type*)tarray;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #endif
 
+#if MWCCPS2_B52
+// b69 0x443080, defined after its first caller: a pointer's size is a call
+static SInt32 CDecl_PointerSize(Type* type);
+#define CDECL_POINTER_SIZE(type) CDecl_PointerSize(type)
+
+#endif
 Type* CDecl_NewPointerType(Type* type) {
     TypePointer* tptr = galloc(sizeof(TypePointer));
     memclrw(tptr, sizeof(TypePointer));
 
     tptr->type = TYPEPOINTER;
+#if MWCCPS2_B52
+    tptr->size = CDECL_POINTER_SIZE(type);
+#else
     tptr->size = 4;
+#endif
     tptr->target = type;
 
     return (Type*)tptr;
 }
 
+#if MWCCPS2_B52
+static SInt32 CDecl_PointerSize(Type* type) {
+    return 4;
+}
+
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (34)
+#endif
 Type* CDecl_NewRefPointerType(Type* type) {
     TypePointer* tptr = galloc(sizeof(TypePointer));
     memclrw(tptr, sizeof(TypePointer));
 
     tptr->type = TYPEPOINTER;
+#if MWCCPS2_B52
+    tptr->size = CDECL_POINTER_SIZE(type);
+#else
     tptr->size = 4;
+#endif
     tptr->target = type;
     tptr->qual = Q_REFERENCE;
 
     return (Type*)tptr;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 TypeTemplDep* CDecl_NewTemplDepType(TypeTemplDepType tdt) {
     TypeTemplDep* t = galloc(sizeof(TypeTemplDep));
@@ -286,7 +328,11 @@ Boolean CanCreateObject(Type* type) {
             return FALSE;
         }
 #if !MWCCPSP // no Objective-C in 3.0.1
+#if MWCCPS2_B52
+        if (B69_OBJCINFO(TYPE_CLASS(type))) {
+#else
         if (TYPE_CLASS(type)->objcinfo) {
+#endif
             CError_Error(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
             return FALSE;
         }
@@ -315,6 +361,10 @@ static Boolean CanCreateHandleMemberObject(Type* type) {
     return TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (34)
+#endif
 void makethetypepointer(DeclInfo* declinfo, UInt32 qual) {
 #if MWCCPS2
     if (IS_TYPE_REFERENCE(declinfo->thetype)) {
@@ -324,6 +374,10 @@ void makethetypepointer(DeclInfo* declinfo, UInt32 qual) {
     declinfo->thetype = CDecl_NewPointerType(declinfo->thetype);
     TYPE_POINTER(declinfo->thetype)->qual = qual;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 void CDecl_AddThisPointerArgument(TypeFunc* tfunc, TypeClass* tclass) {
     Type* ptype;
@@ -465,6 +519,11 @@ void CDecl_ParseDirectFuncDecl(DeclInfo* declinfo) {
     declinfo->isType = FALSE;
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the header inlines out of line here
+#endif
+#endif
 static void scandirectdecl1(DeclInfo* declinfo) {
     Boolean unsized;
     CInt64 len;
@@ -592,6 +651,11 @@ static void scandirectdecl1(DeclInfo* declinfo) {
         }
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 
 static void substitute_type(Type* type1, Type* type2) {
     SInt32 oldsize;
@@ -2317,6 +2381,10 @@ Object* CDecl_GetFunctionObject(
     return obj;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 #if MWCCPSP
 void CDecl_TypedefDeclarator(DeclInfo* declinfo, AccessType access) {
 #else
@@ -2437,7 +2505,15 @@ void CDecl_TypedefDeclarator(DeclInfo* declinfo) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 static void CDecl_DataDeclarator(DeclInfo* declinfo, AccessType access, Boolean isMember) {
     NameSpaceObjectList* list;
     Object* obj;
@@ -2670,6 +2746,10 @@ static void CDecl_DataDeclarator(DeclInfo* declinfo, AccessType access, Boolean 
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 Boolean CDecl_FunctionDeclarator(
     DeclInfo* declinfo, NameSpace* nspace, Boolean allowDefinition, Boolean unused
@@ -2725,6 +2805,10 @@ Boolean CDecl_FunctionDeclarator(
     return TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 static void CDecl_ParseSpecialMember(DeclInfo* declinfo, Boolean parseDeclarator) {
     Object* obj;
     NameSpace* savedNSpace;
@@ -2847,6 +2931,10 @@ static void CDecl_ParseSpecialMember(DeclInfo* declinfo, Boolean parseDeclarator
 
     CError_Error(ERR_DECLARATION_SYNTAX_ERROR);
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 void CDecl_ScanDeclarator(DeclInfo* declinfo) {
     if (declinfo->resolvedObjects || declinfo->resolvedObject) {
@@ -2891,6 +2979,10 @@ void CDecl_ScanDeclarator(DeclInfo* declinfo) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 #if MWCCPSP
 // 3.0.1 marks a function followed by its body and passes the typedef access
 void scandeclaratorlist(DeclInfo* declinfo) {
@@ -3013,6 +3105,10 @@ void scandeclaratorlist(DeclInfo* declinfo) {
         CError_Error(ERR_SEMICOLON_EXPECTED);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #endif
 
 static TypeIntegral* CDecl_FindSignedType(short size) {
@@ -3381,23 +3477,41 @@ static Type* CDecl_MaxType(Type* a, Type* b) {
     }
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the header inlines out of line here
+#endif
+#endif
 void CDecl_ComputeUnderlyingEnumType(TypeEnum* tenum) {
     ObjEnumConst* oec;
+#if !MWCCPS2_B52
     ObjEnumConst* oec2;
+#endif
     Type* basetype;
     CInt64 minimum;
     CInt64 maximum;
     int iter;
+#if !MWCCPS2_B52
     CInt64 val;
+#endif
 
     if (!copts.enumsalwaysint) {
+#if MWCCPS2_B52
+        for (oec = tenum->enumlist; oec; oec = oec->next) {
+            if (CInt64_IsNegative(&oec->val) && !is_unsigned(oec->type)) {
+#else
         for (oec2 = tenum->enumlist; oec2; oec2 = oec2->next) {
             if (CInt64_IsNegative(&oec2->val) && !is_unsigned(oec2->type)) {
+#endif
                 break;
             }
         }
 
+#if MWCCPS2_B52
+        if (oec) {
+#else
         if (oec2) {
+#endif
             minimum = cint64_zero;
             maximum = cint64_zero;
             for (oec = tenum->enumlist; oec; oec = oec->next) {
@@ -3437,11 +3551,20 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum* tenum) {
                 }
             } while (1);
         } else {
+#if MWCCPS2_B52
+            maximum = cint64_zero;
+#else
             val = cint64_zero;
+#endif
 
             for (oec = tenum->enumlist; oec; oec = oec->next) {
+#if MWCCPS2_B52
+                if (CInt64_GreaterU(oec->val, maximum)) {
+                    maximum = oec->val;
+#else
                 if (CInt64_GreaterU(oec->val, val)) {
                     val = oec->val;
+#endif
                 }
             }
 
@@ -3453,7 +3576,11 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum* tenum) {
                     CError_Error(ERR_NUMBER_OUT_RANGE);
                     break;
                 }
+#if MWCCPS2_B52
+                if (CInt64_IsInURange(maximum, basetype->size)) {
+#else
                 if (CInt64_IsInURange(val, basetype->size)) {
+#endif
                     break;
                 }
             } while (1);
@@ -3468,6 +3595,11 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum* tenum) {
         oec->type = TYPE(tenum);
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 
 static Type* CDecl_FindUnderlyingType(short size, CInt64* minimum, CInt64* maximum) {
     if (CInt64_IsZero(minimum)) {
@@ -3528,6 +3660,11 @@ static Type* CDecl_FindUnderlyingType(short size, CInt64* minimum, CInt64* maxim
     return NULL;
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the header inlines out of line here
+#endif
+#endif
 #if MWCCPSP
 extern TemplClass* func_004AF260(
     void
@@ -3758,9 +3895,15 @@ static TypeEnum* CDecl_ParseEnumList(TypeEnum* tenum, HashNameNode* name) {
     AccessType access;
     TemplClass* tmclass;
     ObjEnumConst* oec;
+#if !MWCCPS2_B52
     Boolean has_template_value;
+#endif
     Boolean overflowed;
     Boolean is_first;
+#if MWCCPS2_B52
+    Boolean has_template_value;
+    Boolean b69_dead;
+#endif
     CInt64 val;
     CInt64 minimum;
     CInt64 maximum;
@@ -3799,6 +3942,9 @@ static TypeEnum* CDecl_ParseEnumList(TypeEnum* tenum, HashNameNode* name) {
     access = cscope_current->theclass ? global_access : ACCESSPUBLIC;
     last = NULL;
     is_first = TRUE;
+#if MWCCPS2_B52
+    b69_dead = FALSE; // b69 clears a dead register here (fake)
+#endif
     has_template_value = FALSE;
     val = cint64_zero;
     minimum = cint64_zero;
@@ -3889,7 +4035,12 @@ static TypeEnum* CDecl_ParseEnumList(TypeEnum* tenum, HashNameNode* name) {
                         tenum->size = underlying->size;
                         tenum->enumtype = underlying;
                     } else {
+#if MWCCPS2_B52
+                        // b69 shares the other branch's overflow store
+                        goto overflow;
+#else
                         overflowed = TRUE;
+#endif
                     }
                 }
             } else {
@@ -3899,6 +4050,9 @@ static TypeEnum* CDecl_ParseEnumList(TypeEnum* tenum, HashNameNode* name) {
                         tenum->size = underlying->size;
                         tenum->enumtype = underlying;
                     } else {
+#if MWCCPS2_B52
+overflow:
+#endif
                         overflowed = TRUE;
                     }
                 }
@@ -3944,8 +4098,17 @@ static TypeEnum* CDecl_ParseEnumList(TypeEnum* tenum, HashNameNode* name) {
 
     return tenum;
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 #if MWCCPSP
 // 3.0.1: the enum body is parsed in the elaborated-name branch; the
 // identifier-with-body path jumps there. defines_tag is set before a body.
@@ -4100,6 +4263,10 @@ define_enum:
 
     declinfo->thetype = TYPE(&stsignedint);
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #endif
 
 #if MWCCPSP
@@ -4365,7 +4532,9 @@ parse_width:
     tbitfield->size = bde->declinfo2.thetype->size;
     tbitfield->bitfieldtype = bde->declinfo2.thetype;
     tbitfield->bitlength = val;
+#if !MWCCPS2_B52
     tbitfield->suppressAlignment = is_bitfield;
+#endif
     bde->declinfo2.thetype = TYPE(tbitfield);
 
     if (tk == TK_UU_ATTRIBUTE_UU) {
@@ -5126,10 +5295,13 @@ void CDecl_UnpackDeclInfo(DeclInfo* declinfo, PackedDeclInfo* packed) {
 }
 
 #if !MWCCPSP // 3.0.1: CClass_AddFriend
+#if !MWCCPS2_B52
 void CDecl_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendclass) {
     ClassFriend* scan;
     ClassFriend* newfriend;
+#endif
 
+#if !MWCCPS2_B52
     if (friendfunc) {
         for (scan = tclass->friends; scan; scan = scan->next) {
             if (!scan->isclass && scan->u.obj == friendfunc) {
@@ -5163,7 +5335,10 @@ void CDecl_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendcla
     }
 }
 #endif
+#endif
+#if !MWCCPS2_B52
 
+#endif
 static void CDecl_ParseFriendDecl(TypeClass* tclass) {
     DeclInfo declinfo;
     DeclInfo declinfo_copy;
@@ -5274,6 +5449,10 @@ static void CDecl_ParseFriendDecl(TypeClass* tclass) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-65)
+#endif
 static ObjMemberVar* CDecl_InstanceDataDeclarator(
     ClassLayout* decle,
     TypeClass* tclass,
@@ -5340,6 +5519,10 @@ static ObjMemberVar* CDecl_InstanceDataDeclarator(
 
     return ivar;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 Boolean CDecl_CheckCtorIntegrity(FuncArg* args, TypeClass* tclass) {
     if (args && args->type == TYPE(tclass)) {
@@ -5868,12 +6051,19 @@ void CDecl_MakeVBaseList(TypeClass* tclass) {
     VClassList* vbase;
     VClassList* new_vbase;
     SInt32 offset;
+#if MWCCPS2_B52
+    SInt32 b69_dead;
+#endif
 
     if (copts.vbase_ctor_offset) {
         tclass->flags |= CLASS_VBASE_CTOR_OFFSET;
     }
 
+#if MWCCPS2_B52
+    for (base = tclass->bases, b69_dead = offset = tclass->size; base; base = base->next) {
+#else
     for (base = tclass->bases, offset = tclass->size; base; base = base->next) {
+#endif
         for (vbase = base->base->vbases; vbase; vbase = vbase->next) {
             if ((new_vbase = AddVBaseToList(tclass, vbase->base))) {
                 new_vbase->offset = offset + CMach_MemberAlignValue(TYPE(vbase->base), offset);
@@ -6559,6 +6749,10 @@ void CDecl_CompleteClass(ClassLayout* decle, TypeClass* tclass) {
     CClass_ClassDefaultFuncAction(tclass);
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-69)
+#endif
 TypeClass* CDecl_DefineClass(
     NameSpace* nspace,
     HashNameNode* name,
@@ -6622,6 +6816,10 @@ TypeClass* CDecl_DefineClass(
 
     return tclass;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 void CDecl_ParseClassDeclSpec(UInt8* declspec) {
     DeclInfo declinfo;
@@ -6655,7 +6853,9 @@ static TemplClass* CDecl_SpecializeTemplateClass(TemplClass* tmclass) {
     tmclass->theclass.bases = NULL;
     tmclass->theclass.vbases = NULL;
 #if !MWCCPSP
+#if !MWCCPS2_B52
     tmclass->theclass.friends = NULL;
+#endif
 #endif
     tmclass->theclass.vtable = NULL;
     tmclass->members = NULL;

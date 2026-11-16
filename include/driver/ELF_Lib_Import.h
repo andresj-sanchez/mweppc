@@ -1,11 +1,13 @@
 #ifndef DRIVER_ELF_LIB_IMPORT_H
 #define DRIVER_ELF_LIB_IMPORT_H
+#if !MWCCPS2_B52
 #if MWCCPSP
 
 #endif
 #if MWCCPSP
 // 2.4.7's PPC importer; 3.0.1's is src/psp/driver/ELFImportGlue.c
 #define ELFImport_main ELFImport_main_PPC
+#endif
 #endif
 
 #include <setjmp.h>

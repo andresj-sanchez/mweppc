@@ -3,6 +3,175 @@
 
 #include "compiler/common.h"
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define ENODE_IS(_enode, _etype) ((_enode)->type == (_etype))
+#define ENODE_IS2(_enode, _etype1, _etype2) \
+    (ENODE_IS(_enode, (_etype1)) || ENODE_IS(_enode, (_etype2)))
+#define ENODE_IS3(_enode, _etype1, _etype2, _etype3) \
+    (ENODE_IS2(_enode, _etype1, _etype2) || ENODE_IS(_enode, (_etype3)))
+#define ENODE_IS4(_enode, _etype1, _etype2, _etype3, _etype4) \
+    (ENODE_IS3(_enode, _etype1, _etype2, _etype3) || ENODE_IS(_enode, (_etype4)))
+#define ENODE_IS_RANGE(_enode, _lo, _hi) (((_enode)->type >= (_lo)) && ((_enode)->type <= (_hi)))
+#define ENODE_QUALS(_enode) ((UInt32)((_enode)->flags & ENODE_FLAG_QUALS))
+#define ENODE_IS_INDIRECT_TO(_enode, _etype) \
+    (ENODE_IS((_enode), EINDIRECT) && ENODE_IS((_enode)->data.monadic, (_etype)))
+
+#define ENODE_CASE_MONADIC \
+    case EPOSTINC: \
+    case EPOSTDEC: \
+    case EPREINC: \
+    case EPREDEC: \
+    case EINDIRECT: \
+    case EMONMIN: \
+    case EBINNOT: \
+    case ELOGNOT: \
+    case EFORCELOAD: \
+    case ETYPCON: \
+    case EBITFIELD
+
+#define ENODE_CASE_DIADIC_ALL \
+    case EMUL: \
+    case EMULV: \
+    case EDIV: \
+    case EMODULO: \
+    case EADDV: \
+    case ESUBV: \
+    case EADD: \
+    case ESUB: \
+    case ESHL: \
+    case ESHR: \
+    case ELESS: \
+    case EGREATER: \
+    case ELESSEQU: \
+    case EGREATEREQU: \
+    case EEQU: \
+    case ENOTEQU: \
+    case EAND: \
+    case EXOR: \
+    case EOR: \
+    case ELAND: \
+    case ELOR: \
+    case EASS: \
+    case EMULASS: \
+    case EDIVASS: \
+    case EMODASS: \
+    case EADDASS: \
+    case ESUBASS: \
+    case ESHLASS: \
+    case ESHRASS: \
+    case EANDASS: \
+    case EXORASS: \
+    case EORASS: \
+    case ECOMMA: \
+    case EPMODULO: \
+    case EROTL: \
+    case EROTR: \
+    case EBCLR: \
+    case EBTST: \
+    case EBSET
+
+// b52's ENodeType is 3.0.1's (its expression dumper names EMIN/EMAX after
+// ECOMMA, ESCOPEBEGIN/ESCOPEEND, EOBJACCESS, EPOINTERSTAR, EDOTSTAR,
+// ECTORINIT and ESTMT, as b145's; intconstnode passes EINTCONST = 0x34).
+// 2.4.7's EMEMBER takes 3.0.1's EOBJACCESS place, EOBJLIST follows MAXEXPR.
+typedef enum ENodeType {
+    EPOSTINC,
+    EPOSTDEC,
+    EPREINC,
+    EPREDEC,
+    EINDIRECT,
+    EMONMIN,
+    EBINNOT,
+    ELOGNOT,
+    EFORCELOAD,
+    EMUL,
+    EMULV,
+    EDIV,
+    EMODULO,
+    EADDV,
+    ESUBV,
+    EADD,
+    ESUB,
+    ESHL,
+    ESHR,
+    ELESS,
+    EGREATER,
+    ELESSEQU,
+    EGREATEREQU,
+    EEQU,
+    ENOTEQU,
+    EAND,
+    EXOR,
+    EOR,
+    ELAND,
+    ELOR,
+    EASS,
+    EMULASS,
+    EDIVASS,
+    EMODASS,
+    EADDASS,
+    ESUBASS,
+    ESHLASS,
+    ESHRASS,
+    EANDASS,
+    EXORASS,
+    EORASS,
+    ECOMMA,
+    EMIN,
+    EMAX,
+    EPMODULO,
+    EROTL,
+    EROTR,
+    EBCLR,
+    EBTST,
+    EBSET,
+    ETYPCON,
+    EBITFIELD,
+    EINTCONST,
+    EFLOATCONST,
+    ESTRINGCONST,
+    ECOND,
+    EFUNCCALL,
+    EFUNCCALLP,
+    EOBJREF,
+    ENULLCHECK,
+    EPRECOMP,
+    ELABEL,
+    ESCOPEBEGIN,
+    ESCOPEEND,
+    EMFPOINTER,
+    ETEMP,
+    ELOCOBJ,
+    EARGOBJ,
+    ESETCONST,
+    ENEWEXCEPTION,
+    ENEWEXCEPTIONARRAY,
+    EINITTRYCATCH,
+    EMEMBER,
+    ETEMPLDEP,
+    EPOINTERSTAR,
+    EDOTSTAR,
+    ECTORINIT,
+    ESTMT,
+    EINSTRUCTION,
+    EDEFINE,
+    EREUSE,
+    EASSBLK,
+    ECONDASS,
+    MAXEXPR,
+    EOBJLIST,
+    EVECTOR128CONST = 0x7E // kept out of range for the vector-only code that names it
+} ENodeType;
+#define EOBJACCESS EMEMBER
+// the 3.0 optimizer's tables cover 124 node kinds, as 3.0.1's
+// (IRO_InitializeNonAssignmentOpArray 0x5269D0 clears 124 entries)
+#define IRO_MAXEXPR 124
+enum {
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -260,6 +429,7 @@ typedef enum ENodeType {
 #else
 #endif
 enum {
+#endif
     ENODE_FLAG_CONST = Q_CONST,
     ENODE_FLAG_VOLATILE = Q_VOLATILE,
     ENODE_FLAG_QUALS = Q_CONST | Q_VOLATILE,
@@ -268,6 +438,37 @@ enum {
     ENODE_FLAG_PARENS = 0x80,
     ENODE_FLAG_SAME_TYPE_CAST = 0x80,
     ENODE_FLAG_RESULT_VIA_TEMP = 0x80
+#if MWCCPS2_B52
+};
+#pragma pack(push, 2)
+struct EMemberInfo {
+    BClassList* path;
+    ENode* expr;
+    NameSpaceObjectList* list;
+    TemplArg* templargs;
+    Boolean is_qualified;
+    Boolean addressTaken;
+    Boolean isambig;
+};
+struct ENodeList {
+    ENodeList* next;
+    ENode* node;
+};
+typedef enum TemplDepSubType {
+    TDE_PARAM,
+    TDE_SIZEOF,
+    TDE_ALIGNOF,
+    TDE_CAST,
+    TDE_QUALNAME,
+    TDE_OBJ,
+    TDE_SOURCEREF,
+    TDE_ADDRESS_OF
+} TemplDepSubType;
+union ENodeUnion {
+    // b52: CExpr_NewENode allocates 0x36 bytes; the operands start at +0x18
+    // as in b69 and take 0x1E (3.0.1's 0x20 less its alignment)
+    UInt8 size1e[0x1E];
+#else
 };
 #pragma pack(push, 2)
 struct EMemberInfo {
@@ -340,6 +541,7 @@ union ENodeUnion {
     UInt8 size20[0x20]; // 3.0.1: the operands take 0x20 bytes
     EObjAccess objaccess;
 #endif
+#endif
     CInt64 intval;
     Float floatval;
     MWVector128 vector128val;
@@ -385,9 +587,11 @@ union ENodeUnion {
     struct {
         SInt32 size;
         char* data;
+#if !MWCCPS2_B52
 #if MWCCPSP
         SInt32
             inlineid; // 3.0.1: numbers strings in inline functions with external linkage (primary expression, 0x516990)
+#endif
 #endif
         unsigned char ispascal;
     } string;
@@ -421,6 +625,34 @@ union ENodeUnion {
             struct {
                 struct TypeTemplDep* type;
                 HashNameNode* name;
+#if MWCCPS2_B52
+            } qual;
+            struct {
+                ENode* expr;
+                struct TStreamElement* token;
+            } sourceref;
+            ENode* monadic;
+            Object* obj;
+            UInt8 size1c
+                [0x1C]; // b52: the subtype byte is at +0x34 (0x4E4430), 3.0.1's +0x1C into the operands
+        } u;
+        UInt8 subtype;
+    } templdep;
+};
+struct ENode {
+    ENodeType type;
+    UInt8 cost;
+    UInt16 flags;
+    Boolean ignored;
+    Boolean hascall;
+    // b69: 0x28 bytes (makediadicnode: lalloc(0x28)); rtype at +0x0A, the
+    // operands at +0x18. The other fields' places are provisional.
+    UInt8 unk06[4];
+    Type* rtype;
+    struct PointsToFunction* pointsTo;
+    UInt8 unk12[6];
+    ENodeUnion data;
+#else
             } qual;
             struct {
                 ENode* expr;
@@ -468,6 +700,7 @@ struct ENode {
     Type* rtype;
     struct PointsToFunction* pointsTo;
     ENodeUnion data;
+#endif
 #endif
 };
 #pragma pack(pop)

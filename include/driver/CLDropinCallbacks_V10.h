@@ -3,6 +3,21 @@
 
 #include "compiler/common.h"
 #include "driver/cmdline.h"
+#if MWCCPS2_B52
+#include "driver/CWPlugins.h"
+#include "driver/Files.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+typedef struct shellContextType {
+    struct Plugin* plugin;
+    Boolean userAccessPathsChanged;
+    Boolean systemAccessPathsChanged;
+} shellContextType;
+#else
 #include "driver/CWPlugins.h"
 #include "driver/Files.h"
 
@@ -72,6 +87,7 @@ typedef struct shellContextType {
     Boolean userAccessPathsChanged;
     Boolean systemAccessPathsChanged;
 } shellContextType;
+#endif
 #endif
 #pragma pack(pop)
 

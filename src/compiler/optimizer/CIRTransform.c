@@ -129,6 +129,10 @@ static ENode* CIRTrans_CheckRuntimeAssign(ENode* expr) {
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-5)
+#endif
 #if MWCCPS2
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 17 // mwccps2: its assert is at line 0x220
@@ -168,6 +172,10 @@ static void CIRTrans_SetupMultiAccessOperand(MultiAccessOperand* mop, ENode* exp
         mop->ass = makediadicnode(create_objectnode(mop->tempobj), expr, EASS);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPS2
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 0
@@ -199,6 +207,10 @@ static ENode* CIRTrans_InitMultiAccessExpression(MultiAccessOperand* mop, ENode*
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-5)
+#endif
 #if MWCCPS2
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 27 // mwccps2: 0x28E
@@ -269,6 +281,10 @@ ENode* CIRTrans_TransformOpAss(ENode* expr) {
     result = makediadicnode(CIRTrans_GetMultiAccessOperand(&mop), result, EASS);
     return CIRTrans_InitMultiAccessExpression(&mop, result);
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPS2
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 0
@@ -548,7 +564,9 @@ static ENode* CIRTrans_TransExpr(ENode* expr, Boolean isUsed) {
         case EMEMBER:
         case EINSTRUCTION:
 #if !MWCCPSP // not a 3.0.1 node kind
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
 #endif
             break;
         default:

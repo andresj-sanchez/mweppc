@@ -22,9 +22,20 @@ typedef enum MOperandType {
 } MOperandType;
 
 // an operand (0x10 bytes; mwccps2: 0x14)
+#if MWCCPS2_B52
+// b69 packs these records to 2 bytes: CodeGen_GetAsmEffects (0x4C0B00) steps
+// operands by 0x12 and reads a register's object at +6, its effect at +0xA,
+// a memory operand's offset at +2 and object at +6, a label at +2; the
+// opcode table (0x56E958) has 0x2C-byte entries with flags at +0x16
+#pragma pack(push, 2)
+#endif
 typedef struct MAsmOperand {
     UInt8 type;
+#if MWCCPS2_B52
+    UInt8 pad1[1];
+#else
     UInt8 pad1[3];
+#endif
 #if MWCCPS2
     // mwccps2 b210: the immediate is a 16-byte CInt64 and a register's
     // effect/rclass overlap its third word (op++ steps by 0x14 in
@@ -101,7 +112,9 @@ typedef struct OpcodeDef {
     char* format;
     UInt8 nargs;
     UInt8 size;
+#if !MWCCPS2_B52
     UInt8 pad0E[2];
+#endif
     UInt32 unk10;
     UInt8 pad14[4];
     UInt32 flags;
@@ -111,10 +124,31 @@ typedef struct OpcodeDef {
     SInt32 unk28;
     UInt16 unk2C;
 } OpcodeDef; // 0x30
+#if MWCCPS2_B52
+#pragma pack(pop)
+#if INLINEASM_OURS
+// the source-only/native links' assembler (src/srconly/psp/*_ours.c) keeps
+// b69's opcode numbers and indexes b69_asm_opcodes, the tree's entries in
+// b69's numbering; its pcode gets the tree's number (ASM_BE_OP)
+// (src/srconly/psp/OpcodeMap69.c, re/gen_opcode_map69.py)
+#define data_006115F8 b69_asm_opcodes
+extern void b69_asm_sync_opcodes(void);
+extern UInt16 b69_tree_opcode(int op);
+#define ASM_BE_OP(op) b69_tree_opcode(op)
+extern struct OpcodeDef* b69_tree_def(int op);
+#define ASM_TREE_DEF(op) b69_tree_def(op)
+#else
+#define ASM_BE_OP(op) (op)
+#define ASM_TREE_DEF(op) (&data_006115F8[op])
+#endif
+#endif
 extern OpcodeDef data_006115F8[]; // the opcodes (0x5C5)
 extern UInt16 data_00625CE4[]; // an opcode's form with a register offset, from 0x518
 
 // a name's meaning (InlineAsm_LookupSymbolMIPS)
+#if MWCCPS2_B52
+#pragma pack(push, 2) // b69: 0x22 bytes (gcc_name_list's stride at 0x56BFC0)
+#endif
 typedef struct MLookupResult {
     struct HashNameNode* name;
     struct CLabel* label;
@@ -123,6 +157,9 @@ typedef struct MLookupResult {
     CInt64 value;
     Boolean has_value;
 } MLookupResult;
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 
 extern Boolean InlineAsm_LookupSymbolMIPS(struct HashNameNode* name, MLookupResult* result);
 extern CInt64 InlineAsm_Int64Expression(void);

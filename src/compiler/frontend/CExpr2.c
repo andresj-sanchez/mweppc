@@ -32,17 +32,36 @@
 ENode* assign_node;
 Boolean temp_reference_init;
 static SInt32 assign_value;
+#if MWCCPS2_B52
+ENode* firstarrayexpr; // not in b52's .bss (0x18 bytes: assign_value follows user_std_match)
+#else
 static ENode* firstarrayexpr;
+#endif
 static ComparisonValues user_std_match;
 static Boolean cexpr_hascall;
 #if !MWCCPSP
+#if MWCCPS2_B52
+// b52's .bss has none of these (its CExpr_SearchExprTree is a plain callback
+// walker); globals keep the unit's other statics at b52's offsets
+Boolean cexpr_esearch_bool[MAXEXPR];
+Boolean cexpr_rsearch_bool[MAXEXPR];
+CExprSearchCB cexpr_esearch_callback;
+CExprReplaceCB cexpr_rsearch_callback;
+#else
 static Boolean cexpr_esearch_bool[MAXEXPR];
 #endif
+#endif
+#if !MWCCPS2_B52
 static Boolean cexpr_rsearch_bool[MAXEXPR];
+#endif
 #if !MWCCPSP
+#if !MWCCPS2_B52
 static CExprSearchCB cexpr_esearch_callback;
 #endif
+#endif
+#if !MWCCPS2_B52
 static CExprReplaceCB cexpr_rsearch_callback;
+#endif
 static Type* cexpr_left_conversion_type;
 static Type* cexpr_right_conversion_type;
 
@@ -598,6 +617,10 @@ restart:
         case EXORASS:
         case EORASS:
         case ECOMMA:
+#if MWCCPS2_B52
+        case EMIN:
+        case EMAX:
+#endif
         case EPMODULO:
         case EROTL:
         case EROTR:
@@ -613,13 +636,18 @@ restart:
         case EOBJREF:
         case EPRECOMP:
         case ETEMP:
+#if MWCCPS2_B52
+        case ESTMT:
+#endif
         case EARGOBJ:
         case ELOCOBJ:
         case ELABEL:
         case EOBJLIST:
         case EMEMBER:
         case EINSTRUCTION:
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
             return;
         case EFUNCCALL:
         case EFUNCCALLP:
@@ -746,6 +774,10 @@ static ENode* CExpr_RecSearchExprTreeReplace(ENode* expr) {
         case EXORASS:
         case EORASS:
         case ECOMMA:
+#if MWCCPS2_B52
+        case EMIN:
+        case EMAX:
+#endif
         case EPMODULO:
         case EROTL:
         case EROTR:
@@ -761,12 +793,17 @@ static ENode* CExpr_RecSearchExprTreeReplace(ENode* expr) {
         case EOBJREF:
         case EPRECOMP:
         case ETEMP:
+#if MWCCPS2_B52
+        case ESTMT:
+#endif
         case EARGOBJ:
         case ELOCOBJ:
         case ELABEL:
         case EMEMBER:
         case EINSTRUCTION:
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
             return expr;
         case EFUNCCALL:
         case EFUNCCALLP:
@@ -847,7 +884,11 @@ void CExpr_AliasTransform(ENode* expr) {
 #if MWCCPSP
             intconstnode(TYPE_UNSIGNED_OFFSET, obj->u.alias.offset),
 #else
+#if MWCCPS2_B52
+            intconstnode(TYPE(&stofsulong), obj->u.alias.offset),
+#else
             intconstnode(TYPE(&stunsignedlong), obj->u.alias.offset),
+#endif
 #endif
             EADD
         );
@@ -872,6 +913,15 @@ ENode* CExpr_NewENode(ENodeType ty) {
     return expr;
 }
 
+#if MWCCPS2_B52
+// b52 (0x4E4410): a copy of an expression node (3.0.1's; b69 copies inline)
+ENode* CExpr_CopyENode(ENode* expr) {
+    ENode* copy = lalloc(sizeof(ENode));
+    *copy = *expr;
+    return copy;
+}
+
+#endif
 ENode* CExpr_NewTemplDepENode(TemplDepSubType t) {
     ENode* expr = CExpr_NewENode(ETEMPLDEP);
     expr->rtype = &sttemplexpr;
@@ -930,11 +980,17 @@ ENode* forceintegral(ENode* expr) {
 }
 
 ENode* makemonadicnode(ENode* inner, ENodeType ty) {
+#if MWCCPS2_B52
+    ENode* expr = CExpr_NewENode(ty); // b52 clears its nodes (3.0.1's form)
+#else
     ENode* expr = lalloc(sizeof(ENode));
+#endif
 #if MWCCPSP
     memclrw(expr, sizeof(ENode)); // 3.0.1 clears new nodes
 #endif
+#if !MWCCPS2_B52
     expr->type = ty;
+#endif
     if ((expr->cost = inner->cost) == 0) {
         expr->cost = 1;
     }
@@ -945,11 +1001,17 @@ ENode* makemonadicnode(ENode* inner, ENodeType ty) {
 }
 
 ENode* makediadicnode(ENode* left, ENode* right, UInt8 ty) {
+#if MWCCPS2_B52
+    ENode* expr = CExpr_NewENode(ty);
+#else
     ENode* expr = lalloc(sizeof(ENode));
+#endif
 #if MWCCPSP
     memclrw(expr, sizeof(ENode)); // 3.0.1 clears new nodes
 #endif
+#if !MWCCPS2_B52
     expr->type = ty;
+#endif
     expr->rtype = left->rtype;
     expr->data.diadic.left = left;
     expr->data.diadic.right = right;
@@ -1075,14 +1137,22 @@ Boolean CExpr_AllBitsSet(ENode* expr) {
 }
 
 ENode* CExpr_NewETEMPNode(Type* type, Boolean assign_id) {
+#if MWCCPS2_B52
+    ENode* expr = CExpr_NewENode(ETEMP);
+#else
     ENode* expr = lalloc(sizeof(ENode));
+#endif
 #if MWCCPSP
     memclrw(expr, sizeof(ENode)); // 3.0.1 clears new nodes
 #endif
+#if !MWCCPS2_B52
     expr->type = ETEMP;
+#endif
 #if !MWCCPSP
+#if !MWCCPS2_B52
     expr->cost = 0;
     expr->flags = 0;
+#endif
 #endif
     expr->rtype = CDecl_NewPointerType(type);
     expr->data.temp.type = type;
@@ -1091,6 +1161,10 @@ ENode* CExpr_NewETEMPNode(Type* type, Boolean assign_id) {
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (643)
+#endif
 static ENode* CExpr_DerefETEMPCopy(ENode* expr) {
     ENode* copy;
 
@@ -1103,13 +1177,21 @@ static ENode* CExpr_DerefETEMPCopy(ENode* expr) {
 #if MWCCPSP
     copy = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+    copy = CExpr_CopyENode(expr);
+#else
     copy = lalloc(sizeof(ENode));
     *copy = *expr;
+#endif
 #endif
     copy = makemonadicnode(copy, EINDIRECT);
     copy->rtype = TYPE_POINTER(copy->rtype)->target;
     return copy;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 ENode* CExpr_GetETEMPCopy(ENode* expr) {
     ENode* newnode;
@@ -1319,8 +1401,12 @@ static ENode* CExpr_GetEA(ENode* expr) {
 #if MWCCPSP
                             copy = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+                            copy = CExpr_CopyENode(expr);
+#else
                             copy = lalloc(sizeof(ENode));
                             *copy = *expr;
+#endif
 #endif
                             return copy;
                         case ECOMMA:
@@ -1607,8 +1693,12 @@ loop:
 #if MWCCPSP
                 tempcopy = CEXPR_COPYENODE(temp);
 #else
+#if MWCCPS2_B52
+                tempcopy = CExpr_CopyENode(temp);
+#else
                 tempcopy = lalloc(sizeof(ENode));
                 *tempcopy = *temp;
+#endif
 #endif
                 result = makemonadicnode(temp, EINDIRECT);
                 result->rtype = expr->rtype;
@@ -1637,9 +1727,13 @@ ENode* CExpr_MakeObjRefNode(Object* obj, Boolean markUsed) {
         return intconstnode(TYPE(&void_ptr), 0);
     }
 
+#if MWCCPS2_B52
+    expr = CExpr_NewENode(EOBJREF);
+#else
     expr = lalloc(sizeof(ENode));
     memclrw(expr, sizeof(ENode));
     expr->type = EOBJREF;
+#endif
     expr->data.objref = obj;
     expr->rtype = CDecl_NewPointerType(obj->type);
 
@@ -1871,6 +1965,10 @@ ENode* CExpr_AdjustFunctionCall(ENode* expr) {
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (673)
+#endif
 ENode* funccallexpr(Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* arg4) {
     ENode* expr;
     TypeFunc* tfunc;
@@ -1886,8 +1984,12 @@ ENode* funccallexpr(Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* 
 #if MWCCPS2
     expr = CExpr_NewENode(EFUNCCALL);
 #else
+#if MWCCPS2_B52
+    expr = CExpr_NewENode(EFUNCCALL);
+#else
     expr = lalloc(sizeof(ENode));
     expr->type = EFUNCCALL;
+#endif
 #endif
     expr->cost = 4;
     expr->rtype = tfunc->functype;
@@ -1921,7 +2023,15 @@ ENode* funccallexpr(Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* 
 
     return CExpr_AdjustFunctionCall(expr);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (674)
+#endif
 ENode* CExpr_FuncCallSix(
     Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* arg4, ENode* arg5, ENode* arg6
 ) {
@@ -1939,8 +2049,12 @@ ENode* CExpr_FuncCallSix(
 #if MWCCPS2
     expr = CExpr_NewENode(EFUNCCALL);
 #else
+#if MWCCPS2_B52
+    expr = CExpr_NewENode(EFUNCCALL);
+#else
     expr = lalloc(sizeof(ENode));
     expr->type = EFUNCCALL;
+#endif
 #endif
     expr->cost = 4;
     expr->rtype = tfunc->functype;
@@ -1972,6 +2086,10 @@ ENode* CExpr_FuncCallSix(
 
     return CExpr_AdjustFunctionCall(expr);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 static void CExpr_CalcStdAssign(
     short checkresult,
@@ -2046,6 +2164,10 @@ void CExpr_MatchCV(Type* t1, UInt32 q1, Type* t2, UInt32 q2, ArgMatch* match) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (675)
+#endif
 Boolean CExpr_MatchAssign(Type* type, UInt32 qual, ENode* expr, ArgMatch* match) {
     switch (assign_check(expr, type, qual, FALSE, FALSE, TRUE)) {
         case CheckResult_NoMatch:
@@ -2082,6 +2204,10 @@ Boolean CExpr_MatchAssign(Type* type, UInt32 qual, ENode* expr, ArgMatch* match)
 
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static short CExpr_StdMatchCompare(
     ComparisonValues* a, ComparisonValues* b, Boolean compareQualifiers
@@ -2118,6 +2244,10 @@ static short CExpr_StdMatchCompare(
     return -1;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (675)
+#endif
 static short CExpr2_MemberPointerConversion(Type* type, ENode* expr, Boolean doConvert) {
     ENode* newnode;
     short depth;
@@ -2125,8 +2255,12 @@ static short CExpr2_MemberPointerConversion(Type* type, ENode* expr, Boolean doC
 #if MWCCPSP
     newnode = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+    newnode = CExpr_CopyENode(expr);
+#else
     newnode = lalloc(sizeof(ENode));
     *newnode = *expr;
+#endif
 #endif
     if (!IS_TYPE_MEMBERPOINTER(newnode->rtype)) {
 #if MWCCPSP
@@ -2171,6 +2305,10 @@ static short CExpr2_MemberPointerConversion(Type* type, ENode* expr, Boolean doC
 
     return CheckResult_NoMatch;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 ENode* CExpr_ClassPointerCast(BClassList* cls, ENode* origexpr, Boolean nullcheckflag) {
     ENode* expr;
@@ -2220,7 +2358,11 @@ ENode* CExpr_ClassPointerCast(BClassList* cls, ENode* origexpr, Boolean nullchec
 #if MWCCPSP
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
 #else
+#if MWCCPS2_B52
+                    expr = makediadicnode(expr, intconstnode(TYPE(&stofsulong), offset), EADD);
+#else
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
                     optimizecomm(expr);
                 }
@@ -2234,7 +2376,11 @@ ENode* CExpr_ClassPointerCast(BClassList* cls, ENode* origexpr, Boolean nullchec
 #if MWCCPSP
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
 #else
+#if MWCCPS2_B52
+                    expr = makediadicnode(expr, intconstnode(TYPE(&stofsulong), offset), EADD);
+#else
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
                     optimizecomm(expr);
                 }
@@ -2396,9 +2542,13 @@ static short std_assign_check_overload(
                 CError_Error(ERR_EXPRESSION_SYNTAX_ERROR);
                 expr = intconstnode(TYPE(&void_ptr), 0);
             } else {
+#if MWCCPS2_B52
+                expr = CExpr_NewENode(EOBJREF);
+#else
                 expr = lalloc(sizeof(ENode));
                 memclrw(expr, sizeof(ENode));
                 expr->type = EOBJREF;
+#endif
                 expr->data.objref = used_obj;
                 expr->rtype = CDecl_NewPointerType(used_obj->type);
                 if (!IS_TYPE_FUNC(used_obj->type)) {
@@ -2620,7 +2770,11 @@ static short std_assign_check(ENode* expr, Type* type, Boolean doConvert, Boolea
 #if MWCCPSP
             if (COPTS_GONE(objective_c) && CObjC_IsCompatibleType(expr->rtype, type)) {
 #else
+#if MWCCPS2_B52
+            if (COPTS_X.objective_c && CObjC_IsCompatibleType(expr->rtype, type)) {
+#else
             if (copts.objective_c && CObjC_IsCompatibleType(expr->rtype, type)) {
+#endif
 #endif
                 assign_value = 1;
                 return CheckResult_Conversion;
@@ -2767,6 +2921,10 @@ static void CExpr_ConIteratorInit(ConIterator* iter) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-16)
+#endif
 void CExpr_ConversionIteratorInit(ConversionIterator* iter, TypeClass* tclass) {
     memclrw(iter, sizeof(ConversionIterator));
     if (tclass->flags & CLASS_IS_CONVERTIBLE) {
@@ -2776,6 +2934,10 @@ void CExpr_ConversionIteratorInit(ConversionIterator* iter, TypeClass* tclass) {
         CScope_InitObjectIterator(&iter->objiter, tclass->nspace);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static inline Boolean CExpr_ConversionIteratorIsHidden(ConIterator* iter, TypeFunc* tfunc) {
     CScopeObjectIterator objiter;
@@ -3051,8 +3213,12 @@ short user_assign_check(
                     expr, CDecl_NewPointerType(TYPE(conv_tmethod->theclass)), expr->flags, FALSE
                 );
 
+#if MWCCPS2_B52
+                expr = CExpr_NewENode(EFUNCCALL);
+#else
                 expr = lalloc(sizeof(ENode));
                 expr->type = EFUNCCALL;
+#endif
                 expr->cost = 4;
                 expr->rtype = conv_tmethod->functype;
                 expr->flags = conv_tmethod->qual & ENODE_FLAG_QUALS;
@@ -3238,7 +3404,11 @@ ENode* get_address_of_temp_copy(ENode* expr, Boolean copyConstant) {
 #if MWCCPSP
                         innertype = TYPE_UNSIGNED_OFFSET;
 #else
+#if MWCCPS2_B52
+                        innertype = TYPE(&stofsulong);
+#else
                         innertype = TYPE(&stunsignedlong);
+#endif
 #endif
                         break;
                     default:
@@ -3259,7 +3429,12 @@ ENode* get_address_of_temp_copy(ENode* expr, Boolean copyConstant) {
         }
         result = makemonadicnode(result, EINDIRECT);
         result->rtype = TYPE_POINTER(result->rtype)->target;
+#if MWCCPS2_B52
+        result = makecommaexpression(makediadicnode(result, expr, EASS), result->data.monadic);
+        return result;
+#else
         return makecommaexpression(makediadicnode(result, expr, EASS), result->data.monadic);
+#endif
     } else {
         result = nullnode();
         CInt64_SetLong(&result->data.intval, -1);
@@ -3472,9 +3647,13 @@ Boolean CExpr_GetFuncMatchArgs(
     }
 
     if (expr) {
+#if MWCCPS2_B52
+        intexpr = CExpr_NewENode(EINTCONST);
+#else
         intexpr = lalloc(sizeof(ENode));
         intexpr->type = EINTCONST;
         intexpr->cost = 0;
+#endif
         intexpr->flags = expr->flags;
         intexpr->rtype = CDecl_NewPointerType(expr->rtype);
         intexpr->data.intval = cint64_zero;
@@ -3571,6 +3750,10 @@ static void CExpr_MatchArgList(
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (712)
+#endif
 ENode* CExpr_GetDefaultArgument(ENode* funcexpr, FuncArg* arg) {
     ENode* expr;
 
@@ -3590,6 +3773,10 @@ ENode* CExpr_GetDefaultArgument(ENode* funcexpr, FuncArg* arg) {
 
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 static ENode* CExpr_GenericCall(
     ENode* funcexpr, ENodeList* argexprs, TypeFunc* tfunc, FuncArg* args
@@ -3615,11 +3802,17 @@ static ENode* CExpr_GenericCall(
         args = args->next;
     }
 
+#if MWCCPS2_B52
+    callexpr = CExpr_NewENode(EFUNCCALL);
+#else
     callexpr = lalloc(sizeof(ENode));
+#endif
 #if MWCCPSP
     memclrw(callexpr, sizeof(ENode));
 #endif
+#if !MWCCPS2_B52
     callexpr->type = EFUNCCALL;
+#endif
     callexpr->cost = 4;
     callexpr->rtype = tfunc->functype;
     callexpr->flags = tfunc->qual & ENODE_FLAG_QUALS;
@@ -4474,6 +4667,7 @@ ENode* CExpr_MakeFunctionCall(ENode* funcexpr, ENodeList* arg_exprs) {
             return nullnode();
         }
 
+#if !MWCCPS2_B52
         if (funcexpr->data.objlist.list->object->otype == OT_OBJECT &&
             (TYPE_FUNC(OBJECT(funcexpr->data.objlist.list->object)->type)->flags &
              FUNC_INTRINSIC) &&
@@ -4482,6 +4676,7 @@ ENode* CExpr_MakeFunctionCall(ENode* funcexpr, ENodeList* arg_exprs) {
              ))) {
             return expr;
         }
+#endif
 
         return CExpr_GenericFuncCall(
             NULL,
@@ -4514,6 +4709,7 @@ ENode* CExpr_MakeFunctionCall(ENode* funcexpr, ENodeList* arg_exprs) {
         save_isambig = FALSE;
     }
 
+#if !MWCCPS2_B52
     if (ENODE_IS(funcexpr, EOBJREF) &&
         IS_TYPE_FUNC(funcexpr->data.objref->type) &&
         (TYPE_FUNC(funcexpr->data.objref->type)->flags & FUNC_INTRINSIC)) {
@@ -4533,6 +4729,7 @@ ENode* CExpr_MakeFunctionCall(ENode* funcexpr, ENodeList* arg_exprs) {
         }
         return expr;
     }
+#endif
 
     if (ENODE_IS(funcexpr, EOBJLIST)) {
         return CExpr_GenericFuncCall(
@@ -4628,6 +4825,10 @@ ENode* CExpr_MakeFunctionCall(ENode* funcexpr, ENodeList* arg_exprs) {
 }
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (998)
+#endif
 static Boolean accept_conversion_type(Type* type, short mode) {
     switch (mode) {
         case 0:
@@ -4647,6 +4848,10 @@ static Boolean accept_conversion_type(Type* type, short mode) {
             return FALSE;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static ENode* CExpr_OperatorConversion(ENode* expr, Type* type, UInt32 qual) {
     if (IS_TYPE_CLASS(expr->rtype) && type) {
@@ -4742,6 +4947,10 @@ static Boolean monadic_conversion_check(ENode* expr, short which, Conversion* co
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (998)
+#endif
 static Boolean is_legal_type_combination(Type* left, Type* right, short mode) {
     short left_type;
     short right_type;
@@ -4865,6 +5074,10 @@ mode1:
             return FALSE;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void match_class_type_conversion(
     ArgMatch* match, ENode* left, ENode* right, ENodeList* list, short which
@@ -5386,10 +5599,16 @@ static ENode* CExpr_DeleteFuncCall(Object* obj, ENode* arg, Type* type, Boolean 
     ENode* expr;
     ENodeList* list;
 
+#if MWCCPS2_B52
+    expr = CExpr_NewENode(EFUNCCALL);
+#else
     expr = lalloc(sizeof(ENode));
     expr->type = EFUNCCALL;
+#endif
     expr->cost = 4;
+#if !MWCCPS2_B52
     expr->flags = 0;
+#endif
     expr->rtype = &stvoid;
     expr->data.funccall.funcref = create_objectrefnode(obj);
     expr->data.funccall.functype = TYPE_FUNC(obj->type);
@@ -5412,6 +5631,12 @@ static ENode* CExpr_DeleteFuncCall(Object* obj, ENode* arg, Type* type, Boolean 
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-33)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (976)
+#endif
 static ENode* CExpr_CopyPlacementNewArg(ENodeList* list) {
     switch (list->node->type) {
         case EINDIRECT:
@@ -5431,7 +5656,9 @@ static ENode* CExpr_CopyPlacementNewArg(ENodeList* list) {
 #if !MWCCPSP // not a 3.0.1 node kind
         case EOBJLIST:
 #endif
+#if !MWCCPS2_B52
         case EVECTOR128CONST:
+#endif
             return CInline_CopyExpression(list->node, CopyModeLocal);
         default:
             break;
@@ -5455,6 +5682,12 @@ static ENode* CExpr_CopyPlacementNewArg(ENodeList* list) {
             return CExpr_GetETEMPCopy(list->node);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static ENode* CExpr_PlacementDeleteCall(
     Type* type, ENode* expr, Object* obj, Boolean isArray, Boolean isGlobal
@@ -5711,8 +5944,12 @@ static ENode* CExpr_NewExceptionSafeAlloc(
 #if MWCCPSP
     result = CEXPR_COPYENODE(node);
 #else
+#if MWCCPS2_B52
+    result = CExpr_CopyENode(node);
+#else
     result = lalloc(sizeof(ENode));
     *result = *node;
+#endif
 #endif
     node = makediadicnode(create_objectnode(obj), node, EASS);
     if (!catchexpr && !include_size) {
@@ -5736,6 +5973,12 @@ static ENode* CExpr_NewExceptionSafeAlloc(
     return result;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-33)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1049)
+#endif
 static ENode* CExpr_NewExceptionSafeInit(ENode* expr, ENode* tryexpr) {
     switch (expr->type) {
         case ENEWEXCEPTION:
@@ -5749,6 +5992,12 @@ static ENode* CExpr_NewExceptionSafeInit(ENode* expr, ENode* tryexpr) {
     }
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static ENode* CExpr_NewArray(Type* type, UInt32 qual, ENodeList* nodelist, Boolean isGlobal) {
     Type* tptr;
@@ -5889,8 +6138,12 @@ static ENode* CExpr_NewSimpleClass(TypeClass* tclass, ENode* expr, ENodeList* ar
 #if MWCCPSP
     precomp = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+    precomp = CExpr_CopyENode(expr);
+#else
     precomp = lalloc(sizeof(ENode));
     *precomp = *expr;
+#endif
 #endif
     precomp->type = EPRECOMP;
     precomp->data.precompid = CParser_GetUniqueID();
@@ -5898,8 +6151,12 @@ static ENode* CExpr_NewSimpleClass(TypeClass* tclass, ENode* expr, ENodeList* ar
 #if MWCCPSP
     nullcheck = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+    nullcheck = CExpr_CopyENode(expr);
+#else
     nullcheck = lalloc(sizeof(ENode));
     *nullcheck = *expr;
+#endif
 #endif
     nullcheck->type = ENULLCHECK;
     nullcheck->cost = 4;
@@ -5993,7 +6250,11 @@ ENode* scannew(Boolean isGlobal) {
 #if MWCCPSP
         if (CLASS_OBJCINFO(TYPE_CLASS(type))) {
 #else
+#if MWCCPS2_B52
+        if (B69_OBJCINFO(TYPE_CLASS(type))) {
+#else
         if (TYPE_CLASS(type)->objcinfo) {
+#endif
 #endif
             return CObjC_New(TYPE_CLASS(type));
         }
@@ -6356,8 +6617,12 @@ static ENode* CExpr_DeleteArray(ENode* expr, Type* type, Boolean isGlobal) {
 #if MWCCPSP
     precomp = CEXPR_COPYENODE(expr);
 #else
+#if MWCCPS2_B52
+    precomp = CExpr_CopyENode(expr);
+#else
     precomp = lalloc(sizeof(ENode));
     *precomp = *expr;
+#endif
 #endif
     precomp->type = EPRECOMP;
     precomp->data.precompid = precompid = CParser_GetUniqueID();
@@ -6466,7 +6731,11 @@ ENode* scandelete(Boolean isGlobal) {
 #if MWCCPSP
     if (COPTS_GONE(objective_c) && CObjC_IsType_id(expr->rtype)) {
 #else
+#if MWCCPS2_B52
+    if (COPTS_X.objective_c && CObjC_IsType_id(expr->rtype)) {
+#else
     if (copts.objective_c && CObjC_IsType_id(expr->rtype)) {
+#endif
 #endif
         return CObjC_Delete(NULL, expr);
     }
@@ -6484,7 +6753,11 @@ ENode* scandelete(Boolean isGlobal) {
 #if MWCCPSP
     if (CLASS_OBJCINFO(TYPE_CLASS(innertype))) {
 #else
+#if MWCCPS2_B52
+    if (B69_OBJCINFO(TYPE_CLASS(innertype))) {
+#else
     if (TYPE_CLASS(innertype)->objcinfo) {
+#endif
 #endif
         return CObjC_Delete(TYPE_CLASS(innertype), expr);
     }
@@ -6504,18 +6777,28 @@ ENode* scandelete(Boolean isGlobal) {
     path.type = innertype;
     CClass_CheckObjectAccess(&path, dtor);
 
+#if MWCCPS2_B52
+    result_expr = CExpr_NewENode(EFUNCCALL);
+#else
     result_expr = lalloc(sizeof(ENode));
     result_expr->type = EFUNCCALL;
+#endif
     result_expr->cost = 4;
+#if !MWCCPS2_B52
     result_expr->flags = 0;
+#endif
     result_expr->rtype = &stvoid;
     if (dtor->datatype == DVFUNC) {
         precomp_orig = expr;
 #if MWCCPSP
         expr = CEXPR_COPYENODE(precomp_orig);
 #else
+#if MWCCPS2_B52
+        expr = CExpr_CopyENode(precomp_orig);
+#else
         expr = lalloc(sizeof(ENode));
         *expr = *precomp_orig;
+#endif
 #endif
         expr->type = EPRECOMP;
         expr->data.precompid = precompid = CParser_GetUniqueID();
@@ -6535,11 +6818,17 @@ ENode* scandelete(Boolean isGlobal) {
     }
 
     if (is_virtual) {
+#if MWCCPS2_B52
+        nc = CExpr_NewENode(ENULLCHECK);
+#else
         nc = lalloc(sizeof(ENode));
         nc->type = ENULLCHECK;
+#endif
         nc->rtype = &stvoid;
         nc->cost = 4;
+#if !MWCCPS2_B52
         nc->flags = 0;
+#endif
         nc->data.nullcheck.nullcheckexpr = precomp_orig;
         nc->data.nullcheck.condexpr = result_expr;
         nc->data.nullcheck.precompid = precompid;

@@ -5,8 +5,13 @@
 #include "driver/oslib.h"
 
 void GetStaticTarget(OSType* cpu, OSType* os) {
+#if MWCCPS2_B52
+    *cpu = 'mips';
+    *os = 'psx2';
+#else
     *cpu = 'ePPC';
     *os = 'EABI';
+#endif
 }
 
 void GetStaticPluginType(OSType* language, OSType* plugintype) {

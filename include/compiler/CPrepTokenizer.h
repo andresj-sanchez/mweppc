@@ -7,21 +7,27 @@
 extern "C" {
 #endif
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 #pragma enumsalwaysint on // int constants, as in 3.0.1 (built with minimal enums)
+#endif
 #endif
 enum {
     CR = 13,
     LF = 10
 };
+#if !MWCCPS2_B52
 #if MWCCPSP
 #pragma enumsalwaysint reset
+#endif
 #endif
 
 extern short prepskipnextchar(void);
 extern short prepnextchar(void);
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern short prepcurchar(void);
+#endif
 #endif
 extern short prepnextstringchar(unsigned char* str, Boolean countNewlines);
 extern void CPrep_MatchChar(char ch, Boolean countNewlines);
@@ -36,11 +42,13 @@ extern short lex(void);
 extern short plex(void);
 extern short lexidentifier(void);
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern void skipcurchar(short c);
 #endif
 #if MWCCPSP
 
+#endif
 #endif
 #ifdef __cplusplus
 }

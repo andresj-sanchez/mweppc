@@ -152,6 +152,10 @@ void pclabel(MPCodeBlock* block, MPCodeLabel* label) {
     block->labels = label;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-2)
+#endif
 void pcbranch(MPCodeBlock* block, MPCodeLabel* label, UInt16 flags) {
     MPPendingBranch* p;
 
@@ -166,6 +170,10 @@ void pcbranch(MPCodeBlock* block, MPCodeLabel* label, UInt16 flags) {
         label->block = (MPCodeBlock*)p;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 // Place a label: the current block ends (falling through to it) unless it
 // is still empty.
@@ -200,7 +208,13 @@ void deleteunreachableblocks(void) {
 
     computedepthfirstordering();
     for (block = data_00624FD0->next; block; block = block->next) {
+#if MWCCPS2_B52
+        // b69 (0x4986A0): a noreorder block (0x4000) is kept, unreached or not
+        // (the delay slot of an asm `b` under .set noreorder)
+        if (!(block->flags2E & 4) && !(block->flags2E & 0x4000)) {
+#else
         if (!(block->flags2E & 4) && !(block->flags2E & 0x190)) {
+#endif
             deleteblock(block);
         }
     }

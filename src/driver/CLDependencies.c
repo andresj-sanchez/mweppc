@@ -118,6 +118,10 @@ static Boolean _FindFileInPath(Path* path, const char* filename, Path** thepath,
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (-9)
+#endif
 static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepath, OSSpec* spec) {
     UInt16 idx;
     Path* path;
@@ -136,6 +140,10 @@ static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepat
 
     return FALSE;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 static void AddFileToIncls(
     Incls* incls,
@@ -491,6 +499,21 @@ static char* EscapeName(Boolean spaces, char* escbuf, char* path) {
     return ret;
 }
 
+#if MWCCPS2_B52
+// the native tool writes POSIX names (the specs keep Windows separators)
+static char* DepsName(char* buf, const char* name) {
+    char* p = buf;
+
+    while (*name) {
+        *(p++) = (*name == '\\') ? '/' : *name;
+        name++;
+    }
+    *p = 0;
+    return buf;
+}
+#define DEPS_NAME(buf, name) DepsName(buf, name)
+
+#endif
 #if MWCCPSP
 #if MWCCPSP_NATIVE
 // the native tool writes POSIX names (the specs keep Windows separators)
@@ -543,20 +566,32 @@ void Deps_ListDependencies(Incls* incls, File* file, OSHandle* h) {
 #if MWCCPSP
             LIST_DEP("%s%s%s%s ", DEPS_NAME(path, outfilename), ":");
 #else
+#if MWCCPS2_B52
+            LIST_DEP("%s%s%s%s ", DEPS_NAME(path, outfilename), ":");
+#else
             LIST_DEP("%s%s%s%s ", outfilename, ":");
+#endif
 #endif
             spaces = strchr(file->srcfilename, ' ') != NULL;
 #if MWCCPSP
             LIST_DEP("%s%s%s %s\n", DEPS_NAME(path, file->srcfilename), totdeps ? "\\" : "");
 #else
+#if MWCCPS2_B52
+            LIST_DEP("%s%s%s %s\n", DEPS_NAME(path, file->srcfilename), totdeps ? "\\" : "");
+#else
             LIST_DEP("%s%s%s %s\n", file->srcfilename, totdeps ? "\\" : "");
+#endif
 #endif
         } else {
             spaces = strchr(file->srcfilename, ' ') != NULL;
 #if MWCCPSP
             LIST_DEP("%s%s%s%s %s\n", DEPS_NAME(path, file->srcfilename), ":", totdeps ? "\\" : "");
 #else
+#if MWCCPS2_B52
+            LIST_DEP("%s%s%s%s %s\n", DEPS_NAME(path, file->srcfilename), ":", totdeps ? "\\" : "");
+#else
             LIST_DEP("%s%s%s%s %s\n", file->srcfilename, ":", totdeps ? "\\" : "");
+#endif
 #endif
         }
 
@@ -568,7 +603,11 @@ void Deps_ListDependencies(Incls* incls, File* file, OSHandle* h) {
 #if MWCCPSP
             LIST_DEP("\t%s%s%s %s\n", DEPS_NAME(path, path), totdeps ? "\\" : "");
 #else
+#if MWCCPS2_B52
+            LIST_DEP("\t%s%s%s %s\n", DEPS_NAME(path, path), totdeps ? "\\" : "");
+#else
             LIST_DEP("\t%s%s%s %s\n", path, totdeps ? "\\" : "");
+#endif
 #endif
         }
         return;

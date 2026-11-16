@@ -2,6 +2,12 @@
 #define COMPILER_COMMON_H
 #include "version.h"
 
+#if MWCCPS2_B52
+// the MIPS back end (src/psp/backend) marks functions __declspec(noinline)
+// for CW 9.2; CW Pro 6 has no such declspec
+#define BE_NOINLINE
+
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -192,6 +198,25 @@ typedef union MWVector128 MWVector128;
 #define NULL 0
 #endif
 
+#if MWCCPS2_B52
+#ifdef __MWERKS__
+#define HEADER_INLINE inline
+#else
+#define HEADER_INLINE static inline
+#endif
+typedef unsigned char UInt8;
+typedef signed char SInt8;
+typedef unsigned short UInt16;
+typedef short SInt16;
+#ifdef __LP64__
+// native 64-bit build: the original's long is 32 bits
+typedef unsigned int UInt32;
+typedef int SInt32;
+#else
+typedef unsigned long UInt32;
+typedef long SInt32;
+#endif
+#else
 #ifdef __MWERKS__
 #define HEADER_INLINE inline
 #else
@@ -214,6 +239,7 @@ typedef long SInt32;
 typedef unsigned long UInt32;
 typedef long SInt32;
 #endif
+#endif
 typedef unsigned char Boolean;
 
 #ifdef __MWERKS__
@@ -232,12 +258,18 @@ typedef enum TemplParamType {
 } TemplParamType;
 
 struct TemplParamID {
+#if MWCCPS2_B52
+    UInt16 index;
+    UInt8 nindex;
+    TemplParamType type;
+#else
     UInt16 index;
     UInt8 nindex;
 #if MWCCPSP
     UInt8 type; // a byte in 3.0.1 (TypeTemplDep.u.pid.type at +0xF)
 #else
     TemplParamType type;
+#endif
 #endif
 };
 
@@ -298,6 +330,14 @@ enum {
 #define FITS_IN_SHORT(value) ((value) == ((short)(value)))
 #define FITS_IN_USHORT(value) ((value) == ((unsigned short)(value)))
 #define FITS_IN_HI_SHORT(value) ((value) == (value & 0xFFFF0000))
+#if MWCCPS2_B52
+#define FITS_IN_SHORT2(value) (((short)(value)) == (value))
+#define HIGH_PART(value) ((short)(((value) >> 16) + (((value) >> 15) & 1)))
+#define LOW_PART(value) ((short)(value))
+
+#define Q_INTERRUPT 0x80000000
+#pragma pack(push, 2)
+#else
 #define FITS_IN_SHORT2(value) (((short)(value)) == (value))
 #define HIGH_PART(value) ((short)(((value) >> 16) + (((value) >> 15) & 1)))
 #define LOW_PART(value) ((short)(value))
@@ -309,6 +349,7 @@ enum {
 #endif
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(push, 2)
+#endif
 #endif
 struct HashNameNode {
     struct HashNameNode* next;
@@ -328,6 +369,18 @@ typedef enum RegClass {
     RegClass_VR = 2,
     RegClass_FPR = 3,
     RegClass_GPR = 4,
+#if MWCCPS2_B52
+    RegClassMax = 5,
+    RegClass_CRBIT = 6,
+    RegClass_DCR = 7
+} RegClass;
+
+struct CInt64 {
+    // b69: 128-bit constants, as mwccps2 3.0.1 (word 0 most significant)
+    SInt32 hi;
+    UInt32 mid[2];
+    UInt32 lo;
+#else
     RegClassMax = 5,
     RegClass_CRBIT = 6,
     RegClass_DCR = 7
@@ -345,6 +398,7 @@ struct CInt64 {
     SInt32 hi;
     UInt32 lo;
 #endif
+#endif
 };
 union FloatStorage {
     int words[2];
@@ -357,10 +411,16 @@ union MWVector128 {
     UInt8 uc[16];
     UInt16 us[8];
     UInt32 ul[4];
+#if MWCCPS2_B52
+    float f[4];
+};
+#pragma pack(pop)
+#else
     float f[4];
 };
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(pop)
+#endif
 #endif
 
 #ifdef __cplusplus

@@ -37,6 +37,7 @@ static DWORD last_error;
 
 static DWORD win32_error(int e) {
     switch (e) {
+#if MWCCPS2_B52
         case 0:
             return 0;
         case ENOENT:
@@ -45,7 +46,18 @@ static DWORD win32_error(int e) {
             return 3; // ERROR_PATH_NOT_FOUND
         case EMFILE:
             return 4; // ERROR_TOO_MANY_OPEN_FILES
+#else
+        case 0:
+            return 0;
+        case ENOENT:
+            return 2; // ERROR_FILE_NOT_FOUND
+        case ENOTDIR:
+            return 3; // ERROR_PATH_NOT_FOUND
+        case EMFILE:
+            return 4; // ERROR_TOO_MANY_OPEN_FILES
+#endif
         case EACCES:
+#if MWCCPS2_B52
         case EPERM:
             return 5; // ERROR_ACCESS_DENIED
         case EBADF:
@@ -60,6 +72,22 @@ static DWORD win32_error(int e) {
             return 206;
         default:
             return 31; // ERROR_GEN_FAILURE
+#else
+        case EPERM:
+            return 5; // ERROR_ACCESS_DENIED
+        case EBADF:
+            return 6; // ERROR_INVALID_HANDLE
+        case ENOMEM:
+            return 8; // ERROR_NOT_ENOUGH_MEMORY
+        case EEXIST:
+            return 80; // ERROR_FILE_EXISTS
+        case ENOSPC:
+            return 112; // ERROR_DISK_FULL
+        case ENAMETOOLONG:
+            return 206;
+        default:
+            return 31; // ERROR_GEN_FAILURE
+#endif
     }
 }
 
@@ -98,9 +126,15 @@ static void windows_path(char* p) {
 }
 
 // the MSL assertion handler (3.0.1's four-argument form)
+#if MWCCPS2_B52
 void __assertion_failed(
     char const* condition, char const* filename, char const* funcname, int lineno
 ) {
+#else
+void __assertion_failed(
+    char const* condition, char const* filename, char const* funcname, int lineno
+) {
+#endif
     fprintf(stderr, "Assertion (%s) failed in \"%s\" on line %d\n", condition, filename, lineno);
     abort();
 }
@@ -141,6 +175,7 @@ BOOL __stdcall FreeEnvironmentStringsA(LPSTR lpszEnvironmentBlock) {
 }
 
 HANDLE __stdcall CreateFileA(
+#if MWCCPS2_B52
     LPCSTR lpFileName,
     DWORD dwDesiredAccess,
     DWORD dwShareMode,
@@ -148,6 +183,15 @@ HANDLE __stdcall CreateFileA(
     DWORD dwCreationDisposition,
     DWORD dwFlagsAndAttributes,
     HANDLE hTemplateFile
+#else
+    LPCSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+#endif
 ) {
     char buf[PATH_MAX];
     int flags;
@@ -161,6 +205,7 @@ HANDLE __stdcall CreateFileA(
         flags = O_RDONLY;
     }
     switch (dwCreationDisposition) {
+#if MWCCPS2_B52
         case 1:
             flags |= O_CREAT | O_EXCL;
             break; // CREATE_NEW
@@ -175,6 +220,22 @@ HANDLE __stdcall CreateFileA(
             break; // TRUNCATE_EXISTING
         default:
             break; // OPEN_EXISTING
+#else
+        case 1:
+            flags |= O_CREAT | O_EXCL;
+            break; // CREATE_NEW
+        case 2:
+            flags |= O_CREAT | O_TRUNC;
+            break; // CREATE_ALWAYS
+        case 4:
+            flags |= O_CREAT;
+            break; // OPEN_ALWAYS
+        case 5:
+            flags |= O_TRUNC;
+            break; // TRUNCATE_EXISTING
+        default:
+            break; // OPEN_EXISTING
+#endif
     }
     fd = open(posix_path(lpFileName, buf), flags, 0666);
     if (fd < 0) {
@@ -193,11 +254,19 @@ BOOL __stdcall CloseHandle(HANDLE hObject) {
 }
 
 BOOL __stdcall ReadFile(
+#if MWCCPS2_B52
     HANDLE hFile,
     LPVOID lpBuffer,
     DWORD nNumberOfBytesToRead,
     LPDWORD lpNumberOfBytesRead,
     LPOVERLAPPED lpOverlapped
+#else
+    HANDLE hFile,
+    LPVOID lpBuffer,
+    DWORD nNumberOfBytesToRead,
+    LPDWORD lpNumberOfBytesRead,
+    LPOVERLAPPED lpOverlapped
+#endif
 ) {
     ssize_t n = read(FD_OF(hFile), lpBuffer, nNumberOfBytesToRead);
     if (n < 0) {
@@ -213,10 +282,17 @@ BOOL __stdcall ReadFile(
 }
 
 BOOL __stdcall WriteFile(
+#if MWCCPS2_B52
     HANDLE hFile,
     LPCVOID lpBuffer,
     DWORD nNumberOfBytesToWrite,
     LPDWORD lpNumberOfBytesWritten,
+#else
+    HANDLE hFile,
+    LPCVOID lpBuffer,
+    DWORD nNumberOfBytesToWrite,
+    LPDWORD lpNumberOfBytesWritten,
+#endif
     LPOVERLAPPED lpOverlapped
 ) {
     ssize_t n = write(FD_OF(hFile), lpBuffer, nNumberOfBytesToWrite);
@@ -245,15 +321,22 @@ DWORD __stdcall GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
     return (DWORD)st.st_size;
 }
 
+#if MWCCPS2_B52
 DWORD __stdcall SetFilePointer(
     HANDLE hFile, LONG lDistanceToMove, PLONG lpDistanceToMoveHigh, DWORD dwMoveMethod
 ) {
+#else
+DWORD __stdcall SetFilePointer(
+    HANDLE hFile, LONG lDistanceToMove, PLONG lpDistanceToMoveHigh, DWORD dwMoveMethod
+) {
+#endif
     off_t off = lDistanceToMove;
     off_t r;
 
     if (lpDistanceToMoveHigh) {
         off = ((off_t)*lpDistanceToMoveHigh << 32) | (UInt32)lDistanceToMove;
     }
+#if MWCCPS2_B52
     r = lseek(
         FD_OF(hFile),
         off,
@@ -261,6 +344,15 @@ DWORD __stdcall SetFilePointer(
             : dwMoveMethod == 1 ? SEEK_CUR
                                 : SEEK_END
     );
+#else
+    r = lseek(
+        FD_OF(hFile),
+        off,
+        dwMoveMethod == 0       ? SEEK_SET
+            : dwMoveMethod == 1 ? SEEK_CUR
+                                : SEEK_END
+    );
+#endif
     if (r < 0) {
         fail();
         return 0xFFFFFFFF;
@@ -309,10 +401,17 @@ BOOL __stdcall GetFileTime(
 }
 
 BOOL __stdcall SetFileTime(
+#if MWCCPS2_B52
     HANDLE hFile,
     const FILETIME* lpCreationTime,
     const FILETIME* lpLastAccessTime,
     const FILETIME* lpLastWriteTime
+#else
+    HANDLE hFile,
+    const FILETIME* lpCreationTime,
+    const FILETIME* lpLastAccessTime,
+    const FILETIME* lpLastWriteTime
+#endif
 ) {
     return TRUE; // modification times are not part of the output
 }
@@ -402,9 +501,15 @@ static void collapse_dots(char* path) {
     strcpy(path, out);
 }
 
+#if MWCCPS2_B52
 DWORD __stdcall GetFullPathNameA(
     LPCSTR lpFileName, DWORD nBufferLength, LPSTR lpBuffer, LPSTR* lpFilePart
 ) {
+#else
+DWORD __stdcall GetFullPathNameA(
+    LPCSTR lpFileName, DWORD nBufferLength, LPSTR lpBuffer, LPSTR* lpFilePart
+) {
+#endif
     char in[PATH_MAX];
     char out[PATH_MAX * 2];
     char* slash;
@@ -463,8 +568,13 @@ static BOOL find_next(FindState* fs, LPWIN32_FIND_DATAA data) {
         memset(data, 0, sizeof(*data));
         snprintf(full, sizeof(full), "%s/%s", fs->dirpath, de->d_name);
         if (stat(full, &st) == 0) {
+#if MWCCPS2_B52
             data->dwFileAttributes =
                 S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+#else
+            data->dwFileAttributes =
+                S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+#endif
             data->nFileSizeLow = (DWORD)st.st_size;
             data->nFileSizeHigh = (DWORD)((uint64_t)st.st_size >> 32);
             to_filetime(st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec, &data->ftLastWriteTime);
@@ -525,6 +635,7 @@ static HANDLE std_handles[3] = {HANDLE_OF(0), HANDLE_OF(1), HANDLE_OF(2)};
 
 HANDLE __stdcall GetStdHandle(DWORD nStdHandle) {
     switch ((int)nStdHandle) {
+#if MWCCPS2_B52
         case -10:
             return std_handles[0];
         case -11:
@@ -533,6 +644,16 @@ HANDLE __stdcall GetStdHandle(DWORD nStdHandle) {
             return std_handles[2];
         default:
             return INVALID_HANDLE_VALUE;
+#else
+        case -10:
+            return std_handles[0];
+        case -11:
+            return std_handles[1];
+        case -12:
+            return std_handles[2];
+        default:
+            return INVALID_HANDLE_VALUE;
+#endif
     }
 }
 
@@ -548,9 +669,15 @@ BOOL __stdcall SetStdHandle(DWORD nStdHandle, HANDLE hHandle) {
     return TRUE;
 }
 
+#if MWCCPS2_B52
 BOOL __stdcall GetConsoleScreenBufferInfo(
     HANDLE hConsoleOutput, PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo
 ) {
+#else
+BOOL __stdcall GetConsoleScreenBufferInfo(
+    HANDLE hConsoleOutput, PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo
+) {
+#endif
     return FALSE; // not a console: no line wrapping
 }
 
@@ -642,6 +769,7 @@ HGLOBAL __stdcall GlobalFree(HGLOBAL hMem) {
 
 // processes, resources, version info and messages: not available natively
 BOOL __stdcall CreateProcessA(
+#if MWCCPS2_B52
     LPCSTR lpApplicationName,
     LPSTR lpCommandLine,
     LPSECURITY_ATTRIBUTES lpProcessAttributes,
@@ -652,6 +780,18 @@ BOOL __stdcall CreateProcessA(
     LPCSTR lpCurrentDirectory,
     LPSTARTUPINFOA lpStartupInfo,
     LPPROCESS_INFORMATION lpProcessInformation
+#else
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+#endif
 ) {
     last_error = 2;
     return FALSE;
@@ -726,9 +866,15 @@ DWORD __stdcall GetFileVersionInfoSizeA(LPCSTR lptstrFilename, LPDWORD lpdwHandl
     return 0;
 }
 
+#if MWCCPS2_B52
 BOOL __stdcall GetFileVersionInfoA(
     LPCSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData
 ) {
+#else
+BOOL __stdcall GetFileVersionInfoA(
+    LPCSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData
+) {
+#endif
     return FALSE;
 }
 
@@ -737,6 +883,7 @@ BOOL __stdcall VerQueryValueA(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID* lplpBuf
 }
 
 DWORD __stdcall FormatMessageA(
+#if MWCCPS2_B52
     DWORD dwFlags,
     LPCVOID lpSource,
     DWORD dwMessageId,
@@ -744,6 +891,15 @@ DWORD __stdcall FormatMessageA(
     LPSTR lpBuffer,
     DWORD nSize,
     va_list* Arguments
+#else
+    DWORD dwFlags,
+    LPCVOID lpSource,
+    DWORD dwMessageId,
+    DWORD dwLanguageId,
+    LPSTR lpBuffer,
+    DWORD nSize,
+    va_list* Arguments
+#endif
 ) {
     const char* msg = strerror(EIO);
     size_t n;
@@ -766,6 +922,7 @@ UINT __stdcall GetWindowsDirectoryA(LPSTR lpBuffer, UINT uSize) {
 
 // Shift-JIS file name wrappers (src/host/ShiftJIS.c): paths are passed through as is
 HANDLE __stdcall ShiftJIS_CreateFileA(
+#if MWCCPS2_B52
     LPCSTR lpFileName,
     DWORD dwDesiredAccess,
     DWORD dwShareMode,
@@ -773,14 +930,32 @@ HANDLE __stdcall ShiftJIS_CreateFileA(
     DWORD dwCreationDisposition,
     DWORD dwFlagsAndAttributes,
     HANDLE hTemplateFile
+#else
+    LPCSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+#endif
 ) {
     return CreateFileA(
+#if MWCCPS2_B52
         lpFileName,
         dwDesiredAccess,
         dwShareMode,
         lpSecurityAttributes,
         dwCreationDisposition,
         dwFlagsAndAttributes,
+#else
+        lpFileName,
+        dwDesiredAccess,
+        dwShareMode,
+        lpSecurityAttributes,
+        dwCreationDisposition,
+        dwFlagsAndAttributes,
+#endif
         hTemplateFile
     );
 }
@@ -794,11 +969,19 @@ DWORD __stdcall ShiftJIS_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
 }
 
 BOOL __stdcall ShiftJIS_ReadFile(
+#if MWCCPS2_B52
     HANDLE hFile,
     LPVOID lpBuffer,
     DWORD nNumberOfBytesToRead,
     LPDWORD lpNumberOfBytesRead,
     LPOVERLAPPED lpOverlapped
+#else
+    HANDLE hFile,
+    LPVOID lpBuffer,
+    DWORD nNumberOfBytesToRead,
+    LPDWORD lpNumberOfBytesRead,
+    LPOVERLAPPED lpOverlapped
+#endif
 ) {
     return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 }

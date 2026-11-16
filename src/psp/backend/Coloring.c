@@ -160,6 +160,47 @@ extern void func_004AFFB0(SInt32 a, SInt32 b, SInt32 c, SInt32 d);
 void BE_ColorRegisters(SInt32 arg) {
     RegClass301 rclass;
     SInt32 failed;
+#if MWCCPS2_B52
+    {
+        MPCodeBlock* b;
+        MPCode* p;
+        int j;
+        for (b = data_00624FD0; b; b = b->next) {
+            for (p = b->first; p; p = p->next) {
+                BE_TRACE(
+                    (stderr,
+                     "pc: b%d op %x n %d f %x",
+                     (int)b->number,
+                     p->op,
+                     p->argcount,
+                     (unsigned)p->flags)
+                );
+                for (j = 0; j < p->argcount; j++) {
+                    if (p->args[j].kind == 0) {
+                        BE_TRACE(
+                            (stderr,
+                             " [r%d:%d %x]",
+                             p->args[j].rclass,
+                             p->args[j].reg,
+                             p->args[j].flags)
+                        );
+                    } else if (p->args[j].kind == 6) {
+                        BE_TRACE((stderr, " [L]"));
+                    } else {
+                        BE_TRACE(
+                            (stderr,
+                             " [%d %d %d]",
+                             p->args[j].kind,
+                             p->args[j].value,
+                             p->args[j].value2 ? 1 : 0)
+                        );
+                    }
+                }
+                BE_TRACE((stderr, "\n"));
+            }
+        }
+    }
+#endif
 
     for (rclass = 0; rclass < 7; rclass++) {
         data_00625ECC = rclass;
@@ -190,8 +231,13 @@ void BE_ColorRegisters(SInt32 arg) {
         data_00625A98[rclass] = data_00624744[rclass];
     }
 
+#if MWCCPS2_B52
     if (copts.debuglisting &&
         (data_00609810 > 0 || data_00609818 > 0 || data_00609814 > 0 || data_0060981C > 0)) {
+#else
+    if (copts.debuglisting &&
+        (data_00609810 > 0 || data_00609818 > 0 || data_00609814 > 0 || data_0060981C > 0)) {
+#endif
         func_004AFFB0(data_00609810, data_00609814, data_00609818, data_0060981C);
     }
     data_0062482C = 0;
@@ -499,10 +545,17 @@ void func_004B3800(void) {
             k = pc->argcount;
             op = pc->args;
             while (k--) {
+#if MWCCPS2_B52
                 if (op->kind == 0 &&
                     op->rclass == data_00625ECC &&
                     (op->flags & 2) &&
                     op->reg >= data_00624744[rclass]) {
+#else
+                if (op->kind == 0 &&
+                    op->rclass == data_00625ECC &&
+                    (op->flags & 2) &&
+                    op->reg >= data_00624744[rclass]) {
+#endif
                     node = &data_0062520C[op->reg];
                     if (!(node->flags & 0x30) && !(node->flags & 0x40)) {
                         if (!node->def) {
@@ -689,8 +742,13 @@ void func_004B3EE0(void) {
                     for (j = 0; j < count; j++) {
 #if MWCCPS2
                         if (!(pc->flags & 0x10) ||
+#if MWCCPS2_B52
                             (COLOR_VU0OP(pc->op) ? &pc->args[2] : &pc->args[1])->reg !=
                                 (SInt32)dense[j]) {
+#else
+                            (COLOR_VU0OP(pc->op) ? &pc->args[2] : &pc->args[1])->reg !=
+                                (SInt32)dense[j]) {
+#endif
 #else
                         if (!(pc->flags & 0x10) || pc->args[1].reg != (SInt32)dense[j]) {
 #endif
@@ -724,9 +782,15 @@ void func_004B3EE0(void) {
                 }
             }
             if (pc->flags & 8) { // call: argument registers
+#if MWCCPS2_B52
                 for (i = func_00461F50() + 2 - func_004B8990(), op = &pc->args[i];
                      i < (UInt32)pc->argcount;
                      i++, op++) {
+#else
+                for (i = func_00461F50() + 2 - func_004B8990(), op = &pc->args[i];
+                     i < (UInt32)pc->argcount;
+                     i++, op++) {
+#endif
                     if (op->rclass == data_00625ECC) {
                         for (j = 0; j < data_006241E0[data_00625ECC]; j++) {
                             func_004B46E0(op->reg, data_0060E038[data_00625ECC][j]);
@@ -847,7 +911,11 @@ SInt32 func_004B3B80(void) {
             if (!(pc->flags & 0x10)) {
                 continue;
             }
+#if MWCCPS2_B52
+            vu = pc->op > OPC(0x21E) && pc->op <= OPC(0x2E7);
+#else
             vu = pc->op > 0x21E && pc->op <= 0x2E7;
+#endif
             if (pc->args[vu ? 2 : 1].rclass != data_00625ECC) {
                 continue;
             }
@@ -888,9 +956,15 @@ SInt32 func_004B3B80(void) {
     for (block = data_00624FD0; block; block = block->next) {
         for (pc = block->first; pc; pc = pc->next) {
             for (k = pc->argcount, op = pc->args; k--; op++) {
+#if MWCCPS2_B52
                 if (op->kind == 0 &&
                     op->rclass == data_00625ECC &&
                     op->reg != data_005F3DA8[op->reg]) {
+#else
+                if (op->kind == 0 &&
+                    op->rclass == data_00625ECC &&
+                    op->reg != data_005F3DA8[op->reg]) {
+#endif
                     op->reg = coalesce_find(op->reg);
                 }
             }
@@ -1002,8 +1076,13 @@ static void frame_operands(MPCode* pc, Object* obj, SInt32 off) {
     pc->args[1].kind = 4;
     MOP_SETOBJ(pc->args[1], obj);
     pc->args[1].value = OBJECT_FRAMEOFFSET(obj) + off;
+#if MWCCPS2_B52
     pc->alias =
         func_004817A0((Object*)MOP_OBJ(pc->args[1]), pc->args[1].value, func_0048FBE0(pc->op));
+#else
+    pc->alias =
+        func_004817A0((Object*)MOP_OBJ(pc->args[1]), pc->args[1].value, func_0048FBE0(pc->op));
+#endif
     pc->args[2].kind = 0;
     pc->args[2].rclass = 0;
     pc->args[2].reg = data_00625E3E;
@@ -1028,9 +1107,11 @@ MPCode* func_004B8A00(SInt16 reg, IGNode* node) {
     pc->args[0].rclass = data_00625ECC;
     pc->args[0].reg = reg;
     pc->args[0].flags = 1;
+#if !MWCCPS2_B52
     if (pc->op == MACRO_OP(0x7F)) {
         pc->args[0].flags |= 0x2000;
     }
+#endif
     frame_operands(pc, obj, off);
     return pc;
 }
@@ -1053,37 +1134,45 @@ MPCode* func_004B8B00(SInt16 reg, IGNode* node) {
     pc->args[0].rclass = data_00625ECC;
     pc->args[0].reg = reg;
     pc->args[0].flags = 2;
-    if (pc->op == MACRO_OP(0x5D)) {
-        pc->args[0].flags |= 0x2000;
-    }
-#if MWCCPS2
+#if MWCCPS2_B52
     if (pc->op ==
         (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
                                                                  : MACRO_OP(0x48))) {
 #else
+    if (pc->op == MACRO_OP(0x5D)) {
+        pc->args[0].flags |= 0x2000;
+    }
+#endif
+#if MWCCPS2
+#if !MWCCPS2_B52
+        if (pc->op ==
+            (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
+                                                                     : MACRO_OP(0x48))) {
+#endif
+#else
     if (pc->op ==
         ((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B) : MACRO_OP(0x48))) {
 #endif
-        pc->args[0].flags |= 0x8000;
-        if (copts.mips_option1A) {
-            pc->args[0].flags |= 0x20;
+            pc->args[0].flags |= 0x8000;
+            if (copts.mips_option1A) {
+                pc->args[0].flags |= 0x20;
+            }
         }
+        frame_operands(pc, node->object, off);
+        return pc;
     }
-    frame_operands(pc, node->object, off);
-    return pc;
-}
 
 #if !MWCCPS2 // mwccps2 has it in RegisterInfo.c
-// The type a spill slot of the current class holds.
-Type* func_004B89D0(IGNode* node) {
-    if (data_00625ECC != 0) {
-        if (copts.floatsp32) {
-            return TYPE(&stfloat);
+    // The type a spill slot of the current class holds.
+    Type* func_004B89D0(IGNode * node) {
+        if (data_00625ECC != 0) {
+            if (copts.floatsp32) {
+                return TYPE(&stfloat);
+            }
+            return TYPE(&stlongdouble);
         }
-        return TYPE(&stlongdouble);
+        return TYPE(&stunsignedlong);
     }
-    return TYPE(&stunsignedlong);
-}
 #else
 Type* func_004B89D0(IGNode* node);
 #endif
@@ -1094,237 +1183,241 @@ Type* func_004B89D0(IGNode* node);
         } \
     } while (0)
 
-// Reload rematerializable value: a copy of the defining instruction, writing reg.
-static MPCode* remat(MPCode* def, SInt16 reg) {
-    MPCode* copy = copypcode(def);
-    SPILL_ASSERT(0x76, copy->args[(copy->flags & 0x80000000) ? 1 : 0].kind == 0);
-    copy->args[(copy->flags & 0x80000000) ? 1 : 0].reg = reg;
-    return copy;
-}
+    // Reload rematerializable value: a copy of the defining instruction, writing reg.
+    static MPCode* remat(MPCode * def, SInt16 reg) {
+        MPCode* copy = copypcode(def);
+        SPILL_ASSERT(0x76, copy->args[(copy->flags & 0x80000000) ? 1 : 0].kind == 0);
+        copy->args[(copy->flags & 0x80000000) ? 1 : 0].reg = reg;
+        return copy;
+    }
 
-// Rewrite a register move whose source or destination was spilled.
-void func_0054BD20(MPCodeBlock* block, MPCode* pc) {
+    // Rewrite a register move whose source or destination was spilled.
+    void func_0054BD20(MPCodeBlock * block, MPCode * pc) {
 #if MWCCPS2
-    // b210 (0x55E0A0): a VU0 instruction (0x21F..0x2E7) has its operands
-    // one slot later
+        // b210 (0x55E0A0): a VU0 instruction (0x21F..0x2E7) has its operands
+        // one slot later
+#if MWCCPS2_B52
+        int vu = pc->op > OPC(0x21E) && pc->op <= OPC(0x2E7);
+#else
     int vu = pc->op > 0x21E && pc->op <= 0x2E7;
-    SInt16 src = pc->args[vu ? 2 : 1].reg;
-    SInt16 dst = pc->args[vu ? 1 : 0].reg;
+#endif
+        SInt16 src = pc->args[vu ? 2 : 1].reg;
+        SInt16 dst = pc->args[vu ? 1 : 0].reg;
 #else
     SInt16 src = pc->args[1].reg;
     SInt16 dst = pc->args[0].reg;
 #endif
-    IGNode* srcnode = &data_0062520C[src];
-    IGNode* dstnode = &data_0062520C[dst];
-    SInt16 tmp;
+        IGNode* srcnode = &data_0062520C[src];
+        IGNode* dstnode = &data_0062520C[dst];
+        SInt16 tmp;
 
-    if (!(srcnode->flags & 1)) {
-        insertpcodebefore(pc, func_004B8A00(src, dstnode));
-        data_00609814++;
-        data_0060981C += block->weight;
-    } else if (!(dstnode->flags & 1)) {
-        if (srcnode->def) {
-            insertpcodebefore(pc, remat(srcnode->def, dst));
-        } else {
-            insertpcodebefore(pc, func_004B8B00(dst, srcnode));
-            data_00609810++;
-            data_00609818 += block->weight * 2;
-        }
-    } else {
-        tmp = data_00625A98[data_00625ECC]++;
-        if (srcnode->def) {
-            insertpcodebefore(pc, remat(srcnode->def, tmp));
-        } else {
-            insertpcodebefore(pc, func_004B8B00(tmp, srcnode));
-            data_00609810++;
-            data_00609818 += block->weight * 2;
-        }
-        insertpcodebefore(pc, func_004B8A00(tmp, dstnode));
-        data_00609814++;
-        data_0060981C += block->weight;
-    }
-    deletepcode(pc);
-}
-
-// Give each spilled register pc reads or writes a fresh temporary, loaded
-// before pc and stored after it.
-void func_0054BF20(MPCodeBlock* block, MPCode* pc) {
-    SInt32 limit = data_00625A98[data_00625ECC];
-    SInt32 i;
-    SInt32 j;
-    MOperand* op;
-    MOperand* op2;
-    SInt16 reg;
-    IGNode* node;
-    SInt16 tmp;
-    SInt32 uses;
-    SInt32 defs;
-
-    for (i = 0, op = pc->args; i < pc->argcount; i++, op++) {
-        if (op->kind != 0 || op->rclass != data_00625ECC || op->reg >= limit) {
-            continue;
-        }
-        reg = op->reg;
-        node = &data_0062520C[reg];
-        if (!(node->flags & 1)) {
-            continue;
-        }
-        tmp = data_00625A98[data_00625ECC]++;
-        defs = 0;
-        uses = 0;
-        for (j = i, op2 = op; j < pc->argcount; j++, op2++) {
-            if (op2->kind == 0 && op2->rclass == data_00625ECC && op2->reg == reg) {
-                if (op2->flags & 1) {
-                    uses++;
-                }
-                if (op2->flags & 2) {
-                    defs++;
-                }
-                op2->reg = tmp;
-                op2->flags |= 0x40;
-            }
-        }
-        if (uses) {
-            if (node->def) {
-                insertpcodebefore(pc, remat(node->def, tmp));
+        if (!(srcnode->flags & 1)) {
+            insertpcodebefore(pc, func_004B8A00(src, dstnode));
+            data_00609814++;
+            data_0060981C += block->weight;
+        } else if (!(dstnode->flags & 1)) {
+            if (srcnode->def) {
+                insertpcodebefore(pc, remat(srcnode->def, dst));
             } else {
-                insertpcodebefore(pc, func_004B8B00(tmp, node));
+                insertpcodebefore(pc, func_004B8B00(dst, srcnode));
                 data_00609810++;
                 data_00609818 += block->weight * 2;
             }
-        }
-        if (defs) {
-            if (node->def || (pc->flags & 0x8000)) {
-                deletepcode(pc);
+        } else {
+            tmp = data_00625A98[data_00625ECC]++;
+            if (srcnode->def) {
+                insertpcodebefore(pc, remat(srcnode->def, tmp));
             } else {
-                insertpcodeafter(pc, func_004B8A00(tmp, node));
-                data_00609814++;
-                data_0060981C += block->weight;
+                insertpcodebefore(pc, func_004B8B00(tmp, srcnode));
+                data_00609810++;
+                data_00609818 += block->weight * 2;
+            }
+            insertpcodebefore(pc, func_004B8A00(tmp, dstnode));
+            data_00609814++;
+            data_0060981C += block->weight;
+        }
+        deletepcode(pc);
+    }
+
+    // Give each spilled register pc reads or writes a fresh temporary, loaded
+    // before pc and stored after it.
+    void func_0054BF20(MPCodeBlock * block, MPCode * pc) {
+        SInt32 limit = data_00625A98[data_00625ECC];
+        SInt32 i;
+        SInt32 j;
+        MOperand* op;
+        MOperand* op2;
+        SInt16 reg;
+        IGNode* node;
+        SInt16 tmp;
+        SInt32 uses;
+        SInt32 defs;
+
+        for (i = 0, op = pc->args; i < pc->argcount; i++, op++) {
+            if (op->kind != 0 || op->rclass != data_00625ECC || op->reg >= limit) {
+                continue;
+            }
+            reg = op->reg;
+            node = &data_0062520C[reg];
+            if (!(node->flags & 1)) {
+                continue;
+            }
+            tmp = data_00625A98[data_00625ECC]++;
+            defs = 0;
+            uses = 0;
+            for (j = i, op2 = op; j < pc->argcount; j++, op2++) {
+                if (op2->kind == 0 && op2->rclass == data_00625ECC && op2->reg == reg) {
+                    if (op2->flags & 1) {
+                        uses++;
+                    }
+                    if (op2->flags & 2) {
+                        defs++;
+                    }
+                    op2->reg = tmp;
+                    op2->flags |= 0x40;
+                }
+            }
+            if (uses) {
+                if (node->def) {
+                    insertpcodebefore(pc, remat(node->def, tmp));
+                } else {
+                    insertpcodebefore(pc, func_004B8B00(tmp, node));
+                    data_00609810++;
+                    data_00609818 += block->weight * 2;
+                }
+            }
+            if (defs) {
+                if (node->def || (pc->flags & 0x8000)) {
+                    deletepcode(pc);
+                } else {
+                    insertpcodeafter(pc, func_004B8A00(tmp, node));
+                    data_00609814++;
+                    data_0060981C += block->weight;
+                }
             }
         }
     }
-}
 
 #define IS_SPILLED(op) \
     ((op)->kind == 0 && (op)->rclass == data_00625ECC && (data_0062520C[(op)->reg].flags & 1))
 
-// Rewrite every instruction that uses a spilled register of the class.
-void func_0054B9B0(void) {
-    MPCodeBlock* block;
-    MPCode* pc;
-    MPCode* next;
-    MOperand* op;
-    MOperand* src;
-    MOperand* dst;
-    SInt32 k;
-    SInt32 n;
-    SInt32 i;
-    SInt32 spilled;
+    // Rewrite every instruction that uses a spilled register of the class.
+    void func_0054B9B0(void) {
+        MPCodeBlock* block;
+        MPCode* pc;
+        MPCode* next;
+        MOperand* op;
+        MOperand* src;
+        MOperand* dst;
+        SInt32 k;
+        SInt32 n;
+        SInt32 i;
+        SInt32 spilled;
 
-    func_0054BB30();
-    for (block = data_00624FD0; block; block = block->next) {
-        for (pc = block->first; pc; pc = next) {
-            next = pc->next;
-            n = pc->argcount;
-            spilled = 0;
-            for (k = n, op = pc->args; k--; op++) {
-                if (IS_SPILLED(op)) {
-                    spilled = 1;
-                    break;
-                }
-            }
-            if (!spilled) {
-                continue;
-            }
-            if (pc->flags & 0x10) {
-                func_0054BD20(block, pc);
-                continue;
-            }
-            if (pc->flags & 8) {
-                i = func_00461F50() + 2 - func_004B8990();
-                for (dst = src = &pc->args[i]; i < n; i++, src++) {
-                    if (IS_SPILLED(src)) {
-                        pc->argcount--;
-                    } else {
-                        *dst++ = *src;
+        func_0054BB30();
+        for (block = data_00624FD0; block; block = block->next) {
+            for (pc = block->first; pc; pc = next) {
+                next = pc->next;
+                n = pc->argcount;
+                spilled = 0;
+                for (k = n, op = pc->args; k--; op++) {
+                    if (IS_SPILLED(op)) {
+                        spilled = 1;
+                        break;
                     }
                 }
+                if (!spilled) {
+                    continue;
+                }
+                if (pc->flags & 0x10) {
+                    func_0054BD20(block, pc);
+                    continue;
+                }
+                if (pc->flags & 8) {
+                    i = func_00461F50() + 2 - func_004B8990();
+                    for (dst = src = &pc->args[i]; i < n; i++, src++) {
+                        if (IS_SPILLED(src)) {
+                            pc->argcount--;
+                        } else {
+                            *dst++ = *src;
+                        }
+                    }
+                }
+                func_0054BF20(block, pc);
             }
-            func_0054BF20(block, pc);
         }
     }
-}
 
-extern void func_004A4660(Object* obj); // give a local a stack frame slot
-extern void func_004AFFE0(SInt32 index, SInt32 cost, SInt32 nedges, Object* obj);
+    extern void func_004A4660(Object * obj); // give a local a stack frame slot
+    extern void func_004AFFE0(SInt32 index, SInt32 cost, SInt32 nedges, Object * obj);
 #define VARINFO_23(vi) (*(UInt8*)&((VarInfo*)(vi))->used) // +0x23
 
-// Give every spilled node of the class a stack location.
-void func_0054BB30(void) {
-    UInt32 i;
-    UInt32 n;
-    IGNode* node;
-    Object* obj;
-    Type* type;
-    Type* t2;
+    // Give every spilled node of the class a stack location.
+    void func_0054BB30(void) {
+        UInt32 i;
+        UInt32 n;
+        IGNode* node;
+        Object* obj;
+        Type* type;
+        Type* t2;
 
-    n = data_00625A98[data_00625ECC];
-    for (i = data_00624744[data_00625ECC]; i < n; i++) {
-        node = &data_0062520C[i];
-        if (!(node->flags & 1)) {
-            continue;
-        }
-        if (node->def) {
-            if (node->object) {
-                VARINFO_23(OBJECT_VARINFO(node->object)) = 0;
+        n = data_00625A98[data_00625ECC];
+        for (i = data_00624744[data_00625ECC]; i < n; i++) {
+            node = &data_0062520C[i];
+            if (!(node->flags & 1)) {
+                continue;
             }
-            continue;
-        }
+            if (node->def) {
+                if (node->object) {
+                    VARINFO_23(OBJECT_VARINFO(node->object)) = 0;
+                }
+                continue;
+            }
 
-        if (node->flags & 0x20) {
-            if (!(VARINFO_FLAGS(OBJECT_VARINFO(node->object)) & 1)) {
-                func_004A4660(node->object);
-            }
-            data_0062520C[i + 1].flags |= 1;
-        } else if (node->flags & 0x10) {
-            if (!(data_0062520C[i - 1].flags & 1)) {
-                data_0062520C[i - 1].flags |= 1;
+            if (node->flags & 0x20) {
                 if (!(VARINFO_FLAGS(OBJECT_VARINFO(node->object)) & 1)) {
                     func_004A4660(node->object);
                 }
-            }
-        } else if ((obj = node->object)) {
-            if (!(VARINFO_FLAGS(OBJECT_VARINFO(obj)) & 1)) {
-                if (VARINFO_FLAGS(OBJECT_VARINFO(obj)) & 0x10) {
-                    type = obj->type;
-                    t2 = func_004B89D0(node);
-                    if (type->size < t2->size) {
-                        node->object->type = t2;
+                data_0062520C[i + 1].flags |= 1;
+            } else if (node->flags & 0x10) {
+                if (!(data_0062520C[i - 1].flags & 1)) {
+                    data_0062520C[i - 1].flags |= 1;
+                    if (!(VARINFO_FLAGS(OBJECT_VARINFO(node->object)) & 1)) {
                         func_004A4660(node->object);
-                        node->object->type = type;
-                        VARINFO_FLAGS(OBJECT_VARINFO(node->object)) |= 8;
-                        goto done;
                     }
                 }
-                func_004A4660(obj);
+            } else if ((obj = node->object)) {
+                if (!(VARINFO_FLAGS(OBJECT_VARINFO(obj)) & 1)) {
+                    if (VARINFO_FLAGS(OBJECT_VARINFO(obj)) & 0x10) {
+                        type = obj->type;
+                        t2 = func_004B89D0(node);
+                        if (type->size < t2->size) {
+                            node->object->type = t2;
+                            func_004A4660(node->object);
+                            node->object->type = type;
+                            VARINFO_FLAGS(OBJECT_VARINFO(node->object)) |= 8;
+                            goto done;
+                        }
+                    }
+                    func_004A4660(obj);
+                }
+            } else {
+                t2 = func_004B89D0(node);
+                obj = lalloc(sizeof(Object));
+                memclrw(obj, sizeof(Object));
+                obj->otype = OT_OBJECT;
+                obj->name = CParser_GetUniqueName();
+                obj->type = t2;
+                obj->datatype = DLOCAL;
+                OBJECT_VARINFO(obj) = (char*)CodeGen_GetNewVarInfo();
+                node->object = obj;
+                func_004A4660(node->object);
             }
-        } else {
-            t2 = func_004B89D0(node);
-            obj = lalloc(sizeof(Object));
-            memclrw(obj, sizeof(Object));
-            obj->otype = OT_OBJECT;
-            obj->name = CParser_GetUniqueName();
-            obj->type = t2;
-            obj->datatype = DLOCAL;
-            OBJECT_VARINFO(obj) = (char*)CodeGen_GetNewVarInfo();
-            node->object = obj;
-            func_004A4660(node->object);
-        }
 done:
-        VARINFO_REG(OBJECT_VARINFO(node->object)) = 0;
-        VARINFO_REGHI(OBJECT_VARINFO(node->object)) = 0;
-        if (copts.debuglisting) {
-            func_004AFFE0(i, node->cost, node->nedges, node->object);
+            VARINFO_REG(OBJECT_VARINFO(node->object)) = 0;
+            VARINFO_REGHI(OBJECT_VARINFO(node->object)) = 0;
+            if (copts.debuglisting) {
+                func_004AFFE0(i, node->cost, node->nedges, node->object);
+            }
         }
     }
-}

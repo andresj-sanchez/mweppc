@@ -460,7 +460,11 @@ void func_00569AC0(BitVector* bv, IROLinear* nd) {
     SInt32 size;
     BitVector** table;
 
+#if MWCCPS2_B52
+    if (0) {
+#else
     if (nd->type == IROLinearOp1Arg && nd->nodetype == EINDIRECT && (nd->flags & IROLF_Assigned)) {
+#endif
         size = nd->rtype->size;
         if (size > 0x400) {
             size = 0x400;
@@ -539,8 +543,13 @@ static void GetDependsOfIndirect(IROLinear* nd) {
             }
             if (!result) {
                 for (scan = resultList; scan; scan = scan->nextList) {
+#if MWCCPS2_B52
                     for (scannd = scan->list.head; scannd != scan->list.tail->next;
                          scannd = scannd->next) {
+#else
+                    for (scannd = scan->list.head; scannd != scan->list.tail->next;
+                         scannd = scannd->next) {
+#endif
                         if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                             obj = scannd->u.node->data.objref;
                             CError_ASSERT(126, obj != NULL);
@@ -632,8 +641,13 @@ static void GetDependsOfFunctionCall(IROLinear* nd) {
                     break;
                 }
                 foundObjRef = FALSE;
+#if MWCCPS2_B52
                 for (scannd = scan->list.head; scannd != scan->list.tail->next;
                      scannd = scannd->next) {
+#else
+                for (scannd = scan->list.head; scannd != scan->list.tail->next;
+                     scannd = scannd->next) {
+#endif
                     if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                         foundObjRef = TRUE;
                         obj = scannd->u.node->data.objref;
@@ -665,8 +679,13 @@ static void GetDependsOfFunctionCall(IROLinear* nd) {
             }
             if (!result) {
                 for (scan = resultList; scan; scan = scan->nextList) {
+#if MWCCPS2_B52
                     for (scannd = scan->list.head; scannd != scan->list.tail->next;
                          scannd = scannd->next) {
+#else
+                    for (scannd = scan->list.head; scannd != scan->list.tail->next;
+                         scannd = scannd->next) {
+#endif
                         if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                             obj = scannd->u.node->data.objref;
                             depsList = NULL;
@@ -903,9 +922,15 @@ CSE_NOINLINE Boolean func_004C47F0(IROLinear* linear) {
 static void IRO_AddExpression(IROLinear* linear, IRONode* node, Boolean unused) {
     IROExpr* expr;
 
+#if MWCCPS2_B52
     if ((linear->flags & IROLF_Reffed) &&
         IRO_Hook0 &&
         ((Boolean (*)(IROLinear*))IRO_Hook0)(linear) &&
+#else
+    if ((linear->flags & IROLF_Reffed) &&
+        IRO_Hook0 &&
+        ((Boolean (*)(IROLinear*))IRO_Hook0)(linear) &&
+#endif
         func_004C47F0(linear)) {
         expr = IRO_Alloc(sizeof(IROExpr));
         expr->flags = FALSE;
@@ -930,9 +955,15 @@ static void IRO_AddExpression(IROLinear* linear, IRONode* node, Boolean unused) 
 }
 
 extern Boolean data_00625ECA; // IroLinearForm.c
+#if MWCCPS2_B52
 extern Boolean func_00555190(
     IROLinear* a, IROLinear* b
 ); // IroSimplifyIfThenElse.c: same semantically
+#else
+extern Boolean func_00555190(
+    IROLinear* a, IROLinear* b
+); // IroSimplifyIfThenElse.c: same semantically
+#endif
 
 // 3.0.1 CSE: the expressions in classes of equal ones
 IROElmList** data_00608CA4; // the classes (IROExpr* elements)
@@ -985,6 +1016,7 @@ void func_00575BB0(IROLinear* linear) {
     Boolean unknown = FALSE;
     Boolean found;
 
+#if MWCCPS2_B52
     if (target &&
         target->type == IROLinearOp1Arg &&
         target->nodetype == EINDIRECT &&
@@ -992,6 +1024,15 @@ void func_00575BB0(IROLinear* linear) {
         copts.opt_pointer_analysis &&
         inner->pointsToFunction &&
         FunctionName) {
+#else
+    if (target &&
+        target->type == IROLinearOp1Arg &&
+        target->nodetype == EINDIRECT &&
+        (inner = target->u.monadic) &&
+        copts.opt_pointer_analysis &&
+        inner->pointsToFunction &&
+        FunctionName) {
+#endif
         resultList = NULL;
         PointerAnalysis_LookupLinearNodePointerExpr(FunctionName, inner, &resultList);
         if (!resultList) {
@@ -1003,8 +1044,13 @@ void func_00575BB0(IROLinear* linear) {
                     break;
                 }
                 found = FALSE;
+#if MWCCPS2_B52
                 for (scannd = scan->list.head; scannd != scan->list.tail->next;
                      scannd = scannd->next) {
+#else
+                for (scannd = scan->list.head; scannd != scan->list.tail->next;
+                     scannd = scannd->next) {
+#endif
                     if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                         found = TRUE;
                         break;
@@ -1017,8 +1063,13 @@ void func_00575BB0(IROLinear* linear) {
             }
             if (!unknown) {
                 for (scan = resultList; scan; scan = scan->nextList) {
+#if MWCCPS2_B52
                     for (scannd = scan->list.head; scannd != scan->list.tail->next;
                          scannd = scannd->next) {
+#else
+                    for (scannd = scan->list.head; scannd != scan->list.tail->next;
+                         scannd = scannd->next) {
+#endif
                         if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                             obj = scannd->u.node->data.objref;
                             if (!obj) {
@@ -1294,7 +1345,11 @@ CSE_NOINLINE void func_0058E790(void) {
 
 // 3.0.1 keeps a CSE state byte where range propagation kept its range
 // (IROLinear +0x28): 0 none, 1 recomputed, 2 first computation
+#if MWCCPS2_B52
 #define CSE_STATE(nd) (*(UInt8*)&(nd)->range)
+#else
+#define CSE_STATE(nd) (*(UInt8*)&(nd)->range)
+#endif
 
 // an earlier computation of the same class (IROExpr.use)
 typedef struct IROExprUse {
@@ -1381,7 +1436,11 @@ static inline IROExprUse* AppendUses(IROExprUse* list, IROExprUse* more) {
     IROExprUse* tail;
 
     if (list) {
+#if MWCCPS2_B52
         for (tail = list; tail->next; tail = tail->next) {}
+#else
+        for (tail = list; tail->next; tail = tail->next) {}
+#endif
         tail->next = more;
         return list;
     }
@@ -1460,10 +1519,17 @@ CSE_NOINLINE void func_0058E240(void) {
 
     for (node = IRO_FirstNode; node; node = node->nextnode) {
         for (nd = node->first; nd; nd = nd->next) {
+#if MWCCPS2_B52
             if ((expr = nd->expr) &&
                 CSE_STATE(nd) == 2 &&
                 Bv_IsBitSet(expr->x18, node->in) &&
                 expr->x20) {
+#else
+            if ((expr = nd->expr) &&
+                CSE_STATE(nd) == 2 &&
+                Bv_IsBitSet(expr->x18, node->in) &&
+                expr->x20) {
+#endif
                 list = NULL;
                 for (i = 0; i < node->numpred; i++) {
                     for (scan = IRO_FirstNode; scan; scan = scan->nextnode) {
@@ -1553,6 +1619,30 @@ CSE_NOINLINE void func_0058DFE0(void) {
         for (nd = node->first;; nd = nd->next) {
 #else
         for (nd = node->first; nd; nd = nd->next) {
+#if MWCCPS2_B52
+            // debugging aid: MWCCPS2_CSETRACE=1 lists each expression's class,
+            // temporary and first use (as a gdb trace of b52's 0x532866 does)
+            if (nd->expr) {
+                static int trace = -1;
+                extern char* getenv(const char*);
+                extern int printf(const char*, ...);
+                if (trace < 0) {
+                    trace = getenv("MWCCPS2_CSETRACE") != NULL;
+                }
+                if (trace) {
+                    IROExprUse* u = (IROExprUse*)nd->expr->use;
+                    printf(
+                        "T X %d cls=%d temp=%d use=%d nf=%x usefrom=%d\n",
+                        nd->index,
+                        (int)nd->expr->x18,
+                        nd->expr->temp != NULL,
+                        u != NULL,
+                        nd->nodeflags,
+                        u ? u->expr->linear->index : -1
+                    );
+                }
+            }
+#endif
 #endif
             if ((expr = nd->expr)) {
                 if (!expr->temp) {
@@ -1609,9 +1699,15 @@ CSE_NOINLINE void func_0058EA00(void) {
                 found = FALSE;
                 for (i = 0; i < data_00608CA8; i++) {
                     if (data_00608CA4[i] &&
+#if MWCCPS2_B52
                         func_00555190(
                             nd->expr->linear, ((IROExpr*)data_00608CA4[i]->element)->linear
                         )) {
+#else
+                        func_00555190(
+                            nd->expr->linear, ((IROExpr*)data_00608CA4[i]->element)->linear
+                        )) {
+#endif
                         expr = nd->expr;
                         elm = IRO_Alloc(sizeof(IROElmList));
                         elm->element = NULL;
@@ -1659,6 +1755,7 @@ void func_0058EB60(void) {
     Bv_AllocVector(&seen, IRO_NumVars + 1);
     for (nd = IRO_FirstLinear; nd; nd = nd->next) {
         nd->expr = NULL;
+#if MWCCPS2_B52
         if ((nd->flags & IROLF_Reffed) &&
             nd->type >= IROLinearOperand &&
             nd->type <= IROLinearFunccall &&
@@ -1669,6 +1766,18 @@ void func_0058EB60(void) {
             nd->u.node->type == EOBJREF &&
             (var = IRO_FindVar(nd->u.node->data.objref, FALSE, TRUE)) &&
             !Bv_IsBitSet(CSE_BIT(var->index), seen) &&
+#else
+        if ((nd->flags & IROLF_Reffed) &&
+            nd->type >= IROLinearOperand &&
+            nd->type <= IROLinearFunccall &&
+            ((Boolean (*)(IROLinear*))IRO_Hook0)(nd) &&
+            func_004C47F0(nd) &&
+            nd->type == IROLinearOperand &&
+            nd->u.node &&
+            nd->u.node->type == EOBJREF &&
+            (var = IRO_FindVar(nd->u.node->data.objref, FALSE, TRUE)) &&
+            !Bv_IsBitSet(CSE_BIT(var->index), seen) &&
+#endif
             ((Boolean (*)(IROLinear*, VarRecord*, Boolean))IRO_Hook14)(nd, var, data_00625ECA)) {
             copy = IRO_NewLinear(IROLinearNop);
             *copy = *nd;

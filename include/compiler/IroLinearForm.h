@@ -1,3 +1,237 @@
+#if MWCCPS2_B52
+// b52 (3.0 build 52): tools/mwccpsp's 3.0.1 header with its MWCCPSP layouts,
+// packed to 2 bytes like the rest of the b69 tree (IRO_NewStatement: 0x1E bytes,
+// IROLinear's rtype at +0x10). Only MWCCPS2_B69_BUILD=52 searches include/b52.
+#ifndef COMPILER_IROLINEARFORM_H
+#define COMPILER_IROLINEARFORM_H
+
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#pragma pack(push, 2)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+typedef struct IROLinearIRSave {
+    IROLinear* firstLinear;
+    IROLinear* lastLinear;
+    UInt32 numLinear;
+    Statement* curStat;
+    Boolean disableDueToAsm;
+    Boolean isLeafFunction;
+    Boolean functionHasReturn;
+    void* nullCheckList;
+    Statement* currStmt;
+    Statement* prevStmt;
+} IROLinearIRSave;
+
+// 3.0.1 numbering, from IRO_Linearize (statement kinds), MarkAllSubExprs and
+// TravExprToUpdateFlags (0x563dd0, 0x5620f0): the expression kinds come
+// first and a goto through an expression (ST_GOTOEXPR) has its own kind.
+typedef enum IROLinearType {
+    IROLinearNop, // 0
+    IROLinearOperand, // 1
+    IROLinearOp1Arg, // 2
+    IROLinearOp2Arg, // 3
+    IROLinearOp3Arg, // 4
+    IROLinearScope, // 5: an ESCOPEBEGIN/ESCOPEEND operand, kept only when no optimization runs
+    IROLinearFunccall, // 6
+    IROLinearGoto, // 7
+    IROLinearGotoExpr, // 8: u.monadic is the target expression
+    IROLinearIf, // 9
+    IROLinearIfNot, // 10
+    IROLinearReturn, // 11
+    IROLinearLabel, // 12
+    IROLinearSwitch, // 13
+    IROLinearEntry, // 14
+    IROLinearExit, // 15
+    IROLinearBeginCatch, // 16
+    IROLinearEndCatch, // 17
+    IROLinearEndCatchDtor, // 18
+    IROLinearAsm, // 19
+    IROLinear18, // 20 (fatal in TravExprToUpdateFlags' caller)
+    IROLinear19, // 21
+    IROLinearEnd // 22
+} IROLinearType;
+
+enum {
+    IROLF_StartsNode = 0x1,
+    IROLF_Reffed = 0x2,
+    IROLF_Assigned = 0x4,
+    IROLF_ReplaceCSE = 0x8,
+    IROLF_Used = 0x10,
+    IROLF_Ind = 0x20,
+    IROLF_Subs = 0x40,
+    IROLF_LoopInvariant = 0x100,
+    IROLF_BeginLoop = 0x200,
+    IROLF_EndLoop = 0x400,
+    IROLF_Ris = 0x800,
+    IROLF_Immind = 0x1000,
+    IROLF_VecOp = 0x2000,
+    IROLF_InCallArg = 0x4000,
+    IROLF_RightFirst = 0x8000,
+    IROLF_VecOpBase = 0x10000,
+    IROLF_CounterLoop = 0x40000,
+    IROLF_BitfieldIndirect = 0x80000,
+    IROLF_CouldError = 0x100000,
+    IROLF_Unk200000 = 0x200000 // 3.0.1: cleared with the per-pass flags (TravExprToUpdateFlags)
+};
+
+// b52: 3.0.1's fields packed to 2 bytes, without the x24 union before range
+// (IRO_IsVariable reads u at +0x24, IRO_AddToList next at +0x38; with
+// unk18 dropped instead, expr and pointsToFunction read 4 bytes low).
+struct IROLinear {
+    IROLinearType type; // +0
+    ENodeType nodetype; // +1
+    SInt32 flags; // +2
+    UInt16 nodeflags; // +6
+    UInt32 index; // +8
+    Statement* stmt; // +0xC
+    Type* rtype; // +0x10
+    void* unk18; // +0x14 unidentified (IRO_NewLinear clears it)
+    IROExpr* expr; // +0x18
+    struct PointsToFunction* pointsToFunction; // +0x1C
+    struct ERange* range; // +0x20
+    union { // +0x2C
+        ENode* node;
+        IROLinear* monadic;
+        struct {
+            IROLinear* left;
+            IROLinear* right;
+        } diadic;
+        struct {
+            IROLinear* a;
+            IROLinear* b;
+            IROLinear* c;
+        } args3;
+        struct {
+            char ispascal; // +0x2C
+            short argCount; // +0x2E
+            IROLinear** args; // +0x30
+            IROLinear* callee; // +0x34
+            TypeFunc* functype;
+            struct LocationSetSet* returnedLocs;
+        } funccall;
+        Statement* asm_stmt;
+        struct {
+            CLabel* label;
+            IROLinear* cond;
+            struct IROCounterLoopInfo* loop; // +0x34: the test of a counter loop (3.0.1)
+        } label;
+        struct {
+            SwitchInfo* info;
+            IROLinear* cond;
+        } swtch;
+        struct {
+            IROLinear* linear;
+            int unused1;
+            int unused2;
+        } ctch;
+        struct {
+            IROLinear* operand;
+            Boolean counterUpdate; // +0x30: a counter loop's update, dropped by IRO_Delinearize
+        } op1x;
+        struct {
+            IROLinear* left;
+            IROLinear* right;
+            Boolean counterUpdate; // +0x34
+        } op2x;
+        struct {
+            Statement* stmt; // NULL: emit expr (an ENode) as an expression statement
+            ENode* expr;
+        } asmx;
+    } u;
+    IROLinear* next; // +0x38
+    union { // 3.0.1's +0x24 union; b52's place for it is unverified
+        Boolean evaluated; // pointer analysis
+        struct IRODef301* aggDefs; // the aggregate pass's definitions by this linear
+    } x24;
+};
+
+// 3.0.1: what the loop passes record for a counter loop, and what
+// IRO_Delinearize hands the back end in an ST_BEGINLOOP statement.
+typedef struct IROCounterLoopInfo {
+    UInt8 kind; // +0: 1 = the counter range is constant
+    IROLinear* x4;
+    IROLinear* x8;
+    IROLinear* xC; // a constant or an expression
+    CInt64 x10;
+    IROLinear* x18;
+    IROLinear* x1C;
+} IROCounterLoopInfo;
+
+typedef struct StmtLoopInfo {
+    UInt32 flags; // 1: x20 is valid
+    ENode* x4;
+    ENode* cond;
+    Statement* test; // the loop's if/ifnot statement
+    ENode* x10;
+    CInt64 x14; // xC when it is constant
+    ENode* x1C; // xC otherwise
+    CInt64 x20;
+    ENode* x28;
+    ENode* x2C;
+} StmtLoopInfo; // 0x30 bytes
+#pragma pack(pop)
+
+extern IROLinear* IRO_FirstLinear;
+extern IROLinear* IRO_LastLinear;
+extern UInt32 IRO_NumLinear;
+// 3.0.1: the linearizer's globals, saved around a nested run (0x561390, 0x561320)
+typedef struct IROLinearState {
+    IROLinear* firstLinear;
+    IROLinear* lastLinear;
+    UInt32 numLinear;
+    Statement* curStat;
+    Boolean disableDueToAsm;
+    Boolean x11; // data_00625ECA
+    void* nullCheckList;
+    Statement* currStmt;
+    Statement* prevStmt;
+    Statement* firstStmt;
+    void* catchObjects;
+} IROLinearState;
+extern void func_00561390(IROLinearState* state);
+extern void func_00561320(IROLinearState* state);
+extern Statement* CurStat;
+
+extern IROLinear* IRO_NewLinear(IROLinearType type);
+extern void IRO_PreLinearize(Statement* stmt);
+extern void IRO_Linearize(Statement* stmt);
+extern ENode* IRO_NewENode(ENodeType nodetype);
+extern Statement* IRO_Delinearize(IRONode* node, IROLinear* linear);
+extern void IRO_RenumberInts(void);
+extern void IRO_UpdateFlagsOnInts(IROLinear* first); // 3.0.1 walks the list it is given
+extern void IRO_SaveLinearIR(IROLinearIRSave* save);
+extern void IRO_RestoreLinearIR(IROLinearIRSave* save);
+
+#define IS_LINEAR_ENODE(_linear, _nodetype) \
+    (((_linear)->type == IROLinearOperand) && ((_linear)->u.node->type) == (_nodetype))
+#define IS_LINEAR_MONADIC(_linear, _nodetype) \
+    (((_linear)->type == IROLinearOp1Arg) && ((_linear)->nodetype) == (_nodetype))
+#define IS_LINEAR_MONADIC_2(_linear, _nodetype1, _nodetype2) \
+    (((_linear)->type == IROLinearOp1Arg) && \
+     (((_linear)->nodetype) == (_nodetype1) || ((_linear)->nodetype) == (_nodetype2)))
+#define IS_LINEAR_DIADIC(_linear, _nodetype) \
+    (((_linear)->type == IROLinearOp2Arg) && ((_linear)->nodetype) == (_nodetype))
+#define IS_LINEAR_DIADIC_2(_linear, _nodetype1, _nodetype2) \
+    (((_linear)->type == IROLinearOp2Arg) && \
+     (((_linear)->nodetype) == (_nodetype1) || ((_linear)->nodetype) == (_nodetype2)))
+#define IS_LINEAR_DIADIC_3(_linear, _nodetype1, _nodetype2, _nodetype3) \
+    (((_linear)->type == IROLinearOp2Arg) && \
+     (((_linear)->nodetype) == (_nodetype1) || \
+      ((_linear)->nodetype) == (_nodetype2) || \
+      ((_linear)->nodetype) == (_nodetype3)))
+
+#ifdef __cplusplus
+}
+#endif
+
+#pragma pack(pop)
+#endif
+#else
 #ifndef COMPILER_IROLINEARFORM_H
 #define COMPILER_IROLINEARFORM_H
 
@@ -315,4 +549,5 @@ extern void IRO_RestoreLinearIR(IROLinearIRSave* save);
 }
 #endif
 
+#endif
 #endif

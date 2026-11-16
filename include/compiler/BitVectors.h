@@ -37,12 +37,18 @@ extern void bitvectorinitialize_range(
 );
 extern CompressedBitVector* bitvector_compress(UInt32* vec, int bitCount);
 extern CompressedBitVector* bitvector_empty_compressed(void);
+#if MWCCPS2_B52
+extern void init_compressed_bitvectors(int bitCount);
+
+#define bitvectorgetbit(_bit, _vec) ((1 << ((_bit) & 31)) & (_vec)[(_bit) >> 5])
+#else
 extern void init_compressed_bitvectors(int bitCount);
 
 #if MWCCPSP // 3.0.1 shifts the word down
 #define bitvectorgetbit(_bit, _vec) (((_vec)[(_bit) >> 5] >> ((_bit) & 31)) & 1)
 #else
 #define bitvectorgetbit(_bit, _vec) ((1 << ((_bit) & 31)) & (_vec)[(_bit) >> 5])
+#endif
 #endif
 #define bitvectorsetbit(_bit, _vec) ((_vec)[(_bit) >> 5] |= 1 << ((_bit) & 31))
 #define bitvectorclearbit(_bit, _vec) ((_vec)[(_bit) >> 5] &= ~(1 << ((_bit) & 31)))
