@@ -8,6 +8,9 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 #include "compiler/IroCSE.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 // 3.0.1 keeps a record per natural loop (0x70 bytes): the loop headers are
 // found first (a predecessor that the node dominates), then each loop's body
@@ -90,13 +93,25 @@ extern IROLoopInd301* func_00588C90(IRONaturalLoop* loop, VarRecord* var);
 extern CInt64 func_00583FD0(IROLoopInd301* ind, Type* type);
 extern void func_00587540(IRONaturalLoop* loop);
 extern Boolean func_0058A4F0(IRONaturalLoop* loop);
+#if MWCCPS2_B52
 extern void func_0058A430(
     IRONaturalLoop* loop, IRONode* header, IRONode* pred, IROLinear** at, Boolean* made
 );
+#else
+extern void func_0058A430(
+    IRONaturalLoop* loop, IRONode* header, IRONode* pred, IROLinear** at, Boolean* made
+);
+#endif
 extern void func_00589F20(IRONaturalLoop* loop, IRONode** exitNode, IROLinear** at);
+#if MWCCPS2_B52
 extern Boolean func_0058A030(
     IRONaturalLoop* loop, IROLinear** pre, IRONode* exitNode, IRONode** newPre, void* unused
 );
+#else
+extern Boolean func_0058A030(
+    IRONaturalLoop* loop, IROLinear** pre, IRONode* exitNode, IRONode** newPre, void* unused
+);
+#endif
 extern IRONode* func_0058A5D0(IRONaturalLoop* loop);
 extern void func_00583D30(UInt32 flags);
 extern void func_00587270(IRONaturalLoop* loop);
@@ -110,4 +125,7 @@ extern IROLinear* func_00588900(IRONaturalLoop* loop);
 extern void func_00588AE0(IRONaturalLoop* loop, IROLoopInd301* ind);
 extern Boolean func_00584020(IRONaturalLoop* loop, IROLoopInd301* ind, Boolean withConds);
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

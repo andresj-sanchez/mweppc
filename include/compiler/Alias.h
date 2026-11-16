@@ -26,6 +26,11 @@ struct Alias {
     SInt32 size;
     int valuenumber;
     PCode* valuepcode;
+#if MWCCPS2_B52
+    UInt32* membervec;
+    int index;
+    AliasType type;
+#else
     UInt32* membervec;
     int index;
 #if MWCCPSP
@@ -33,6 +38,7 @@ struct Alias {
     UInt8 pad2D[3]; // 3.0.1: sizeof(Alias) is 0x30 (create_alias)
 #else
     AliasType type;
+#endif
 #endif
 };
 

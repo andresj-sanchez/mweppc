@@ -206,7 +206,11 @@ static void SetRangesForKillsByIndirectAssignment(IROLinear* nd) {
                          scannd = scannd->next) {
                         if (scannd->type == IROLinearOperand && scannd->u.node->type == EOBJREF) {
                             obj = scannd->u.node->data.objref;
+#if MWCCPS2_B52
+                            CError_ASSERT(314, obj != NULL);
+#else
                             CError_ASSERT(302, obj != NULL);
+#endif
 
                             range = nd->range;
                             if (nd->nodetype == EPOSTINC || nd->nodetype == EPOSTDEC) {
@@ -225,7 +229,11 @@ static void SetRangesForKillsByIndirectAssignment(IROLinear* nd) {
 
             while (resultList) {
                 next = resultList->nextList;
+#if MWCCPS2_B52
+                IRO_free2(resultList); // b52 (0x52CF10) calls the second copy
+#else
                 IRO_free(resultList);
+#endif
                 resultList = next;
             }
         } else {
@@ -241,6 +249,10 @@ static void SetRangesForKillsByIndirectAssignment(IROLinear* nd) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (24)
+#endif
 static void InvalidateRangesForKillsByFunctionCall(IROLinear* nd) {
     IROListNode* scan;
     IROLinear* scannd;
@@ -351,6 +363,10 @@ static void InvalidateRangesForKillsByFunctionCall(IROLinear* nd) {
         ERinvalidAll();
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void ERfoldOperand(IROLinear* nd) {
     switch (nd->u.node->type) {

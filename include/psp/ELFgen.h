@@ -86,16 +86,19 @@ enum {
 };
 
 extern Elf32_Ehdr elf_ehdr;
+#if !MWCCPS2_B52
 extern ELFSection** elf_sections;
 extern ELFSection* elf_symtab;
 extern ELFSection* elf_strtab;
 extern ELFSection* elf_shstrtab;
 extern ELFSymbol* elf_symbols;
+#endif
 
 extern void ELF_Init(UInt16 machine, UInt32 flags, SInt32 encoding);
 extern ELFSection* ELF_NewSection(char* name, SInt32 type, SInt32 flags);
 extern void ELF_SetRelSection(ELFSection* section, ELFSection* relsection);
 extern SInt32 ELF_AddString(ELFSection* section, char* str);
+#if MWCCPS2_B52
 extern ELFSymbol* ELF_NewUndefinedSymbol(
     char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, UInt32 value
 );
@@ -105,6 +108,17 @@ extern ELFSymbol* ELF_NewSymbol(
 extern void ELF_DefineSymbol(
     ELFSymbol* sym, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
 );
+#else
+extern ELFSymbol* ELF_NewUndefinedSymbol(
+    char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, UInt32 value
+);
+extern ELFSymbol* ELF_NewSymbol(
+    char* name, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
+);
+extern void ELF_DefineSymbol(
+    ELFSymbol* sym, UInt16 shndx, UInt8 bind, UInt8 type, UInt32 size, void* data, UInt32 align
+);
+#endif
 extern void ELF_AddReloc(UInt8 type, ELFSymbol* at, UInt32 offset, ELFSymbol* to, SInt32 addend);
 extern void ELF_WriteRelocs(ELFSection* relsection);
 extern void ELF_BuildSymtab(void);

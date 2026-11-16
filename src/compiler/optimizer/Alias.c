@@ -32,7 +32,9 @@ int n_aliases;
 int n_gathered_aliases;
 #else
 static Alias* aliases;
+#if !MWCCPS2_B52
 static Alias* set_aliases;
+#endif
 static int n_aliases;
 static int n_gathered_aliases;
 #endif
@@ -264,7 +266,9 @@ void initialize_aliases(void) {
     worst_case_obj.name = GetHashNameNodeExport("@worst_case@");
 
     aliases = NULL;
+#if !MWCCPS2_B52
     set_aliases = NULL;
+#endif
     n_aliases = 0;
     n_gathered_aliases = 0;
     for (i = 0; i < 997; i++) {
@@ -272,7 +276,9 @@ void initialize_aliases(void) {
     }
 
     worst_case_ptr = make_alias_set();
+#if !MWCCPS2_B52
     add_alias_member(worst_case_ptr, make_alias(&worst_case_obj, 0, 0));
+#endif
 #if VERSION >= VERSION_GC_2_5
     worst_case_func = make_alias_set();
     add_alias_member(worst_case_func, make_alias(&worst_case_obj, 0, 0));
@@ -295,11 +301,18 @@ Alias* make_alias(Object* object, SInt32 offset, SInt32 size) {
     Alias* alias2;
     Alias* alias;
 
+#if MWCCPS2_B52
+    if (!object) {
+        return NULL;
+    }
+#endif
 #if MWCCPSP
     CError_ASSERT(470, object);
 #endif
     if (!size) {
+#if !MWCCPS2_B52
         offset = 0;
+#endif
         size = object->type->size;
     }
 
@@ -309,12 +322,18 @@ Alias* make_alias(Object* object, SInt32 offset, SInt32 size) {
 #else
         if (alias->object == object && alias->offset == offset && alias->size == size) {
 #endif
+#if MWCCPS2_B52
+            return alias;
+#else
             goto found;
+#endif
         }
     }
+#if !MWCCPS2_B52
     alias = NULL;
 found:
     if (!alias) {
+#endif
         if (offset > 0 || size != object->type->size) {
             alias2 = make_alias(object, 0, object->type->size);
             alias = create_alias(AliasType_ObjectPart, object, offset, size, TRUE);
@@ -322,34 +341,39 @@ found:
         } else {
             alias = create_alias(AliasType_Object, object, offset, size, TRUE);
         }
-
-        switch (object->datatype) {
-            case DLOCAL:
-                break;
-            default:
-#if VERSION < VERSION_GC_2_5
-                if (!is_safe_const(object)) {
-                    add_alias_member(worst_case_ptr, make_alias(object, 0, 0));
-                }
+#if MWCCPS2_B52
+        add_alias_member(worst_case_ptr, alias);
 #else
-                if (!is_safe_const(object)) {
-                    if (!is_virtual_or_local_static(object)) {
-                        add_alias_member(worst_case_ptr, make_alias(object, 0, 0));
-                    } else {
-                        add_alias_member(worst_case_func, make_alias(object, 0, 0));
-                    }
-                }
-#endif
-        }
-    }
 
-    if ((object->type->type != TYPEARRAY || object->type->size > 0) &&
-        offset > object->type->size) {
-        return NULL;
-    } else {
-        return alias;
+    switch (object->datatype) {
+        case DLOCAL:
+            break;
+        default:
+#if VERSION < VERSION_GC_2_5
+            if (!is_safe_const(object)) {
+                add_alias_member(worst_case_ptr, make_alias(object, 0, 0));
+            }
+#else
+            if (!is_safe_const(object)) {
+                if (!is_virtual_or_local_static(object)) {
+                    add_alias_member(worst_case_ptr, make_alias(object, 0, 0));
+                } else {
+                    add_alias_member(worst_case_func, make_alias(object, 0, 0));
+                }
+            }
+#endif
     }
 }
+
+if ((object->type->type != TYPEARRAY || object->type->size > 0) && offset > object->type->size) {
+    return NULL;
+} else {
+#endif
+        return alias;
+    }
+#if !MWCCPS2_B52
+}
+#endif
 
 #if MWCCPSP
 // 0x481740 (3.0.1 keeps it out of line)
@@ -375,6 +399,7 @@ static inline Alias* create_alias_union(Alias* a, Alias* b) {
 void add_alias_member(Alias* parent, Alias* child) {
     AliasMember* member;
 
+#if !MWCCPS2_B52
     if (parent == child) {
         return;
     }
@@ -398,6 +423,7 @@ void add_alias_member(Alias* parent, Alias* child) {
             }
         }
 
+#endif
         member = lalloc(sizeof(AliasMember));
         member->parent = parent;
         member->child = child;
@@ -406,7 +432,9 @@ void add_alias_member(Alias* parent, Alias* child) {
         member->nextChild = child->children;
         child->children = member;
     }
+#if !MWCCPS2_B52
 }
+#endif
 
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
@@ -1210,6 +1238,34 @@ static void gather_instruction_alias(PCode* pcode, UInt32* myvec) {
 }
 #endif
 
+#if MWCCPS2_B52
+// b69 (0x4A4FE0): GC 2.4.x's gather_alias_info without the coloring path (b69
+// has no use/def chains), on the MIPS back end's pcode (psp/BE.h's MPCode and
+// MPCodeBlock heads, declared here so this unit keeps GC's PCode types): a
+// load, store, memory operation or call without an alias gets worst_case_ptr,
+// then the set aliases get their member vectors
+typedef struct B69PCode {
+    struct B69PCode* next;
+    void* prev;
+    void* block;
+    UInt32 flags; // +0x0C
+    SInt32 useID;
+    SInt32 defID;
+    Alias* alias; // +0x10
+} B69PCode;
+
+typedef struct B69PCodeBlock {
+    struct B69PCodeBlock* next;
+    void* prev;
+    void* labels;
+    void* predecessors;
+    void* successors;
+    B69PCode* first; // +0x14
+} B69PCodeBlock;
+
+extern B69PCodeBlock* data_00624FD0; // pcbasicblocks
+
+#endif
 #if MWCCPSP
 // 3.0.1's gather_alias_info (0x481370) walks MPCode: AliasPropagation.c.
 // This is its tail, which needs this file's alias list.
@@ -1239,6 +1295,15 @@ void gather_alias_info(void) {
     Alias* alias;
     AliasMember* member;
     AliasMember* member2;
+#if MWCCPS2_B52
+    B69PCodeBlock* block;
+    B69PCode* pcode;
+
+    for (block = data_00624FD0; block; block = block->next) {
+        for (pcode = block->first; pcode; pcode = pcode->next) {
+            if ((pcode->flags & 0x60006) && !pcode->alias) {
+                pcode->alias = worst_case_ptr;
+#else
     PCodeBlock* block;
     PCode* pcode;
     RegUseOrDef* list;
@@ -1265,58 +1330,71 @@ void gather_alias_info(void) {
 #else
                     pcode->alias = worst_case_func;
 #endif
-                }
-
-                for (def = &Defs[defID = pcode->defID];
-                     defID < number_of_Defs && def->pcode == pcode;
-                     def++, defID++) {
-                    if (def->v.kind == PCOp_REGISTER && def->v.arg == RegClass_GPR) {
-                        for (list = reg_Defs[def->v.arg][def->v.u.reg]; list; list = list->next) {
-                            bitvectorclearbit(list->id, myvec);
-                        }
-                    }
-                    bitvectorsetbit(defID, myvec);
-                }
-            }
-        }
-
-        freeoheap();
-    } else {
-        for (block = pcbasicblocks; block; block = block->nextBlock) {
-            for (pcode = block->firstPCode; pcode; pcode = pcode->nextPCode) {
-#if VERSION < VERSION_GC_2_5
-                if ((pcode->flags & (fIsRead | fIsWrite | fIsCall)) && !pcode->alias) {
-                    pcode->alias = worst_case_ptr;
-                }
-#else
-                if (!pcode->alias) {
-                    if (pcode->flags & (fIsRead | fIsWrite)) {
-                        pcode->alias = worst_case_ptr;
-                    } else if (pcode->flags & fIsCall) {
-                        pcode->alias = worst_case_func;
-                    }
-                }
 #endif
             }
-        }
-    }
+#if !MWCCPS2_B52
 
-    if (n_gathered_aliases != n_aliases) {
-        for (alias = aliases; alias; alias = alias->next) {
-            if (alias->type == AliasType_Set) {
-                alias->membervec = lalloc(4 * ((n_aliases + 31) >> 5));
-                bitvectorinitialize(alias->membervec, n_aliases, 0);
-                for (member = alias->parents; member; member = member->nextParent) {
-                    bitvectorsetbit(member->child->index, alias->membervec);
-                    for (member2 = member->child->parents; member2; member2 = member2->nextParent) {
-                        bitvectorsetbit(member2->child->index, alias->membervec);
+            for (def = &Defs[defID = pcode->defID]; defID < number_of_Defs && def->pcode == pcode;
+                 def++, defID++) {
+                if (def->v.kind == PCOp_REGISTER && def->v.arg == RegClass_GPR) {
+                    for (list = reg_Defs[def->v.arg][def->v.u.reg]; list; list = list->next) {
+                        bitvectorclearbit(list->id, myvec);
+#endif
                     }
                 }
-            }
-        }
-        n_gathered_aliases = n_aliases;
+#if MWCCPS2_B52
+
+                if (n_gathered_aliases == n_aliases) {
+                    return;
+                }
+#else
+        bitvectorsetbit(defID, myvec);
     }
 }
+}
+
+freeoheap();
+}
+else {
+    for (block = pcbasicblocks; block; block = block->nextBlock) {
+        for (pcode = block->firstPCode; pcode; pcode = pcode->nextPCode) {
+#if VERSION < VERSION_GC_2_5
+            if ((pcode->flags & (fIsRead | fIsWrite | fIsCall)) && !pcode->alias) {
+                pcode->alias = worst_case_ptr;
+            }
+#else
+            if (!pcode->alias) {
+                if (pcode->flags & (fIsRead | fIsWrite)) {
+                    pcode->alias = worst_case_ptr;
+                } else if (pcode->flags & fIsCall) {
+                    pcode->alias = worst_case_func;
+                }
+            }
+#endif
+        }
+    }
+}
+
+if (n_gathered_aliases != n_aliases) {
+#endif
+                for (alias = aliases; alias; alias = alias->next) {
+                    if (alias->type == AliasType_Set) {
+                        alias->membervec = lalloc(4 * ((n_aliases + 31) >> 5));
+                        bitvectorinitialize(alias->membervec, n_aliases, 0);
+                        for (member = alias->parents; member; member = member->nextParent) {
+                            bitvectorsetbit(member->child->index, alias->membervec);
+                            for (member2 = member->child->parents; member2;
+                                 member2 = member2->nextParent) {
+                                bitvectorsetbit(member2->child->index, alias->membervec);
+                            }
+                        }
+                    }
+                }
+                n_gathered_aliases = n_aliases;
+            }
+#if !MWCCPS2_B52
+        }
+#endif
 #endif
 
 #if VERSION < VERSION_GC_2_5
@@ -1336,13 +1414,13 @@ static Boolean may_alias_alias(Alias* a, Alias* b) {
 #if VERSION < VERSION_GC_2_5
             return a->object == b->object;
 #else
-            return same_object(a->object, b->object);
+                    return same_object(a->object, b->object);
 #endif
         case (AliasType_ObjectPart * 3) + AliasType_ObjectPart:
 #if VERSION < VERSION_GC_2_5
             return (a->object == b->object) && aliases_overlap(a, b);
 #else
-            return same_object(a->object, b->object) && aliases_overlap(a, b);
+                    return same_object(a->object, b->object) && aliases_overlap(a, b);
 #endif
         case (AliasType_Object * 3) + AliasType_Set:
         case (AliasType_ObjectPart * 3) + AliasType_Set:
@@ -1363,7 +1441,11 @@ static Boolean may_alias_alias(Alias* a, Alias* b) {
 #endif
 
 Boolean may_alias(PCode* a, PCode* b) {
-    return may_alias_alias(a->alias, b->alias);
+#if MWCCPS2_B52
+    return may_alias_alias(((B69PCode*)a)->alias, ((B69PCode*)b)->alias);
+#else
+            return may_alias_alias(a->alias, b->alias);
+#endif
 }
 
 #if VERSION == VERSION_GC_2_0P2
@@ -1396,7 +1478,11 @@ static inline Boolean is_small_data_load(PCode* pcode) {
         alias->type != AliasType_Set &&
         alias->object->datatype != DLOCAL &&
         alias->object->name->name[0] != '@' &&
+#if MWCCPS2_B52
+        alias->object->type->size <= COPTS_X.sdata_threshold;
+#else
         alias->object->type->size <= copts.sdata_threshold;
+#endif
 }
 
 static inline Boolean is_direct_small_data_store(PCode* pcode) {
@@ -1641,7 +1727,11 @@ void update_small_data_values(PCode* pcode) {
             alias->object->datatype != DLOCAL &&
             alias->object->name->name[0] != '@' &&
             alias != pcode->alias &&
+#if MWCCPS2_B52
+            alias->object->type->size <= COPTS_X.sdata_threshold) {
+#else
             alias->object->type->size <= copts.sdata_threshold) {
+#endif
             killmemory(alias, NULL);
         }
     }

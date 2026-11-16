@@ -70,8 +70,13 @@ void func_00495410(ENode* expr, void* target, VOperand* out) {
         out->unk18 = 0;
     } else {
         *out = func_004C3BA0(0, 0);
+#if MWCCPS2_B52
         if ((expr->rtype->type == TYPEINT || expr->rtype->type == TYPEENUM) &&
             expr->rtype->size == 8) {
+#else
+        if ((expr->rtype->type == TYPEINT || expr->rtype->type == TYPEENUM) &&
+            expr->rtype->size == 8) {
+#endif
             out->regHi = 0;
             out->kind = 0;
         }
@@ -110,20 +115,32 @@ void func_0049B770(ENode* expr, void* target, VOperand* out) {
         return;
     }
     type = expr->rtype;
+#if MWCCPS2_B52
     if (type->type == TYPEINT ||
         type->type == TYPEENUM ||
         type->type == TYPEPOINTER ||
         (type->type == TYPEMEMBERPOINTER && type->size == 4) ||
         type->type == TYPEFLOAT ||
+#else
+    if (type->type == TYPEINT ||
+        type->type == TYPEENUM ||
+        type->type == TYPEPOINTER ||
+        (type->type == TYPEMEMBERPOINTER && type->size == 4) ||
+        type->type == TYPEFLOAT ||
+#endif
         (IS_AGGREGATE(type) && type->size <= data_00624788)) {
         if (out->kind) {
             func_004A64C0(out, type, 0);
         }
+#if !MWCCPS2_B52
         if (IS_AGGREGATE(expr->rtype) && sub->type == 0x3A) {
             func_00480230(CMach_GetTypeAlign(sub->rtype), sub->data.monadic);
+#endif
         }
     }
+#if !MWCCPS2_B52
 }
+#endif
 
 void func_0049B8D0(ENode* expr, void* target, VOperand* out) {
     VOperand a;
@@ -237,7 +254,11 @@ Boolean func_00494170(VOperand* src, SInt32 shift, int negate, VOperand* out, Ty
 #if MWCCPS2
 // b210 (0x49EEB0): 64-bit registers shift a long long like any integer
 // (a call in b210's EDIV, not inlined)
+#if MWCCPS2_B52
+BE_NOINLINE void func_00494360(VOperand* src, Type* type, SInt16 shift, VOperand* out) {
+#else
 __declspec(noinline) void func_00494360(VOperand* src, Type* type, SInt16 shift, VOperand* out) {
+#endif
     *out = func_0047EA50(src, (SInt16)(shift & 0x3F), type);
 }
 #else
@@ -308,9 +329,15 @@ void func_00494AA0(ENode* expr, SInt16 target, VOperand* out) {
 #define IS_SOFTFLOAT(t) \
     ((IS_SINGLE(t) && !(copts.fp_library & 1)) || (IS_DOUBLE(t) && !(copts.fp_library & 2)))
 
+#if MWCCPS2_B52
 void func_004950C0(
     ENode* cond, CLabel* iftrue, CLabel* iffalse, Boolean truenext, Boolean falsenext
 ); // branch on a condition
+#else
+void func_004950C0(
+    ENode* cond, CLabel* iftrue, CLabel* iffalse, Boolean truenext, Boolean falsenext
+); // branch on a condition
+#endif
 extern VOperand func_004A7050(VOperand* src, Type* type); // into a new register
 
 // ECOND: a ? b : c.
@@ -331,18 +358,31 @@ void func_00494AE0(ENode* expr, void* target, VOperand* out) {
     type = expr->rtype;
     a = expr->data.cond.expr1;
     b = expr->data.cond.expr2;
+#if MWCCPS2_B52
     if (copts.peephole &&
         copts.conditional_move &&
         a->type == EINTCONST &&
         b->type == EINTCONST &&
+#else
+    if (copts.peephole &&
+        copts.conditional_move &&
+        a->type == EINTCONST &&
+        b->type == EINTCONST &&
+#endif
         ((cond = expr->data.cond.cond)->type == EEQU || cond->type == ENOTEQU) &&
         cond->data.diadic.right->type == EINTCONST &&
         CInt64_Equal(cond->data.diadic.right->data.intval, cint64_zero)) {
         // a conditional move on the value compared with zero
         op = expr->data.cond.cond->type == ENOTEQU ? 0x111 : 0x110;
+#if MWCCPS2_B52
         data_005D0140[expr->data.cond.cond->data.diadic.left->type](
             expr->data.cond.cond->data.diadic.left, NULL, &c
         );
+#else
+        data_005D0140[expr->data.cond.cond->data.diadic.left->type](
+            expr->data.cond.cond->data.diadic.left, NULL, &c
+        );
+#endif
         if (c.kind) {
             func_004A64C0(&c, expr->data.cond.cond->data.diadic.left->rtype, 1);
         }
@@ -430,9 +470,15 @@ extern MPCode* makepcode(VarArgShort op, ...);
 // out = src << shift (negated when asked); a long long shifts the pair.
 #if MWCCPS2
 // b210 (0x49EF20): one 64-bit register, so no pair shift (called, not inlined)
+#if MWCCPS2_B52
+BE_NOINLINE void func_004945B0(
+    VOperand* src, Type* type, SInt16 shift, SInt16 negate, VOperand* out
+) {
+#else
 __declspec(noinline) void func_004945B0(
     VOperand* src, Type* type, SInt16 shift, SInt16 negate, VOperand* out
 ) {
+#endif
     VOperand v;
 
     *out = func_0047EBB0(src, (SInt16)(shift & 0x3F), type);
@@ -495,9 +541,19 @@ extern void func_0049C250(ENode* cond, CLabel* label, Boolean truth); // conditi
 #define CError_PS2_SHIFT -15 // mwccps2: its assert is at line 0xE53
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -34 // b145 asserts
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-213)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (14)
 void func_004950C0(
     ENode* cond, CLabel* iftrue, CLabel* iffalse, Boolean truenext, Boolean falsenext
 ) {
+#else
+void func_004950C0(
+    ENode* cond, CLabel* iftrue, CLabel* iffalse, Boolean truenext, Boolean falsenext
+) {
+#endif
     CLabel* label;
 
     label = newlabel();
@@ -536,39 +592,75 @@ void func_004950C0(
             CError_FATAL(3682);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 0
 
+#if MWCCPS2_B52
 extern VOperand func_00497480(
     Type* type, ENode* left, ENode* right, UInt16 op, UInt16 op64
 ); // a logical operation
+#else
+extern VOperand func_00497480(
+    Type* type, ENode* left, ENode* right, UInt16 op, UInt16 op64
+); // a logical operation
+#endif
 
 // EOR
 void func_00497360(ENode* expr, void* target, VOperand* out) {
+#if MWCCPS2_B52
     *out = func_00497480(
         expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 0xBE, MACRO_OP(0x69)
     );
+#else
+    *out = func_00497480(
+        expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 0xBE, MACRO_OP(0x69)
+    );
+#endif
 }
 
 // EXOR
 void func_004973C0(ENode* expr, void* target, VOperand* out) {
+#if MWCCPS2_B52
     *out = func_00497480(
         expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 0xE4, MACRO_OP(0x97)
     );
+#else
+    *out = func_00497480(
+        expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 0xE4, MACRO_OP(0x97)
+    );
+#endif
 }
 
 // EAND
 void func_00497420(ENode* expr, void* target, VOperand* out) {
+#if MWCCPS2_B52
     *out = func_00497480(
         expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 6, MACRO_OP(0x02)
     );
+#else
+    *out = func_00497480(
+        expr->rtype, expr->data.diadic.left, expr->data.diadic.right, 6, MACRO_OP(0x02)
+    );
+#endif
 }
 
+#if MWCCPS2_B52
 void func_0049D8D0(
     ENode* left, ENode* right, VOperand* a, VOperand* b, int load
 ); // generate both operands
+#else
+void func_0049D8D0(
+    ENode* left, ENode* right, VOperand* a, VOperand* b, int load
+); // generate both operands
+#endif
 extern VOperand func_0047E650(VOperand* src, UInt32 mask); // src & mask
 extern VOperand func_0047E580(VOperand* src, UInt32 mask); // src | mask
 extern VOperand func_0047E3D0(VOperand* src, SInt32 value); // src ^ value
@@ -942,9 +1034,15 @@ void func_00496D50(ENode* expr, void* target, VOperand* out) {
 
 extern Object* rt_f_sub;
 extern Object* rt_subdf3;
+#if MWCCPS2_B52
 void func_00499010(
     UInt16 op, ENode* x, ENode* y, ENode* z, SInt16 target, VOperand* out
 ); // fused multiply-add family
+#else
+void func_00499010(
+    UInt16 op, ENode* x, ENode* y, ENode* z, SInt16 target, VOperand* out
+); // fused multiply-add family
+#endif
 extern void func_004A4890(VOperand* op, Type* type, int argno); // pass a float argument
 extern VOperand func_004A4710(Type* type); // a float call's result
 
@@ -953,7 +1051,13 @@ extern VOperand ps2_const128_48E3D0(CInt64 value, Type* type); // load a constan
 #endif
 // madd/msub on the float accumulator: b210 tests #pragma usefloatacc (copts+0x3F)
 #if MWCCPS2
+#if MWCCPS2_B52
+// b69's instruction selection never emits the accumulator forms (0x1B4/0x1B5/
+// 0x1B9 occur only in its peephole patterns and the opcode table)
+#define FLOAT_ACC_ON 0
+#else
 #define FLOAT_ACC_ON copts.usefloatacc
+#endif
 #else
 #define FLOAT_ACC_ON copts.mips_option3C
 #endif
@@ -974,16 +1078,30 @@ void func_004980C0(ENode* expr, SInt16 target, VOperand* out) {
     left = expr->data.diadic.left;
     right = expr->data.diadic.right;
     if (type->type == TYPEFLOAT) {
+#if MWCCPS2_B52
         if (right->type == EMUL &&
             IS_SINGLE(left->rtype) &&
             IS_SINGLE(right->rtype) &&
             IS_SINGLE(right->data.diadic.left->rtype) &&
             IS_SINGLE(right->data.diadic.right->rtype) &&
+#else
+        if (right->type == EMUL &&
+            IS_SINGLE(left->rtype) &&
+            IS_SINGLE(right->rtype) &&
+            IS_SINGLE(right->data.diadic.left->rtype) &&
+            IS_SINGLE(right->data.diadic.right->rtype) &&
+#endif
             FLOAT_ACC_ON) {
             CError_ASSERT(2412, right->rtype->type == TYPEFLOAT);
+#if MWCCPS2_B52
             func_00499010(
                 0x1E2, right->data.diadic.left, right->data.diadic.right, left, target, out
             );
+#else
+            func_00499010(
+                0x1E2, right->data.diadic.left, right->data.diadic.right, left, target, out
+            );
+#endif
             return;
         }
         func_0049D8D0(left, right, &a, &b, 1);
@@ -1056,31 +1174,61 @@ void func_00498590(ENode* expr, SInt16 target, VOperand* out) {
     right = expr->data.diadic.right;
     if (type->type == TYPEFLOAT) {
         if (left->type == EMUL &&
+#if MWCCPS2_B52
             ALL_SINGLE4(
                 left->rtype,
                 right->rtype,
                 left->data.diadic.left->rtype,
                 left->data.diadic.right->rtype
             ) &&
+#else
+            ALL_SINGLE4(
+                left->rtype,
+                right->rtype,
+                left->data.diadic.left->rtype,
+                left->data.diadic.right->rtype
+            ) &&
+#endif
             FLOAT_ACC_ON) {
             CError_ASSERT(2246, left->rtype->type == TYPEFLOAT);
+#if MWCCPS2_B52
             func_00499010(
                 0x1DE, left->data.diadic.left, left->data.diadic.right, right, target, out
             );
+#else
+            func_00499010(
+                0x1DE, left->data.diadic.left, left->data.diadic.right, right, target, out
+            );
+#endif
             return;
         }
         if (right->type == EMUL &&
+#if MWCCPS2_B52
             ALL_SINGLE4(
                 left->rtype,
                 right->rtype,
                 right->data.diadic.left->rtype,
                 right->data.diadic.right->rtype
             ) &&
+#else
+            ALL_SINGLE4(
+                left->rtype,
+                right->rtype,
+                right->data.diadic.left->rtype,
+                right->data.diadic.right->rtype
+            ) &&
+#endif
             FLOAT_ACC_ON) {
             CError_ASSERT(2258, right->rtype->type == TYPEFLOAT);
+#if MWCCPS2_B52
             func_00499010(
                 0x1DE, right->data.diadic.left, right->data.diadic.right, left, target, out
             );
+#else
+            func_00499010(
+                0x1DE, right->data.diadic.left, right->data.diadic.right, left, target, out
+            );
+#endif
             return;
         }
         func_0049D8D0(left, right, &a, &b, 1);
@@ -1222,8 +1370,13 @@ void func_00499010(UInt16 op, ENode* x, ENode* y, ENode* z, SInt16 target, VOper
         dst = data_00625A98[1]++;
     }
     acc = data_00625A98[1]++;
+#if MWCCPS2_B52
+    emitpcode(OPC(0xAD), 0, acc);
+    emitpcode(OPC(0x1DD), acc, vz.reg);
+#else
     emitpcode(0xAD, 0, acc);
     emitpcode(0x1DD, acc, vz.reg);
+#endif
     emitpcode(op, dst, vx.reg, vy.reg);
     memclrw(out, sizeof(VOperand));
     out->kind = 1;
@@ -1237,13 +1390,25 @@ extern Object* rt_muldi3_2;
 extern Object* rt_l_muls;
 extern Object* rt_l_mulu;
 extern SInt16 data_00625CE0; // multiply
+#if MWCCPS2_B52
+extern SInt16 data_00625E4A; // unsigned multiply
+#endif
 extern SInt16 data_00625E4E; // multiply (long long)
+#if MWCCPS2_B52
 void func_00493FA0(
     SInt16 op, ENode* left, ENode* right, VOperand* out
 ); // a floating-point operation
 extern VOperand MultiplyByConstant(
     VOperand* src, SInt32 value, Type* type
 ); // multiply by a constant
+#else
+void func_00493FA0(
+    SInt16 op, ENode* left, ENode* right, VOperand* out
+); // a floating-point operation
+extern VOperand MultiplyByConstant(
+    VOperand* src, SInt32 value, Type* type
+); // multiply by a constant
+#endif
 #if MWCCPS2
 extern SInt16 ps2_pipeop3_63732A; // multiply, unsigned (data_00625E4A)
 // b210's func_00491840 (0x49D250) takes the value as a native 64-bit integer,
@@ -1256,8 +1421,13 @@ static inline SInt32 ll_mul_size(ENode* e) {
     if (e->type == EASS) {
         e = e->data.diadic.right;
     }
+#if MWCCPS2_B52
     if (e->type == ETYPCON &&
         e->data.monadic->rtype->size < e->rtype->size &&
+#else
+    if (e->type == ETYPCON &&
+        e->data.monadic->rtype->size < e->rtype->size &&
+#endif
         e->data.monadic->rtype->type != TYPEFLOAT &&
         is_unsigned(e->rtype) == is_unsigned(e->data.monadic->rtype)) {
         return e->data.monadic->rtype->size;
@@ -1376,10 +1546,18 @@ void func_00490BB0(ENode* expr, SInt16 target, VOperand* out) {
         case 4:
             if (!rsigned && !lsigned) {
                 emitpcode(ps2_pipeop3_63732A, dst, a.reg, b.reg);
+#if MWCCPS2_B52
+                emitpcode(OPC(0x48C), dst, dst, 0x20);
+#else
                 emitpcode(0x48C, dst, dst, 0x20);
+#endif
             } else {
                 emitpcode(data_00625CE0, dst, a.reg, b.reg);
+#if MWCCPS2_B52
+                emitpcode(OPC(0x48B), dst, dst, 0x20);
+#else
                 emitpcode(0x48B, dst, dst, 0x20);
+#endif
             }
             break;
         case 5:
@@ -1392,8 +1570,13 @@ void func_00490BB0(ENode* expr, SInt16 target, VOperand* out) {
                 emitpcode(data_00625CE0, t1, a.reg, b.reg);
             }
             t2 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0xA8), t2);
+            emitpcode(OPC(0x228), dst, t2, t1);
+#else
             emitpcode(0xA8, t2);
             emitpcode(0x228, dst, t2, t1);
+#endif
             break;
         case 9:
         case 10:
@@ -1403,47 +1586,101 @@ void func_00490BB0(ENode* expr, SInt16 target, VOperand* out) {
             }
             if (!rsigned) {
                 t1 = data_00625A98[0]++;
+#if MWCCPS2_B52
+                emitpcode(OPC(0x48B), t1, a.reg, 0x20);
+#else
                 emitpcode(0x48B, t1, a.reg, 0x20);
+#endif
                 t2 = data_00625A98[0]++;
                 emitpcode(ps2_pipeop3_63732A, t2, t1, b.reg);
                 t3 = data_00625A98[0]++;
+#if MWCCPS2_B52
+                emitpcode(OPC(0xA8), t3);
+#else
                 emitpcode(0xA8, t3);
+#endif
                 t4 = data_00625A98[0]++;
+#if MWCCPS2_B52
+                emitpcode(OPC(0x228), t4, t3, t2);
+#else
                 emitpcode(0x228, t4, t3, t2);
+#endif
                 t5 = data_00625A98[0]++;
+#if MWCCPS2_B52
+                emitpcode(OPC(0x88), t5, a.reg, 0);
+#else
                 emitpcode(0x88, t5, a.reg, 0);
+#endif
                 t6 = data_00625A98[0]++;
                 emitpcode(data_00625CE0, t6, b.reg, t5);
                 t7 = data_00625A98[0]++;
+#if MWCCPS2_B52
+                emitpcode(OPC(0x85), t7, t6, 0);
+                emitpcode(OPC(0x79), dst, t7, t4);
+#else
                 emitpcode(0x85, t7, t6, 0);
                 emitpcode(0x79, dst, t7, t4);
+#endif
                 break;
             }
             // a signed narrow operand: as 8 x 8
         case 16:
             t1 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x48B), t1, a.reg, 0x20);
+#else
             emitpcode(0x48B, t1, a.reg, 0x20);
+#endif
             t2 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x48B), t2, b.reg, 0x20);
+#else
             emitpcode(0x48B, t2, b.reg, 0x20);
+#endif
             t3 = data_00625A98[0]++;
             emitpcode(ps2_pipeop3_63732A, t3, t1, t2);
             t4 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0xA8), t4);
+#else
             emitpcode(0xA8, t4);
+#endif
             t5 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x228), t5, t4, t3);
+#else
             emitpcode(0x228, t5, t4, t3);
+#endif
             t6 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x88), t6, b.reg, 0);
+#else
             emitpcode(0x88, t6, b.reg, 0);
+#endif
             t7 = data_00625A98[0]++;
             emitpcode(data_00625CE0, t7, t6, t1);
             t8 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x88), t8, a.reg, 0);
+#else
             emitpcode(0x88, t8, a.reg, 0);
+#endif
             t9 = data_00625A98[0]++;
             emitpcode(data_00625CE0, t9, t2, t8);
             t10 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x79), t10, t7, t9);
+#else
             emitpcode(0x79, t10, t7, t9);
+#endif
             t11 = data_00625A98[0]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0x85), t11, t10, 0);
+            emitpcode(OPC(0x79), dst, t11, t5);
+#else
             emitpcode(0x85, t11, t10, 0);
             emitpcode(0x79, dst, t11, t5);
+#endif
             break;
     }
     *out = func_004C3B10(data_006246B4->last->args[0]);
@@ -1517,9 +1754,36 @@ void func_0049A740(ENode* expr, SInt16 target, VOperand* out) {
         return;
     }
     if (IS_TYPE_LL(type) && copts.mips_option25) {
+#if MWCCPS2_B52
+        if (left->type == ETYPCON &&
+            right->type == ETYPCON &&
+            left->data.monadic->rtype->size < 8 &&
+            right->data.monadic->rtype->size < 8) {
+            UInt16 hi, lo;
+            func_00493FA0(is_unsigned(type) ? data_00625E4A : data_00625CE0, left, right, out);
+            hi = data_00625A98[0]++;
+            emitpcode(OPC(0xA9), hi);
+            lo = data_00625A98[0]++;
+            emitpcode(OPC(0xA8), lo);
+            emitpcode(OPC(0x85), hi, hi, 0);
+            emitpcode(OPC(0x85), lo, lo, 0);
+            emitpcode(OPC(0x8B), lo, lo, 0);
+            emitpcode(OPC(0xBE), data_00625A98[0]++, lo, hi);
+            *out = func_004C3B10(data_006246B4->last->args[0]);
+#else
         func_00490BB0(expr, target, out);
+#endif
+            return;
+        }
+#if MWCCPS2_B52
+        func_0049D8D0(left, right, &a, &b, 1);
+        func_004A47E0(&a, 1, 1);
+        func_004A47E0(&b, 1, 2);
+        func_004A4A20(is_unsigned(type) ? rt_muldi3_2 : rt_muldi3);
+        *out = func_004A46E0(1);
         return;
     }
+#endif
     if (copts.mips_option26) {
         func_0049D8D0(left, right, &a, &b, 1);
         func_004A47E0(&a, 0, 1);
@@ -1681,16 +1945,28 @@ void func_00499820(ENode* expr, SInt16 target, VOperand* out) {
         ok = makepclabel();
         trap = makepclabel();
         emitpcode(divop, a.reg, b.reg);
+#if MWCCPS2_B52
+        emitpcode(OPC(0x2A), b.reg, ok);
+#else
         emitpcode(0x2A, b.reg, ok);
+#endif
         pcbranch(data_006246B4, ok, 0);
         pcbranch(data_006246B4, trap, 0);
         makepcblock();
         pclabel(data_006246B4, trap);
+#if MWCCPS2_B52
+        emitpcode(OPC(0x3E), 7);
+#else
         emitpcode(0x3E, 7);
+#endif
         pcbranch(data_006246B4, ok, 0);
         makepcblock();
         pclabel(data_006246B4, ok);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA9), data_00625A98[0]++);
+#else
         emitpcode(0xA9, data_00625A98[0]++);
+#endif
     } else {
         emitpcode(op, data_00625A98[0]++, a.reg, b.reg);
     }
@@ -1699,9 +1975,15 @@ void func_00499820(ENode* expr, SInt16 target, VOperand* out) {
 
 extern Object* rt_moddi3;
 extern Object* rt_umoddi3;
+#if MWCCPS2_B52
 extern VOperand func_00479E40(
     UInt16 op, VOperand* src, CInt64 value
 ); // an operation with a constant
+#else
+extern VOperand func_00479E40(
+    UInt16 op, VOperand* src, CInt64 value
+); // an operation with a constant
+#endif
 
 // EMODULO
 void func_00499200(ENode* expr, SInt16 target, VOperand* out) {
@@ -1758,16 +2040,26 @@ void func_00499200(ENode* expr, SInt16 target, VOperand* out) {
             label->pclabel = (struct PCodeLabel*)makepclabel();
             func_00479540(0x1C, &a, label);
             func_00479540(0x1A, &tmp, label);
+#if MWCCPS2_B52
             t = func_00479E40(
                 IS_TYPE_LL(type) ? 0x78 : 3, &tmp, CInt64_Sub(CInt64_Neg(m), cint64_one)
             );
+#else
+            t = func_00479E40(
+                IS_TYPE_LL(type) ? 0x78 : 3, &tmp, CInt64_Sub(CInt64_Neg(m), cint64_one)
+            );
+#endif
             emitpcode(data_00625E48, tmp.reg, t.reg);
             func_0046FA90((MPCodeLabel*)label->pclabel);
             *out = func_0047F9A0(&tmp);
             return;
         }
         emitpcode(divop, a.reg, b.reg);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA8), data_00625A98[0]++);
+#else
         emitpcode(0xA8, data_00625A98[0]++);
+#endif
         *out = func_004C3B10(data_006246B4->last->args[0]);
         return;
     }
@@ -1775,17 +2067,29 @@ void func_00499200(ENode* expr, SInt16 target, VOperand* out) {
     if (copts.divbyzerocheck) {
         ok = makepclabel();
         trap = makepclabel();
+#if MWCCPS2_B52
+        emitpcode(OPC(0x2A), b.reg, ok);
+#else
         emitpcode(0x2A, b.reg, ok);
+#endif
         pcbranch(data_006246B4, ok, 0);
         pcbranch(data_006246B4, trap, 0);
         makepcblock();
         pclabel(data_006246B4, trap);
+#if MWCCPS2_B52
+        emitpcode(OPC(0x3E), 7);
+#else
         emitpcode(0x3E, 7);
+#endif
         pcbranch(data_006246B4, ok, 0);
         makepcblock();
         pclabel(data_006246B4, ok);
     }
+#if MWCCPS2_B52
+    emitpcode(OPC(0xA8), data_00625A98[0]++);
+#else
     emitpcode(0xA8, data_00625A98[0]++);
+#endif
     *out = func_004C3B10(data_006246B4->last->args[0]);
 }
 
@@ -1847,12 +2151,20 @@ void func_0049B930(ENode* expr, VOperand* old, VOperand* updated) {
         } else {
             one = func_0047F660(0x3F800000);
             f = data_00625A98[1]++;
+#if MWCCPS2_B52
+            emitpcode(OPC(0xAD), one.reg, f);
+#else
             emitpcode(0xAD, one.reg, f);
+#endif
             setpcodeflags(0x4000);
             if (IS_SINGLE(type)) {
                 op = inc ? 0xED : 0x103;
             } else {
+#if MWCCPS2_B52
+                emitpcode(OPC(0x6D), delta = data_00625A98[1]++, f);
+#else
                 emitpcode(0x6D, delta = data_00625A98[1]++, f);
+#endif
                 f = delta;
                 op = inc ? 0xEC : 0x102;
             }
@@ -1920,13 +2232,25 @@ void func_00493FA0(SInt16 op, ENode* left, ENode* right, VOperand* out) {
     if (b.kind) {
         func_004A64C0(&b, right->rtype, 0);
     }
+#if MWCCPS2_B52
+    if (copts.mips_isa >= 4 &&
+        copts.mips_option11 &&
+        (op == OPC(0xF2) || op == OPC(0xF3)) &&
+        !copts.optimizesize) {
+        emitpcode(op == OPC(0xF3) ? 0x123 : 0x122, r = data_00625A98[1]++, b.reg);
+#else
     if (copts.mips_isa >= 4 &&
         copts.mips_option11 &&
         (op == 0xF2 || op == 0xF3) &&
         !copts.optimizesize) {
         emitpcode(op == 0xF3 ? 0x123 : 0x122, r = data_00625A98[1]++, b.reg);
+#endif
         if (!one) {
+#if MWCCPS2_B52
+            emitpcode(op == OPC(0xF3) ? 0xB5 : 0xB4, data_00625A98[1]++, a.reg, r);
+#else
             emitpcode(op == 0xF3 ? 0xB5 : 0xB4, data_00625A98[1]++, a.reg, r);
+#endif
         }
     } else {
         emitpcode(op, data_00625A98[1]++, a.reg, b.reg);
@@ -1969,7 +2293,11 @@ void func_0049B1D0(ENode* expr, void* target, VOperand* out) {
 #if MWCCPSP_NATIVE // 3.0.1 evaluates arguments right to left
                 {
                     SInt32 k = func_0047F680(0x80000000);
+#if MWCCPS2_B52
+                    emitpcode(OPC(0xE4), data_00625A98[0]++, out->reg, k);
+#else
                     emitpcode(0xE4, data_00625A98[0]++, out->reg, k);
+#endif
                 }
 #else
                 emitpcode(0xE4, data_00625A98[0]++, out->reg, func_0047F680(0x80000000));
@@ -1982,7 +2310,11 @@ void func_0049B1D0(ENode* expr, void* target, VOperand* out) {
                 c.mid[1] = 0x80000000;
                 c.lo = 0;
                 k = func_0047F9F0(c, TYPE(&stunsignedlonglong));
+#if MWCCPS2_B52
+                emitpcode(OPC(0xE4), data_00625A98[0]++, out->reg, k.reg);
+#else
                 emitpcode(0xE4, data_00625A98[0]++, out->reg, k.reg);
+#endif
                 *out = func_004C3B10(data_006246B4->last->args[0]);
 #elif MWCCPSP_NATIVE // 3.0.1 evaluates arguments right to left
                 {
@@ -2038,12 +2370,21 @@ void func_0049B1D0(ENode* expr, void* target, VOperand* out) {
 
 extern UInt8 data_00625E83; // something branches to the return label
 extern CLabel* data_006242A4; // returnlabel
+#if MWCCPS2_B52
 extern void func_00479430(
     UInt16 op, VOperand* a, VOperand* b, CLabel* label
 ); // compare two registers and branch
 extern void func_00479310(
     UInt16 op, VOperand* a, SInt32 imm, CLabel* label
 ); // compare with an immediate and branch
+#else
+extern void func_00479430(
+    UInt16 op, VOperand* a, VOperand* b, CLabel* label
+); // compare two registers and branch
+extern void func_00479310(
+    UInt16 op, VOperand* a, SInt32 imm, CLabel* label
+); // compare with an immediate and branch
+#endif
 extern void func_00479640(UInt16 op, CLabel* label);
 extern void func_00479A50(UInt16 op, CLabel* label); // branch on the FP condition
 extern void func_0047A170(VOperand* a, CInt64* imm, Type* type, CLabel* label);
@@ -2059,9 +2400,15 @@ extern void func_0047BD20(VOperand* a, SInt32 imm, CLabel* label);
 extern void func_0047BF50(VOperand* a, SInt32 imm, CLabel* label);
 extern void func_0047C290(VOperand* a, SInt32 imm, CLabel* label);
 Object* func_0049D400(int op, Type* type); // the soft-float comparison routine
+#if MWCCPS2_B52
 void func_0049D530(
     int op, Type* type, SInt16* brop, SInt16* cmpop, Boolean truth
 ); // FP compare and branch opcodes
+#else
+void func_0049D530(
+    int op, Type* type, SInt16* brop, SInt16* cmpop, Boolean truth
+); // FP compare and branch opcodes
+#endif
 
 // Branch to label when cond is (truth ? true : false).
 void func_0049C250(ENode* cond, CLabel* label, Boolean truth) {
@@ -2536,11 +2883,19 @@ VOperand func_0049A430(VOperand* src, SInt32 d) {
     VOperand sign;
 
     m = func_0053EE10(d);
+#if MWCCPS2_B52
+    emitpcode(OPC(0xB6), func_0047F680(m.magic), src->reg);
+#else
     emitpcode(0xB6, func_0047F680(m.magic), src->reg);
+#endif
     if (d > 0) {
         sign = func_00479D10(0xDA, src, 31);
     }
+#if MWCCPS2_B52
+    emitpcode(OPC(0xA8), data_00625A98[0]++);
+#else
     emitpcode(0xA8, data_00625A98[0]++);
+#endif
     q = func_004C3B10(data_006246B4->last->args[0]);
     if (d > 0 && m.magic < 0) {
         q = func_0047F740(4, &q, src, 0);
@@ -2564,8 +2919,13 @@ VOperand func_0049A5C0(VOperand* src, UInt32 d) {
     VOperand t;
 
     m = func_0053ECC0(d);
+#if MWCCPS2_B52
+    emitpcode(OPC(0xB7), func_0047F680(m.magic), src->reg);
+    emitpcode(OPC(0xA8), data_00625A98[0]++);
+#else
     emitpcode(0xB7, func_0047F680(m.magic), src->reg);
     emitpcode(0xA8, data_00625A98[0]++);
+#endif
     q = func_004C3B10(data_006246B4->last->args[0]);
     if (!m.add) {
         if (m.shift) {
@@ -2598,6 +2958,10 @@ extern Object* rt_dpfeq;
 extern Object* rt_dpfne;
 
 // The soft-float routine for a comparison.
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-1)
+#endif
 Object* func_0049D400(int op, Type* type) {
     Boolean single;
 
@@ -2621,6 +2985,10 @@ Object* func_0049D400(int op, Type* type) {
             return NULL;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 // The FPU compare (c.cond.fmt) and branch (bc1t/bc1f) for a comparison.
 void func_0049D530(int op, Type* type, SInt16* brop, SInt16* cmpop, Boolean truth) {
@@ -2695,9 +3063,15 @@ inline Boolean from_bitfield(ENode* sub) {
     if (sub->type == EINDIRECT && sub->data.monadic->type == EBITFIELD) {
         return 1;
     }
+#if MWCCPS2_B52
     if (sub->type >= EASS &&
         sub->type <= EORASS &&
         sub->data.diadic.left->data.monadic->type == EBITFIELD) {
+#else
+    if (sub->type >= EASS &&
+        sub->type <= EORASS &&
+        sub->data.diadic.left->data.monadic->type == EBITFIELD) {
+#endif
         return 1;
     }
     if (sub->type <= EPREDEC && sub->data.monadic->data.monadic->type == EBITFIELD) {
@@ -2707,9 +3081,15 @@ inline Boolean from_bitfield(ENode* sub) {
 }
 
 // Unsigned 32-bit from a float: values of 2^31 and above are reduced first.
+#if MWCCPS2_B52
 static void float_to_uint(
     VOperand* out, VOperand* k, UInt16 trunc, UInt16 cmp, UInt16 sub, SInt32 topbit
 ) {
+#else
+static void float_to_uint(
+    VOperand* out, VOperand* k, UInt16 trunc, UInt16 cmp, UInt16 sub, SInt32 topbit
+) {
+#endif
     MPCodeLabel* large;
     MPCodeLabel* end;
     SInt32 src;
@@ -2720,32 +3100,56 @@ static void float_to_uint(
     src = out->reg;
     if (copts.mips_flags02 & 0x4000) {
         emitpcode(trunc, f = data_00625A98[1]++, src);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
         emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
         setpcodeflags(0x4000);
         *out = func_004C3B10(data_006246B4->last->args[0]);
         emitpcode(cmp, k->reg, src);
         func_00479B00(0xC, large);
         emitpcode(sub, f = data_00625A98[1]++, src, k->reg);
         emitpcode(trunc, r = data_00625A98[1]++, f);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), f = data_00625A98[0]++, r);
+#else
         emitpcode(0xA5, f = data_00625A98[0]++, r);
+#endif
         setpcodeflags(0x4000);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xBE), out->reg, f, func_0047F680(topbit));
+#else
         emitpcode(0xBE, out->reg, f, func_0047F680(topbit));
+#endif
         func_0046FA90(large);
     } else {
         end = makepclabel();
         emitpcode(cmp, k->reg, src);
         func_00479B00(0xE, large);
         emitpcode(trunc, f = data_00625A98[1]++, src);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
         emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
         setpcodeflags(0x4000);
         *out = func_004C3B10(data_006246B4->last->args[0]);
         func_00480710(end);
         func_0046FA90(large);
         emitpcode(sub, f = data_00625A98[1]++, src, k->reg);
         emitpcode(trunc, r = data_00625A98[1]++, f);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), f = data_00625A98[0]++, r);
+#else
         emitpcode(0xA5, f = data_00625A98[0]++, r);
+#endif
         setpcodeflags(0x4000);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xBE), out->reg, f, func_0047F680(topbit));
+#else
         emitpcode(0xBE, out->reg, f, func_0047F680(topbit));
+#endif
         func_0046FA90(end);
     }
 }
@@ -2762,9 +3166,15 @@ extern void ps2_lltof_4A5810(VOperand* out); // long long to float
 extern void ps2_lltod_4A5A10(VOperand* out); // long long to double
 
 // float_to_uint with the constant made after the label (b210 inlines it)
+#if MWCCPS2_B52
 inline void ps2_float_to_uint(
     VOperand* out, Boolean dbl, UInt16 trunc, UInt16 cmp, UInt16 sub, SInt32 topbit
 ) {
+#else
+inline void ps2_float_to_uint(
+    VOperand* out, Boolean dbl, UInt16 trunc, UInt16 cmp, UInt16 sub, SInt32 topbit
+) {
+#endif
     MPCodeLabel* large;
     MPCodeLabel* end;
     VOperand k;
@@ -2788,16 +3198,28 @@ inline void ps2_float_to_uint(
     if (copts.mips_flags02 & 0x4000) {
         src = out->reg;
         emitpcode(trunc, f = data_00625A98[1]++, src);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
         emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
         setpcodeflags(0x4000);
         *out = func_004C3B10(data_006246B4->last->args[0]);
         emitpcode(cmp, k.reg, src);
         func_00479B00(0xC, large);
         emitpcode(sub, f = data_00625A98[1]++, src, k.reg);
         emitpcode(trunc, r = data_00625A98[1]++, f);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), f = data_00625A98[0]++, r);
+#else
         emitpcode(0xA5, f = data_00625A98[0]++, r);
+#endif
         setpcodeflags(0x4000);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xBE), out->reg, f, func_0047F680(topbit));
+#else
         emitpcode(0xBE, out->reg, f, func_0047F680(topbit));
+#endif
         func_0046FA90(large);
     } else {
         end = makepclabel();
@@ -2805,16 +3227,28 @@ inline void ps2_float_to_uint(
         emitpcode(cmp, k.reg, src);
         func_00479B00(0xE, large);
         emitpcode(trunc, f = data_00625A98[1]++, src);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
         emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
         setpcodeflags(0x4000);
         *out = func_004C3B10(data_006246B4->last->args[0]);
         func_00480710(end);
         func_0046FA90(large);
         emitpcode(sub, f = data_00625A98[1]++, src, k.reg);
         emitpcode(trunc, r = data_00625A98[1]++, f);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xA5), f = data_00625A98[0]++, r);
+#else
         emitpcode(0xA5, f = data_00625A98[0]++, r);
+#endif
         setpcodeflags(0x4000);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xBE), out->reg, f, func_0047F680(topbit));
+#else
         emitpcode(0xBE, out->reg, f, func_0047F680(topbit));
+#endif
         func_0046FA90(end);
     }
 }
@@ -2864,9 +3298,15 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
             if (from_bitfield(sub)) {
                 return;
             }
+#if MWCCPS2_B52
             *out = func_00479C30(
                 is_unsigned(from) ? MACRO_OP(0x82) : MACRO_OP(0x81), out, from->size * 8
             );
+#else
+            *out = func_00479C30(
+                is_unsigned(from) ? MACRO_OP(0x82) : MACRO_OP(0x81), out, from->size * 8
+            );
+#endif
             return;
         }
         if (to->size < from->size) {
@@ -2875,8 +3315,13 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
                 *out = func_00479C30(MACRO_OP(0x81), out, 32);
                 return;
             }
+#if MWCCPS2_B52
             *out =
                 func_00479C30(is_unsigned(to) ? MACRO_OP(0x82) : MACRO_OP(0x81), out, to->size * 8);
+#else
+            *out =
+                func_00479C30(is_unsigned(to) ? MACRO_OP(0x82) : MACRO_OP(0x81), out, to->size * 8);
+#endif
             return;
         }
         if (is_unsigned(from) == is_unsigned(to)) {
@@ -2896,8 +3341,13 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
     }
 
     if (to->type == TYPEFLOAT) {
+#if MWCCPS2_B52
         if ((to->type == TYPEFLOAT && IS_SOFTFLOAT(to)) ||
             (from->type == TYPEFLOAT && IS_SOFTFLOAT(from))) {
+#else
+        if ((to->type == TYPEFLOAT && IS_SOFTFLOAT(to)) ||
+            (from->type == TYPEFLOAT && IS_SOFTFLOAT(from))) {
+#endif
             if (to->size != from->size) {
                 func_004A4890(out, from, 1);
                 func_004A4A20(IS_DOUBLE(to) ? rt_extendsfdf2 : rt_truncdfsf2);
@@ -2906,10 +3356,18 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
             return;
         }
         if (to->size < from->size) {
+#if MWCCPS2_B52
+            emitpcode(OPC(0x71), data_00625A98[1]++, out->reg);
+#else
             emitpcode(0x71, data_00625A98[1]++, out->reg);
+#endif
             *out = func_004C3B10(data_006246B4->last->args[0]);
         } else if (to->size > from->size) {
+#if MWCCPS2_B52
+            emitpcode(OPC(0x6D), data_00625A98[1]++, out->reg);
+#else
             emitpcode(0x6D, data_00625A98[1]++, out->reg);
+#endif
             *out = func_004C3B10(data_006246B4->last->args[0]);
         }
         return;
@@ -2919,15 +3377,25 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
     if (copts.trunc && (copts.fp_library & 4)) {
         if ((copts.fp_library & 1) && IS_SINGLE(from)) {
             if (IS_TYPE_LL(to) && !is_unsigned(to)) {
+#if MWCCPS2_B52
+                emitpcode(OPC(0x105), f = data_00625A98[1]++, out->reg);
+                emitpcode(OPC(0x7F), data_00625A98[0]++, f);
+#else
                 emitpcode(0x105, f = data_00625A98[1]++, out->reg);
                 emitpcode(0x7F, data_00625A98[0]++, f);
+#endif
                 *out = func_004C3B10(data_006246B4->last->args[0]);
                 return;
             }
             if (!IS_TYPE_LL(to)) {
                 if (!is_unsigned(to)) {
+#if MWCCPS2_B52
+                    emitpcode(OPC(0x107), f = data_00625A98[1]++, out->reg);
+                    emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
                     emitpcode(0x107, f = data_00625A98[1]++, out->reg);
                     emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
                     setpcodeflags(0x4000);
                     *out = func_004C3B10(data_006246B4->last->args[0]);
                     return;
@@ -2940,15 +3408,25 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
         }
         if ((copts.fp_library & 2) && IS_DOUBLE(from)) {
             if (IS_TYPE_LL(to) && !is_unsigned(to)) {
+#if MWCCPS2_B52
+                emitpcode(OPC(0x104), f = data_00625A98[1]++, out->reg);
+                emitpcode(OPC(0x7F), data_00625A98[0]++, f);
+#else
                 emitpcode(0x104, f = data_00625A98[1]++, out->reg);
                 emitpcode(0x7F, data_00625A98[0]++, f);
+#endif
                 *out = func_004C3B10(data_006246B4->last->args[0]);
                 return;
             }
             if (!IS_TYPE_LL(to)) {
                 if (!is_unsigned(to)) {
+#if MWCCPS2_B52
+                    emitpcode(OPC(0x106), f = data_00625A98[1]++, out->reg);
+                    emitpcode(OPC(0xA5), data_00625A98[0]++, f);
+#else
                     emitpcode(0x106, f = data_00625A98[1]++, out->reg);
                     emitpcode(0xA5, data_00625A98[0]++, f);
+#endif
                     setpcodeflags(0x4000);
                     *out = func_004C3B10(data_006246B4->last->args[0]);
                     return;
@@ -2962,14 +3440,21 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
     }
     if ((copts.fast_fptosi || copts.fastmath) && IS_SINGLE(from) && !IS_TYPE_LL(to)) {
         if (!is_unsigned(to)) {
+#if MWCCPS2_B52
+            emitpcode(OPC(0x75), f = data_00625A98[1]++, out->reg);
+            emitpcode(OPC(0xA5), r = data_00625A98[0]++, f);
+#else
             emitpcode(0x75, f = data_00625A98[1]++, out->reg);
             emitpcode(0xA5, r = data_00625A98[0]++, f);
+#endif
             setpcodeflags(0x4000);
+#if !MWCCPS2_B52
             if (to == TYPE(&stchar) || to == TYPE(&stsignedchar)) {
                 emitpcode(MACRO_OP(0x81), data_00625A98[0]++, r, 8);
             } else if (to == TYPE(&stsignedshort)) {
                 emitpcode(MACRO_OP(0x81), data_00625A98[0]++, r, 16);
             }
+#endif
             *out = func_004C3B10(data_006246B4->last->args[0]);
             return;
         }
@@ -2977,30 +3462,52 @@ void func_00495500(ENode* expr, void* target, VOperand* out) {
         fin = makepclabel();
         k = func_0047F660(0x4F000000);
         k = func_0047A060(&k);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xF9), f = data_00625A98[1]++, out->reg);
+        emitpcode(OPC(0x49), k.reg, f);
+#else
         emitpcode(0xF9, f = data_00625A98[1]++, out->reg);
         emitpcode(0x49, k.reg, f);
+#endif
         func_00479B00(0xE, fin);
+#if MWCCPS2_B52
+        emitpcode(OPC(0x75), f, f);
+        emitpcode(OPC(0xA5), r = data_00625A98[0]++, f);
+#else
         emitpcode(0x75, f, f);
         emitpcode(0xA5, r = data_00625A98[0]++, f);
+#endif
         setpcodeflags(0x4000);
+#if !MWCCPS2_B52
         if (to == TYPE(&stunsignedchar)) {
             emitpcode(MACRO_OP(0x82), r, r, 8);
         } else if (to == TYPE(&stunsignedshort)) {
             emitpcode(MACRO_OP(0x82), r, r, 16);
         }
+#endif
         *out = func_004C3B10(data_006246B4->last->args[0]);
         func_00480710(big);
         func_0046FA90(fin);
+#if MWCCPS2_B52
+        emitpcode(OPC(0x103), f, f, k.reg);
+        emitpcode(OPC(0x75), f, f);
+        emitpcode(OPC(0xA5), r, f);
+#else
         emitpcode(0x103, f, f, k.reg);
         emitpcode(0x75, f, f);
         emitpcode(0xA5, r, f);
+#endif
         setpcodeflags(0x4000);
+#if MWCCPS2_B52
+        emitpcode(OPC(0xBE), r, r, func_0047F680(0x80000000));
+#else
         emitpcode(0xBE, r, r, func_0047F680(0x80000000));
         if (to == TYPE(&stunsignedchar)) {
             emitpcode(MACRO_OP(0x82), r, r, 8);
         } else if (to == TYPE(&stunsignedshort)) {
             emitpcode(MACRO_OP(0x82), r, r, 16);
         }
+#endif
         *out = func_004C3B10(data_006246B4->last->args[0]);
         func_0046FA90(big);
         return;
@@ -3038,16 +3545,33 @@ int_to_float:
                 done->pclabel = (struct PCodeLabel*)makepclabel();
                 func_00479540(0x24, out, neg);
                 tmp = func_0047A060(out);
+#if MWCCPS2_B52
+                emitpcode(OPC(0x73), f, tmp.reg);
+#else
                 emitpcode(0x73, f, tmp.reg);
+#endif
                 func_00480710((MPCodeLabel*)done->pclabel);
                 func_0046FA90((MPCodeLabel*)neg->pclabel);
+#if MWCCPS2_B52
+                emitpcode(OPC(0xDA), r = data_00625A98[0]++, out->reg, 1);
+#else
                 emitpcode(0xDA, r = data_00625A98[0]++, out->reg, 1);
+#endif
                 tmp = func_0047E650(out, 1);
+#if MWCCPS2_B52
+                emitpcode(OPC(0xBE), r, r, tmp.reg);
+#else
                 emitpcode(0xBE, r, r, tmp.reg);
+#endif
                 tmp.reg = r;
                 tmp = func_0047A060(&tmp);
+#if MWCCPS2_B52
+                emitpcode(OPC(0x73), f, tmp.reg);
+                emitpcode(OPC(0xED), f, f, f);
+#else
                 emitpcode(0x73, f, tmp.reg);
                 emitpcode(0xED, f, f, f);
+#endif
                 *out = func_004C3B10(data_006246B4->last->args[0]);
                 func_0046FA90((MPCodeLabel*)done->pclabel);
                 return;
@@ -3318,9 +3842,21 @@ void func_00493F90(ENode* expr, void* target, VOperand* out) {
 #define CError_PS2_SHIFT -15 // mwccps2: 0xF35 and 0xE1A
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -34 // b145 asserts
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-216)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (16)
+#endif
 void func_00494940(ENode* expr, void* target, VOperand* out) {
     CError_FATAL(3908);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 void func_004951D0(ENode* expr, void* target, VOperand* out) {
     CError_FATAL(3625);
@@ -3354,11 +3890,19 @@ void func_0049AEF0(ENode* expr, void* target, VOperand* out) {
 
     data_005D0140[sub->type](sub, NULL, out);
     type = sub->rtype;
+#if MWCCPS2_B52
     if (type->type == TYPEINT ||
         type->type == TYPEENUM ||
         type->type == TYPEPOINTER ||
         (type->type == TYPEMEMBERPOINTER && type->size == 4) ||
         type->type == TYPEFLOAT) {
+#else
+    if (type->type == TYPEINT ||
+        type->type == TYPEENUM ||
+        type->type == TYPEPOINTER ||
+        (type->type == TYPEMEMBERPOINTER && type->size == 4) ||
+        type->type == TYPEFLOAT) {
+#endif
         if (out->kind) {
             func_004A64C0(out, type, 1);
         }
@@ -3415,6 +3959,10 @@ extern void func_0047B6A0(VOperand* a, SInt32 imm, CLabel* label);
 #define CError_PS2_SHIFT -15 // mwccps2: 0x106C
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -34 // b145 asserts
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-208)
+#endif
 void func_00493D90(ENode* expr, void* target, VOperand* out) {
     VOperand a;
     VOperand b;
@@ -3441,6 +3989,10 @@ void func_00493D90(ENode* expr, void* target, VOperand* out) {
     func_0046FA90((MPCodeLabel*)label->pclabel);
     *out = func_004C3BA0(a.reg, 0);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
 #undef CError_PS2_SHIFT

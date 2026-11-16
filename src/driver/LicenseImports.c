@@ -47,7 +47,11 @@ int lp_checkout(
     return 0;
 }
 
+#if MWCCPS2_B52
 void lp_checkin(LP_HANDLE* handle) {}
+#else
+void lp_checkin(LP_HANDLE* handle) {}
+#endif
 
 char* lp_errstring(LP_HANDLE* handle) {
     return "";

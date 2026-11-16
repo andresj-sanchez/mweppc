@@ -1,3 +1,14 @@
+#if MWCCPS2_B52
+#define MWCCPSP 1
+#define MWCCPS2 1
+#define MWCCPS2_BUILD 69
+// b69's InlineAsm.c is the MIPS one (0x4F8A70..0x4F9A20, assert name
+// "InlineAsm.c"): ScanStatements (0x4F94A0, called by FuncLevelAsm.c with
+// '}') starts with the MIPS assembler's set-up (0x4B4690) and dispatches to
+// its directive (0x4B6640) and instruction (0x4B67D0) scanners, as 3.0.1's.
+// This is the 3.0.1 tree's file (tools/mwccpsp) built with the back end's
+// defines; b69 differences go under MWCCPS2_BUILD == 69.
+#endif
 #include "compiler/InlineAsm.h"
 #include "compiler/CError.h"
 #include "compiler/CExpr.h"
@@ -90,8 +101,12 @@ CLabel* InlineAsm_LookupLabel(HashNameNode* name) {
 CLabel* InlineAsm_DeclareLabel(HashNameNode* name) {
     CLabel* label = newlabel();
     label->name = name;
+#if MWCCPS2_B52
+    label->next = Labels, Labels = label; // -inline off keeps the comma's value
+#else
     label->next = Labels;
     Labels = label;
+#endif
     return label;
 }
 
@@ -383,7 +398,9 @@ static CInt64 PrimaryExpression(void) {
     MLookupResult result;
     CInt64 value;
 
+#if !MWCCPS2_B52
     CInt64_SetULong(&value, 0);
+#endif
     switch (tk) {
         case TK_IDENTIFIER:
             if (InlineAsm_LookupSymbolMIPS(tkidentifier, &result)) {
@@ -441,7 +458,9 @@ static CInt64 PrimaryExpression(void) {
             InlineAsm_SyntaxError(ERR_UNEXPECTED_TOKEN);
     }
 
+#if !MWCCPS2_B52
     return value;
+#endif
 }
 
 static CInt64 ConstantExpressionTail(CInt64 value) {
@@ -462,9 +481,15 @@ static CInt64 ConstantExpressionTail(CInt64 value) {
         if (GetPrec(left_token) >= right_prec) {
             value = CMach_CalcIntDiadic(TYPE(&stsignedlonglong), value, left_token, right);
         } else {
+#if MWCCPS2_B52
             value = CMach_CalcIntDiadic(
                 TYPE(&stsignedlonglong), value, left_token, ConstantExpressionTail(right)
             );
+#else
+            value = CMach_CalcIntDiadic(
+                TYPE(&stsignedlonglong), value, left_token, ConstantExpressionTail(right)
+            );
+#endif
             if (GetPrec(tk) == 0) {
                 return value;
             }
@@ -477,7 +502,11 @@ CInt64 InlineAsm_Int64Expression(void) {
     CInt64 left;
 
     left = PrimaryExpression();
+#if MWCCPS2_B52
+    return GetPrec(tk) == 0 ? left : ConstantExpressionTail(left);
+#else
     return GetPrec(tk) != 0 ? ConstantExpressionTail(left) : left;
+#endif
 #else
     CInt64 left = PrimaryExpression();
     CInt64 value;
@@ -675,6 +704,9 @@ static void ScanOptionalLabel(void) {
 extern void func_00483F30(void); // set up the MIPS assembler
 extern void func_00483C40(void); // an assembler directive
 extern void func_00483B20(void); // an instruction
+#if MWCCPS2_B52
+#define func_0053D790 InlineAsm_gcc_parse // b69: 0x50C030
+#endif
 extern void func_0053D790(void); // GCC-style operands after ':'
 
 // 3.0.1 (0x52B660): asm statements up to endToken, for asm functions and
@@ -745,10 +777,26 @@ void ScanStatements(volatile short endToken) {
             }
         }
 
+#if MWCCPS2_B52
+        // b69: a "\n" left in a GCC-style string ends the instruction
+        if (tk == '\\') {
+            tk = lex();
+            if (tk == TK_IDENTIFIER && tkidentifier->name[0] == 'n') {
+                tk = lex();
+            }
+        }
+#endif
         if (tk == ';' || tk == TK_EOL) {
             CPrep_TokenStreamFlush();
             tk = lex();
+#if MWCCPS2_B52
+        } else if (tk != '"' &&
+                   (UInt16)(tk - TK_STRING) > 1 &&
+                   tk != TK_INTCONST &&
+                   tk != endToken) {
+#else
         } else if (tk != TK_STRING && tk != '"' && tk != TK_IDENTIFIER && tk != endToken) {
+#endif
             if (endToken == ')') {
                 CError_Error(ERR_RPAREN_EXPECTED);
             } else {
@@ -836,13 +884,17 @@ static void ScanStatements(volatile short endToken, AssemblerType mode) {
 
 #endif
 #if MWCCPSP
+#if !MWCCPS2_B52
 void InlineAsm_ScanStatements(volatile short endToken) {
     ScanStatements(endToken);
 }
+#endif
 
+#if !MWCCPS2_B52
 void InlineAsm_ScanFunction(volatile short endToken) {
     ScanStatements(endToken);
 }
+#endif
 #else
 void InlineAsm_ScanStatements(volatile short endToken) {
     ScanStatements(endToken, AssemblerType_Statements);
@@ -1107,17 +1159,27 @@ char* InlineAsm_DumpStatement(Statement* stmt) {
 
 #endif
 #if MWCCPSP
+#if MWCCPS2_B52
+#define data_00625EC1 cprep_nostring // b69 keeps GC's name (0x57E161)
+#else
 // 3.0.1: the MIPS assembler's statements (compiler/InlineAsmMIPS.h)
 extern Boolean data_00625EC1; // the tokenizer passes strings through
+#endif
 extern char data_00625FD6;
 extern char* func_00481FE0(MAsmInstruction* mi); // the instruction's mnemonic
 
 void InlineAsm_Assemble(void) {
     short token = (tk == '(') ? ')' : '}';
+#if !MWCCPS2_B52
     char save_cpp = copts.cplusplus;
+#endif
     char save_pc = copts.asmpoundcomment;
 
+#if MWCCPS2_B52
+    data_00625FD6 = copts.cplusplus;
+#else
     data_00625FD6 = save_cpp;
+#endif
     data_00625EC1 = TRUE;
     CFunc_AppendStatement(ST_NOP);
     first_ST_ASM = curstmt;
@@ -1163,8 +1225,13 @@ void InlineAsm_PackAsmStatement(Statement* stmt, Statement* first, void** output
 #endif
                 break;
             case MOpnd_Lab:
+#if MWCCPS2_B52
                 op->u.lab.label =
                     (CLabel*)(SInt32)CInline_GetStatementNumber(first, op->u.lab.label->stmt);
+#else
+                op->u.lab.label =
+                    (CLabel*)(SInt32)CInline_GetStatementNumber(first, op->u.lab.label->stmt);
+#endif
                 break;
             default:
                 break;
@@ -1181,9 +1248,19 @@ void InlineAsm_UnpackAsmStatement(
     MAsmInstruction* mi;
     MAsmOperand* op;
     int i;
+#if MWCCPS2_B52
+    MAsmInstruction* src;
+#endif
 
+#if MWCCPS2_B52
+    src = data;
+#endif
     mi = galloc(size);
+#if MWCCPS2_B52
+    memcpy(mi, src, size);
+#else
     memcpy(mi, data, size);
+#endif
 
     for (i = 0, op = mi->ops; i < mi->nops; i++, op++) {
         switch (op->type) {

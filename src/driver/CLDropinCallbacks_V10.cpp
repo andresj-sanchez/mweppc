@@ -29,12 +29,18 @@
 #include "driver/StringUtils.h"
 #include <stdio.h>
 #if MWCCPSP_NATIVE
+#if !MWCCPS2_B52
 extern "C" FILE* win32_fopen(const char* path, const char* mode);
 #define fopen win32_fopen
+#endif
 #endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if MWCCPS2_B52
+extern "C" FILE* win32_fopen(const char* path, const char* mode);
+#define fopen win32_fopen
+#endif
 
 extern "C" {
 

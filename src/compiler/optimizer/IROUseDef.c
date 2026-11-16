@@ -30,9 +30,15 @@ ENodeType IRO_NonAssignmentOp[MAXEXPR];
 // 3.0.1's folders (IroSelfAssign301.c) truncate or range-check the result
 // against the constant's type (type) and the self-assignment's (type2); the
 // table (0x6078C8) is read by UpdateUseForOtherSelfAssignment there
+#if MWCCPS2_B52
 typedef Boolean (*AssignmentFoldingFunc)(
     CInt64 a, CInt64 b, Type* type, Type* type2, CInt64* result
 );
+#else
+typedef Boolean (*AssignmentFoldingFunc)(
+    CInt64 a, CInt64 b, Type* type, Type* type2, CInt64* result
+);
+#endif
 AssignmentFoldingFunc data_006078C8[IRO_MAXEXPR];
 #define AssignmentFoldingFunction data_006078C8
 #else
@@ -268,6 +274,101 @@ CInt64 IRO_GetSelfAssignmentVal(IROLinear* linear) {
 
     if (linear->type == IROLinearOp1Arg) {
         switch (linear->nodetype) {
+#if MWCCPS2_B52
+            case EPOSTINC:
+            case EPREINC:
+                CInt64_SetLong(&result, 1);
+                break;
+            case EPOSTDEC:
+            case EPREDEC:
+                CInt64_SetLong(&result, -1);
+                break;
+            default:
+                CError_FATAL(4028);
+        }
+
+        if (IS_TYPE_POINTER_ONLY(linear->rtype)) {
+            CInt64 mul;
+            CInt64_SetLong(&mul, TPTR_TARGET(linear->rtype)->size);
+            result = CInt64_Mul(result, mul);
+        }
+    } else if (linear->type == IROLinearOp2Arg) {
+        switch (linear->nodetype) {
+            case EMULASS:
+            case EDIVASS:
+            case EMODASS:
+            case EADDASS:
+            case ESHLASS:
+            case ESHRASS:
+            case EANDASS:
+            case EXORASS:
+            case EORASS:
+                result = linear->u.diadic.right->u.node->data.intval;
+                break;
+            case ESUBASS:
+                result = linear->u.diadic.right->u.node->data.intval;
+                result = CInt64_Neg(result);
+                break;
+            default:
+                CError_FATAL(4071);
+        }
+    } else {
+        CError_FATAL(4076);
+    }
+
+    return result;
+}
+#undef CError_B145_SHIFT
+#define CError_B145_SHIFT 0
+#line 305 "IROUseDef.c"
+
+static IROLinear* IRO_AddTypeConversion(IROLinear* node, Type* type, IROList* list) {
+    IROLinear* first;
+    IROLinear* last;
+    int isBool;
+
+    isBool = type->type == TYPEINT && TYPE_INTEGRAL(type)->integral == IT_BOOL;
+
+    if (isBool) {
+        first = IRO_NewLinear(IROLinearOp1Arg);
+        memcpy(first, node, sizeof(IROLinear));
+        first->type = IROLinearOp1Arg;
+        first->nodetype = ELOGNOT;
+        first->index = IRO_NumLinear++;
+        first->rtype = type;
+        first->u.monadic = node;
+        first->next = last = IRO_NewLinear(IROLinearOp1Arg);
+        memcpy(last, node, sizeof(IROLinear));
+        last->type = IROLinearOp1Arg;
+        last->nodetype = ELOGNOT;
+        last->index = IRO_NumLinear++;
+        last->rtype = type;
+        last->u.monadic = first;
+        last->next = NULL;
+        if (!list) {
+            IRO_PasteAfter(first, last, node);
+        } else {
+            IRO_AddToList(first, list);
+        }
+    } else {
+        first = IRO_NewLinear(IROLinearOp1Arg);
+        memcpy(first, node, sizeof(IROLinear));
+        first->type = IROLinearOp1Arg;
+        first->nodetype = ETYPCON;
+        first->index = IRO_NumLinear++;
+        first->rtype = type;
+        first->u.monadic = node;
+        first->next = NULL;
+        if (!list) {
+            IRO_PasteAfter(first, first, node);
+        } else {
+            IRO_AddToList(first, list);
+        }
+        last = first;
+    }
+    return last;
+}
+#else
             case EPOSTINC:
             case EPREINC:
                 CInt64_SetLong(&result, 1);
@@ -381,6 +482,7 @@ static IROLinear* IRO_AddTypeConversion(IROLinear* node, Type* type, IROList* li
     return last;
 }
 #endif
+#endif
 
 #if MWCCPSP
 // 3.0.1 (0x567C50), called by IROUseDef301.c's inc/dec propagation: the
@@ -411,9 +513,15 @@ void UpdateUse(IROLinear* linear, CInt64 val, Type* type) {
                         val = CInt64_Add(val, IRO_GetSelfAssignmentVal(father));
                         father->nodetype = EADDASS;
                         father->type = IROLinearOp2Arg;
+#if MWCCPS2_B52
+                        // b52 (0x526F6B) gives the constant the variable's own type, a
+                        // pointer type for a pointer: IRO_IsIntConstant then refuses it
+                        repl = IRO_NewIntConst(val, type);
+#else
                         repl = IRO_NewIntConst(
                             val, type->type == TYPEPOINTER ? func_0055A650(type) : type
                         );
+#endif
                         father->u.diadic.right = repl;
                         IRO_PasteAfter(repl, repl, linear);
                         return;
@@ -447,8 +555,13 @@ void UpdateUse(IROLinear* linear, CInt64 val, Type* type) {
 
     IRO_InitList(&list);
     promoted = type;
+#if MWCCPS2_B52
     if ((type->type == TYPEINT && TYPE_INTEGRAL(type)->integral < IT_17) ||
         type->type == TYPEENUM) {
+#else
+    if ((type->type == TYPEINT && TYPE_INTEGRAL(type)->integral < IT_17) ||
+        type->type == TYPEENUM) {
+#endif
         promoted = func_0055A620(type);
     }
     constType = type;
@@ -1105,8 +1218,10 @@ static Boolean PropagateIncsAndDecs(void) {
             IROLinear* father;
             CInt64 val;
             SInt32 i;
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
             Type* type;
+#endif
 #endif
 
             for (use = def->var->uses, i = 0; use; use = use->varnext) {
@@ -1138,6 +1253,11 @@ static Boolean PropagateIncsAndDecs(void) {
                             def->linear->index,
                             use->linear->index
                         );
+#if MWCCPS2_B52
+                        father = IRO_LocateFather(use->linear);
+                        val = IRO_GetSelfAssignmentVal(def->linear);
+                        UpdateUse(father, val, father->rtype);
+#else
                         father = IRO_LocateFather(use->linear);
                         val = IRO_GetSelfAssignmentVal(def->linear);
 #if VERSION < VERSION_GC_2_5
@@ -1148,6 +1268,7 @@ static Boolean PropagateIncsAndDecs(void) {
                         UpdateUse(father, val, type);
 #else
                         UpdateUse(father, val, father->rtype);
+#endif
 #endif
 
                         result = TRUE;
@@ -1222,12 +1343,18 @@ static Boolean PropagateOtherSelfAssignments(void) {
                             "Propagating self assignment from %d to %d\n",
                             def->linear->index,
                             use->linear->index
+#if MWCCPS2_B52
+                        );
+                        father = IRO_LocateFather(use->linear);
+                        UpdateUseForOtherSelfAssignment(father, def->linear, father->rtype);
+#else
                         );
                         father = IRO_LocateFather(use->linear);
 #if VERSION < VERSION_GC_2_5
                         UpdateUseForOtherSelfAssignment(father, def->linear, def->linear->rtype);
 #else
                         UpdateUseForOtherSelfAssignment(father, def->linear, father->rtype);
+#endif
 #endif
 
                         result = TRUE;
@@ -1253,9 +1380,11 @@ nextDef:
     return result;
 }
 
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
 #define CError_LINE_SHIFT -159
+#endif
 #endif
 static void MarkUsesByIndirect(IROLinear* linear, BitVector* a, BitVector* b) {
     IROListNode* scan;
@@ -1870,6 +1999,10 @@ static void AddDefToRange(IRODef* def) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-1590)
+#endif
 static void ReplaceAssigned(IROLinear* nd, Object* from, Object* to) {
     IROLinear* assigned;
 
@@ -1882,14 +2015,26 @@ static void ReplaceAssigned(IROLinear* nd, Object* from, Object* to) {
 
     assigned->u.node->data.objref = to;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void ReplaceUsed(IROLinear* nd, Object* from, Object* to) {
+#if MWCCPS2_B52
+    CError_ASSERT(1054, nd->type == IROLinearOperand && nd->u.node->type == EOBJREF);
+#else
     CError_ASSERT(2644, nd->type == IROLinearOperand && nd->u.node->type == EOBJREF);
+#endif
 
     if (nd->u.node->data.objref == from) {
         nd->u.node->data.objref = to;
     } else if (nd->u.node->data.objref != to) {
+#if MWCCPS2_B52
+        CError_FATAL(1066);
+#else
         CError_FATAL(2656);
+#endif
     }
 }
 

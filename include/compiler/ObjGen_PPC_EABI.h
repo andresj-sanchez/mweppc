@@ -163,6 +163,11 @@ extern void ObjGen_Finish(void);
 extern void ObjGen_Cleanup(void);
 extern void ObjGen_CodeCleanup(void);
 extern void ObjGen_SetupSym(void);
+#if MWCCPS2_B52
+extern void ObjGen_SymFunc(Object* func);
+extern void ObjGen_SegmentName(HashNameNode* name);
+extern void ObjGen_SrcBreakName(HashNameNode* name, SInt32 fileModDate, Boolean unused);
+#else
 extern void ObjGen_SymFunc(Object* func);
 extern void ObjGen_SegmentName(HashNameNode* name);
 #if MWCCPSP
@@ -171,6 +176,7 @@ extern void ObjGen_SrcBreakName(
 ); // 0x4622F0: a FILETIME
 #else
 extern void ObjGen_SrcBreakName(HashNameNode* name, SInt32 fileModDate, Boolean unused);
+#endif
 #endif
 extern void ObjGen_DeclareData(
     Object* object, const void* data, OLinkList* list, unsigned int size

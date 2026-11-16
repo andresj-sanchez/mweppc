@@ -11,6 +11,7 @@
 #define VERSION VERSION_GC_2_6
 #endif
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 /* PS2 compiler builds (mwccps2 3.0.1 bNNN). MWCCPS2 marks any PS2 build;
    code that differs between PS2 builds tests MWCCPS2_BUILD, e.g.
@@ -20,5 +21,6 @@
 #define MWCCPS2_BUILD 210
 #endif
 
+#endif
 #endif
 #endif

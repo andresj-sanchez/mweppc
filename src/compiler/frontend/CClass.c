@@ -26,6 +26,14 @@
 #include "compiler/tokens.h"
 #include "compiler/types.h"
 
+#if MWCCPS2_B52
+// 2.4.5 builds offset and size constants as int where 2.4.7 uses long: b69's
+// CABI_MakeThisExpr, CClass_AccessMember, CExcept_CatchExpressionInit ... reference
+// stunsignedint (0x5360D8, integral 8) and CABI_GetPtrDiffTType stsignedint
+#define ST_OFFS_U stunsignedint
+#define ST_OFFS_S stsignedint
+
+#endif
 #pragma pack(2)
 typedef struct OVClassBase {
     struct OVClassBase* next;
@@ -80,6 +88,26 @@ static TypeClass* cclass_dominator_oclass;
 static SInt32 cclass_dominator_ooffset;
 static Object* cclass_dominator_eobject;
 
+#if MWCCPS2_B52
+// 3.0.1's friend list; a global in b52 (0x5B6D48: CClass_Init clears it,
+// CPrec reads it), not in CClass's .bss; TypeClass has no friends field
+typedef struct CClassFriendFunc {
+    struct CClassFriendFunc* next;
+    Object* obj;
+} CClassFriendFunc;
+typedef struct CClassFriendClass {
+    struct CClassFriendClass* next;
+    TypeClass* tclass;
+} CClassFriendClass;
+typedef struct CClassFriends {
+    struct CClassFriends* next;
+    TypeClass* tclass;
+    CClassFriendFunc* funcs;
+    CClassFriendClass* classes;
+} CClassFriends;
+CClassFriends* cclass_friends;
+
+#endif
 #if MWCCPSP
 // 3.0.1 keeps a class's friends in a list beside it instead of in TypeClass
 typedef struct CClassFriendFunc {
@@ -102,6 +130,9 @@ static CClassFriends* cclass_friends;
 
 #endif
 void CClass_Init(void) {
+#if MWCCPS2_B52
+    cclass_friends = NULL;
+#endif
 #if MWCCPSP
     cclass_friends = NULL;
 #endif
@@ -577,6 +608,90 @@ Boolean func_00501850(TypeClass* base, TypeClass* derived) {
 }
 #endif
 
+#if MWCCPS2_B52
+// 0x461C00 (3.0.1's)
+void CClass_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendclass) {
+    CClassFriends* entry;
+    CClassFriendFunc* func;
+    CClassFriendClass* cls;
+
+    entry = cclass_friends;
+    while (1) {
+        if (!entry) {
+            entry = galloc(sizeof(CClassFriends));
+            entry->next = cclass_friends;
+            entry->tclass = tclass;
+            entry->funcs = NULL;
+            entry->classes = NULL;
+            cclass_friends = entry;
+            break;
+        }
+        if (entry->tclass == tclass) {
+            break;
+        }
+        entry = entry->next;
+    }
+
+    if (friendfunc) {
+        func = entry->funcs;
+        while (1) {
+            if (!func) {
+                func = galloc(sizeof(CClassFriendFunc));
+                func->next = entry->funcs;
+                func->obj = friendfunc;
+                entry->funcs = func;
+                break;
+            }
+            if (func->obj == friendfunc) {
+                break;
+            }
+            func = func->next;
+        }
+    }
+
+    if (friendclass) {
+        cls = entry->classes;
+        while (1) {
+            if (!cls) {
+                cls = galloc(sizeof(CClassFriendClass));
+                cls->next = entry->classes;
+                cls->tclass = friendclass;
+                entry->classes = cls;
+                break;
+            }
+            if (cls->tclass == friendclass) {
+                break;
+            }
+            cls = cls->next;
+        }
+    }
+}
+
+// is the current class or function a friend of tclass (b69 walks tclass->friends)
+static Boolean CClass_IsCurrentFriend(TypeClass* tclass) {
+    CClassFriends* entry;
+    CClassFriendFunc* func;
+    CClassFriendClass* cls;
+
+    for (entry = cclass_friends; entry; entry = entry->next) {
+        if (entry->tclass == tclass) {
+            for (cls = entry->classes; cls; cls = cls->next) {
+                if (cls->tclass == cscope_currentclass) {
+                    return TRUE;
+                }
+            }
+            for (func = entry->funcs; func; func = func->next) {
+                if (func->obj == cscope_currentfunc) {
+                    return TRUE;
+                }
+            }
+            return FALSE;
+        }
+    }
+    return FALSE;
+}
+
+#endif
 void CClass_GenThunks(void) {
     ThunkList* list;
 
@@ -664,6 +779,10 @@ static UInt8 CClass_IsCovariantResult(
     return 0;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (42)
+#endif
 #if MWCCPS2
 UInt8 CClass_GetOverrideKind(Object* oa, Object* ob, Boolean errorflag) {
     TypeFunc* a = TYPE_FUNC(oa->type);
@@ -707,6 +826,10 @@ UInt8 CClass_GetOverrideKind(TypeFunc* a, TypeFunc* b, Boolean errorflag) {
 
     return 1;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 Boolean CClass_IsEmpty(TypeClass* tclass) {
     ClassList* base;
@@ -959,14 +1082,24 @@ Object* CClass_AssignmentOperator(TypeClass* tclass) {
             !(TYPE_FUNC(object->type)->flags & FUNC_IS_TEMPL) &&
 #endif
             (args = TYPE_FUNC(object->type)->args) &&
+#if MWCCPS2_B52
+            (args = args->next) &&
+            !args->next) {
+            if (IS_TYPE_CLASS(args->type) && TYPE_CLASS(args->type) == tclass) {
+#else
             args->next &&
             !args->next->next) {
             if (IS_TYPE_CLASS(args->next->type) && TYPE_CLASS(args->next->type) == tclass) {
+#endif
                 return object;
             }
 
+#if MWCCPS2_B52
+            if (IS_TYPE_REFERENCE(args->type) && TPTR_TARGET(args->type) == TYPE(tclass)) {
+#else
             if (IS_TYPE_REFERENCE(args->next->type) &&
                 TPTR_TARGET(args->next->type) == TYPE(tclass)) {
+#endif
                 return object;
             }
         }
@@ -975,6 +1108,10 @@ Object* CClass_AssignmentOperator(TypeClass* tclass) {
     return NULL;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (96)
+#endif
 Object* CClass_CopyConstructor(TypeClass* tclass) {
     NameSpaceObjectList* nsol;
     Object* object;
@@ -1016,6 +1153,10 @@ Object* CClass_CopyConstructor(TypeClass* tclass) {
 
     return NULL;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 NameSpaceObjectList* CClass_MemberObject(TypeClass* tclass, HashNameNode* name) {
     NameSpaceObjectList* nsol;
@@ -1282,6 +1423,10 @@ BClassList* CClass_AppendPath(BClassList* dest, BClassList* src) {
     return dest;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (94)
+#endif
 static AccessType CClass_GetPathAccess(BClassList* path) {
     AccessType result;
     ClassList* base;
@@ -1341,7 +1486,15 @@ static AccessType CClass_GetPathAccess(BClassList* path) {
 
     return result;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (94)
+#endif
 Boolean CClass_IsMoreAccessiblePath(BClassList* path1, BClassList* path2) {
     switch (CClass_GetPathAccess(path2)) {
         case ACCESSPUBLIC:
@@ -1388,6 +1541,10 @@ Boolean CClass_IsMoreAccessiblePath(BClassList* path1, BClassList* path2) {
 
     return FALSE;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static BClassList* CClass_GetBasePathRec(TypeClass* a, TypeClass* b, SInt32 offset, short depth) {
     BClassList* checkpath;
@@ -1532,7 +1689,11 @@ ENode* CClass_AccessPathCast(BClassList* path, ENode* expr, Boolean reverse) {
 #if MWCCPSP
                     expr = makediadicnode(expr, intconstnode(TYPE_UNSIGNED_OFFSET, offset), EADD);
 #else
+#if MWCCPS2_B52
+                    expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
+#else
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
                     optimizecomm(expr);
                 }
@@ -1551,7 +1712,11 @@ ENode* CClass_AccessPathCast(BClassList* path, ENode* expr, Boolean reverse) {
 #if MWCCPSP
                     expr = makediadicnode(expr, intconstnode(TYPE_UNSIGNED_OFFSET, offset), EADD);
 #else
+#if MWCCPS2_B52
+                    expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
+#else
                     expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedlong), offset), EADD);
+#endif
 #endif
                     optimizecomm(expr);
                 }
@@ -1607,6 +1772,10 @@ doCast:
     return expr;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (110)
+#endif
 ENode* CClass_DirectBasePointerCast(ENode* expr, TypeClass* a, TypeClass* b) {
     ClassList* base;
     VClassList* vbase;
@@ -1652,6 +1821,10 @@ ENode* CClass_DirectBasePointerCast(ENode* expr, TypeClass* a, TypeClass* b) {
 #endif
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 SInt32 CClass_GetPathOffset(BClassList* path) {
     SInt32 offset;
@@ -1696,6 +1869,10 @@ Boolean CClass_ClassDominates(TypeClass* tclass, TypeClass* baseclass) {
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (93)
+#endif
 SInt32 CClass_VirtualBaseOffset(TypeClass* tclass, TypeClass* baseclass) {
     VClassList* vbase;
 
@@ -1712,7 +1889,17 @@ SInt32 CClass_VirtualBaseOffset(TypeClass* tclass, TypeClass* baseclass) {
 #endif
     return 0;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (0)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (93)
+#endif
 SInt32 CClass_VirtualBaseVTableOffset(TypeClass* tclass, TypeClass* baseclass) {
     VClassList* vbase;
 
@@ -1729,6 +1916,12 @@ SInt32 CClass_VirtualBaseVTableOffset(TypeClass* tclass, TypeClass* baseclass) {
 #endif
     return 0;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 SInt32 CClass_GetMemberOffset(TypeClass* tclass, HashNameNode* name, ObjMemberVar** resultIvar) {
     ObjMemberVar* ivar;
@@ -1943,6 +2136,10 @@ static void CClass_FindOVFunc(OVClass* a, OVClass* b, OVFunc* func) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (181)
+#endif
 static TypeList* CClass_GetCoVariantClassList(
     TypeList* list, TypeClass* tclass, Object* func, Boolean isTopLevel
 ) {
@@ -2006,7 +2203,15 @@ static TypeList* CClass_GetCoVariantClassList(
 
     return list;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (181)
+#endif
 static TypeMemberFunc* CClass_GetCovariantType(TypeMemberFunc* tmethod, Type* type) {
     TypePointer* tptr;
     TypeMemberFunc* result;
@@ -2023,7 +2228,15 @@ static TypeMemberFunc* CClass_GetCovariantType(TypeMemberFunc* tmethod, Type* ty
     result->functype = TYPE(tptr);
     return result;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (181)
+#endif
 static Object* CClass_FindCovariantFunction(Object* func, Type* type) {
     NameSpaceObjectList* nsol;
 
@@ -2040,11 +2253,20 @@ static Object* CClass_FindCovariantFunction(Object* func, Type* type) {
 
     return OBJECT(nsol->object);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT 0
+#endif
 
 static ObjectList* CClass_DeclareCovariantFuncs(ObjectList* list, Object* func, TypeClass* tclass) {
+#if !MWCCPS2_B52
     Object* newfunc;
+#endif
     HashNameNode* name;
     TypeList* types;
+#if MWCCPS2_B52
+    Object* newfunc;
+#endif
     ObjectList* newlist;
 
     for (types = CClass_GetCoVariantClassList(NULL, tclass, func, TRUE); types;
@@ -2118,6 +2340,10 @@ static void CClass_OverrideOVClassTree(OVClass* ovclass) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (181)
+#endif
 static void CClass_AllocVTableRec(OVClass* ovclass) {
     OVFunc* ovfunc;
     Object* object;
@@ -2215,6 +2441,10 @@ static void CClass_AllocVTableRec(OVClass* ovclass) {
         CClass_AllocVTableRec(ovbase->ovclass);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static Object* CClass_CheckClass(OVClass* ovclass, Boolean errorflag) {
     Object* object;
@@ -2276,6 +2506,10 @@ static Object* CClass_CheckVirtuals(TypeClass* tclass) {
     return CClass_CheckClass(ovclass, FALSE);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (181)
+#endif
 static void CClass_CheckVirtualBaseOverrides(OVClass* a, OVClass* b, Boolean isVirtualBase) {
     OVFunc* ovfunc;
     VClassList* vbase;
@@ -2305,6 +2539,10 @@ static void CClass_CheckVirtualBaseOverrides(OVClass* a, OVClass* b, Boolean isV
         CClass_CheckVirtualBaseOverrides(a, ovbase->ovclass, isVirtualBase || ovbase->is_virtual);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void CClass_CheckHideVirtual(OVClass* a, OVClass* b) {
     OVClassBase* ovbase;
@@ -2589,6 +2827,10 @@ static void CClass_ConstructVTable(
 
 void CClass_ClassDefaultFuncAction(TypeClass* tclass) {}
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (190)
+#endif
 void CClass_ClassAction(TypeClass* tclass) {
     if (tclass->sominfo) {
         CSOM_GenerateClassStructures(tclass);
@@ -2627,6 +2869,10 @@ void CClass_ClassAction(TypeClass* tclass) {
         );
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CClass_MakeStaticActionClass(TypeClass* tclass) {
     if (tclass->vtable) {
@@ -2644,6 +2890,10 @@ Object* CClass_CheckPures(TypeClass* tclass) {
     return CClass_CheckVirtuals(tclass);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (190)
+#endif
 void CClass_MemberDef(Object* obj, TypeClass* tclass) {
     switch (tclass->action) {
         case CLASS_ACTION_NONE:
@@ -2680,6 +2930,10 @@ void CClass_MemberDef(Object* obj, TypeClass* tclass) {
             return;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 Object* CClass_ThisSelfObject(void) {
     ObjectList* list;
@@ -2688,7 +2942,11 @@ Object* CClass_ThisSelfObject(void) {
 #if MWCCPSP
         if (CLASS_OBJCINFO(cscope_currentclass)) {
 #else
+#if MWCCPS2_B52
+        if (B69_OBJCINFO(cscope_currentclass)) {
+#else
         if (cscope_currentclass->objcinfo) {
+#endif
 #endif
             for (list = arguments; list; list = list->next) {
                 if (list->object->name == self_name_node) {
@@ -2712,6 +2970,10 @@ Object* CClass_ThisSelfObject(void) {
     return NULL;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (2947)
+#endif
 ENode* CClass_CreateThisSelfExpr(void) {
     Object* object;
     ENode* expr;
@@ -2727,6 +2989,10 @@ ENode* CClass_CreateThisSelfExpr(void) {
 
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static AccessType CClass_BaseMemberAccess(BClassList* path, AccessType access) {
     ClassList* base;
@@ -2844,19 +3110,29 @@ static Boolean CClass_CanAccess(BClassList* path, AccessType access) {
             return TRUE;
         }
 #else
+#if MWCCPS2_B52
+        if (CClass_IsCurrentFriend(tclass)) {
+#else
         for (cfriend = tclass->friends; cfriend; cfriend = cfriend->next) {
             if (cfriend->isclass) {
                 if (cfriend->u.theclass == cscope_currentclass) {
-                    return TRUE;
-                }
-            } else {
-                if (cfriend->u.obj == cscope_currentfunc) {
-                    return TRUE;
-                }
-            }
-        }
 #endif
+            return TRUE;
+        }
+#if !MWCCPS2_B52
+    } else {
+        if (cfriend->u.obj == cscope_currentfunc) {
+            return TRUE;
+#endif
+        }
+#if !MWCCPS2_B52
     }
+}
+#endif
+#endif
+#if !MWCCPS2_B52
+    }
+#endif
 
     for (scan = path; scan->next; scan = scan->next) {
         if (CClass_CanAccess(scan->next, access)) {
@@ -2943,17 +3219,24 @@ void CClass_CheckStaticAccess(BClassList* path, TypeClass* tclass, AccessType ac
                 return;
             }
 #else
-            for (cfriend = tclass->friends; cfriend; cfriend = cfriend->next) {
-                if (cfriend->isclass) {
-                    if (cfriend->u.theclass == cscope_currentclass) {
-                        return;
-                    }
-                } else {
-                    if (cfriend->u.obj == cscope_currentfunc) {
-                        return;
-                    }
-                }
+#if MWCCPS2_B52
+            if (CClass_IsCurrentFriend(tclass)) {
+#else
+                    for (cfriend = tclass->friends; cfriend; cfriend = cfriend->next) {
+                        if (cfriend->isclass) {
+                            if (cfriend->u.theclass == cscope_currentclass) {
+#endif
+                return;
             }
+#if !MWCCPS2_B52
+    }
+    else {
+        if (cfriend->u.obj == cscope_currentfunc) {
+            return;
+        }
+    }
+}
+#endif
 #endif
         case ACCESSNONE:
             CError_Warning(ERR_ILLEGAL_ACCESS_PROTECTED_PRIVATE_MEMBER);
@@ -3015,11 +3298,11 @@ static Type* CClass_PointerTypeCopy(Type* type) {
             return TYPE(acopy);
         }
 #else
-        case TYPEARRAY:
-            copy = galloc(sizeof(TypePointer));
-            *copy = *TYPE_POINTER(type);
-            copy->target = CClass_PointerTypeCopy(copy->target);
-            return TYPE(copy);
+            case TYPEARRAY:
+                copy = galloc(sizeof(TypePointer));
+                *copy = *TYPE_POINTER(type);
+                copy->target = CClass_PointerTypeCopy(copy->target);
+                return TYPE(copy);
 #endif
         case TYPEMEMBERPOINTER:
             mcopy = galloc(sizeof(TypeMemberPointer));
@@ -3030,6 +3313,10 @@ static Type* CClass_PointerTypeCopy(Type* type) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (758)
+#endif
 Type* CClass_CombineClassAccessQualifiers(
     Type* type, UInt32 qual1, UInt32 qual2, UInt32* outflags
 ) {
@@ -3067,7 +3354,7 @@ Type* CClass_CombineClassAccessQualifiers(
 #if MWCCPSP
                         CError_FATAL(3883);
 #else
-                        CError_FATAL(3125);
+                            CError_FATAL(3125);
 #endif
                 }
             }
@@ -3079,6 +3366,10 @@ Type* CClass_CombineClassAccessQualifiers(
     *outflags = qual1;
     return type;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void CClass_OptimizeBitFieldAccess(Type** ptype, SInt32* poffset) {
     TypeBitfield* bitfield;
@@ -3170,17 +3461,25 @@ static void CClass_OptimizeBitFieldAccess(Type** ptype, SInt32* poffset) {
 #if MWCCPSP
                 *ptype = TYPE_UNSIGNED_OFFSET;
 #else
-                *ptype = TYPE(&stunsignedlong);
+#if MWCCPS2_B52
+                    *ptype = TYPE(&ST_OFFS_U);
+#else
+                                    *ptype = TYPE(&stunsignedlong);
+#endif
 #endif
             } else {
-                *ptype = TYPE(&stsignedlong);
+#if MWCCPS2_B52
+                *ptype = TYPE(&ST_OFFS_S);
+#else
+                    *ptype = TYPE(&stsignedlong);
+#endif
             }
 #if MWCCPS2 && MWCCPS2_BUILD >= 210 // b210 leaves a full-width 32-bit bitfield's type alone
         }
 #else
-        } else {
-            *ptype = innertype;
-        }
+            } else {
+                *ptype = innertype;
+            }
 #endif
         return;
     }
@@ -3270,7 +3569,13 @@ ENode* CClass_AccessMember(ENode* classexpr, Type* type, UInt32 qual, SInt32 off
 #if MWCCPSP
             classexpr->data.monadic, intconstnode(TYPE(&stunsignedint), offset), EADD
 #else
-            classexpr->data.monadic, intconstnode(TYPE(&stunsignedlong), offset), EADD
+#if MWCCPS2_B52
+                classexpr->data.monadic, intconstnode(TYPE(&stofsulong), offset), EADD
+#else
+                                classexpr->data.monadic,
+                                intconstnode(TYPE(&stunsignedlong), offset),
+                                EADD
+#endif
 #endif
         );
         optimizecomm(classexpr->data.monadic);

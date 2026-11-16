@@ -30,10 +30,16 @@ enum {
     CheckResult_Promotion,
     CheckResult_Conversion,
     CheckResult_UserConversion
+#if MWCCPS2_B52
+};
+
+#pragma pack(push, 2)
+#else
 };
 
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(push, 2)
+#endif
 #endif
 struct ComparisonValues {
     SInt16 exactMatches;
@@ -47,10 +53,16 @@ struct ArgMatch {
     ComparisonValues standard;
     SInt16 userconversions;
     ComparisonValues userStandard;
+#if MWCCPS2_B52
+    struct ObjectList* list;
+};
+#pragma pack(pop)
+#else
     struct ObjectList* list;
 };
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(pop)
+#endif
 #endif
 struct FuncMatchArgs {
     struct ENodeList* exprs;
@@ -87,6 +99,16 @@ extern ENode* CExpr_New_EBINNOT_Node(ENode* input);
 extern ENode* unary_expression(void);
 extern ENode* do_castnullcheck(ENode* condexpr, ENode* nullcheckexpr);
 extern ENode* CExpr_SafeClassPointerCast(
+#if MWCCPS2_B52
+    ENode* expr, TypeClass* a, TypeClass* b, Boolean typconflag, Boolean pathcheckflag
+);
+extern ENode* PointerToMemberCast(
+    ENode* expr, TypeMemberPointer* tm1, TypeMemberPointer* tm2, Boolean checkAccess
+);
+extern ENode* CExpr_MemberPointerConversion(
+    ENode* expr, TypeMemberPointer* type, Boolean buildData
+);
+#else
     ENode* expr, TypeClass* a, TypeClass* b, Boolean typconflag, Boolean pathcheckflag
 );
 extern ENode* PointerToMemberCast(
@@ -101,6 +123,7 @@ extern ENode* CExpr_MemberPointerConversion(
 extern ENode* CExpr_MemberPointerConversion(
     ENode* expr, TypeMemberPointer* type, Boolean buildData
 );
+#endif
 #endif
 extern ENode* do_typecast(ENode* expr, Type* type, UInt32 qual);
 extern ENode* cast_expression(void);
@@ -174,6 +197,11 @@ extern void CExpr_MatchCV(Type* t1, UInt32 q1, Type* t2, UInt32 q2, ArgMatch* ma
 extern ENode* CExpr_FuncCallSix(
     Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* arg4, ENode* arg5, ENode* arg6
 );
+#if MWCCPS2_B52
+extern ENode* funccallexpr(Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* arg4);
+extern ENode* CExpr_AdjustFunctionCall(ENode* expr);
+extern ENode* CExpr_IsTempConstruction(ENode* expr, Type* type, ENode** resultexpr);
+#else
 extern ENode* funccallexpr(Object* func, ENode* arg1, ENode* arg2, ENode* arg3, ENode* arg4);
 extern ENode* CExpr_AdjustFunctionCall(ENode* expr);
 #if MWCCPS2
@@ -181,10 +209,16 @@ extern Boolean CExpr_IsTempConstruction(ENode* expr, Type* type, ENode** resulte
 #else
 extern ENode* CExpr_IsTempConstruction(ENode* expr, Type* type, ENode** resultexpr);
 #endif
+#endif
 extern ENode* create_objectnode2(Object* obj);
 extern ENode* create_objectrefnode(Object* obj);
 extern ENode* CExpr_MakeObjRefNode(Object* obj, Boolean markUsed);
 extern Boolean CExpr_IsLValue(ENode* expr);
+#if MWCCPS2_B52
+extern ENode* CExpr_TempModifyExpr(ENode* expr);
+extern ENode* promote(ENode* expr, Type* type);
+extern void CExpr_ArithmeticConversion(ENode** left, ENode** right);
+#else
 extern ENode* CExpr_TempModifyExpr(ENode* expr);
 extern ENode* promote(ENode* expr, Type* type);
 #if MWCCPSP
@@ -193,6 +227,7 @@ extern void CExpr_ArithmeticConversion(ENode** left, char* opname, ENode** right
 #define CEXPR_ARITHCONV(left, opname, right) CExpr_ArithmeticConversion(left, opname, right)
 #else
 extern void CExpr_ArithmeticConversion(ENode** left, ENode** right);
+#endif
 #endif
 extern CInt64 CExpr_IntConstConvert(Type* to, Type* from, CInt64 val);
 extern ENode* CExpr_GetETEMPCopy(ENode* expr);
@@ -203,6 +238,12 @@ extern short iszero(ENode* expr);
 extern ENode* makecommaexpression(ENode* left, ENode* right);
 extern ENode* makediadicnode(ENode* left, ENode* right, UInt8 ty);
 extern ENode* CExpr_BinaryFloatExpression(ENode* expr);
+#if MWCCPS2_B52
+extern ENode* CExpr_UnaryFloatExpression(ENode* expr);
+extern ENode* CExpr_NewENode(ENodeType ty);
+extern ENode* CExpr_CopyENode(ENode* expr);
+extern ENode* nullnode(void);
+#else
 extern ENode* CExpr_UnaryFloatExpression(ENode* expr);
 extern ENode* CExpr_NewENode(ENodeType ty);
 extern ENode* nullnode(void);
@@ -211,8 +252,14 @@ extern ENode* nullnode(void);
 extern ENode* CExpr_CopyENode(ENode* expr);
 #define CEXPR_COPYENODE(expr) CExpr_CopyENode(expr)
 #endif
+#endif
 extern ENode* CExpr_NewETEMPNode(Type* type, Boolean assign_id);
 extern ENode* CExpr_NewTemplDepENode(TemplDepSubType t);
+#if MWCCPS2_B52
+extern ENode* forceintegral(ENode* expr);
+extern Boolean CExpr_AllBitsSet(ENode* expr);
+extern void CExpr_SearchExprTree(ENode* expr, CExprSearchCB callback, SInt32 count, ...);
+#else
 extern ENode* forceintegral(ENode* expr);
 extern Boolean CExpr_AllBitsSet(ENode* expr);
 #if MWCCPSP
@@ -223,6 +270,7 @@ extern ENode* CExpr_SearchExprTreeReplace(
 ); // 3.0.1: every node, children first
 #else
 extern void CExpr_SearchExprTree(ENode* expr, CExprSearchCB callback, SInt32 count, ...);
+#endif
 #endif
 extern ENode* CExpr_VarArgPromotion(ENode* expr, Boolean toEllipsis);
 extern ENode* CExpr_GenericFuncCall(

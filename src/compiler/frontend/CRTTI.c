@@ -320,6 +320,10 @@ static Object* CRTTI_ConstructTypeInfoObject(Type* type, UInt32 qual) {
     return object;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-10)
+#endif
 static void CRTTI_ConstructVTableHeader(
     TypeClass* tclass1,
     TypeClass* tclass2,
@@ -382,6 +386,10 @@ static void CRTTI_ConstructVTableHeader(
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 OLinkList* CRTTI_ConstructVTableHeaders(TypeClass* tclass, void* data, OLinkList* links) {
     crtti_offsets = NULL;
@@ -537,6 +545,10 @@ static void CRTTI_ConstCastCheck(Type* type1, UInt32 qual1, Type* type2, UInt32 
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-4)
+#endif
 static ENode* CRTTI_ParseCast(DeclInfo* di) {
     ENode* expr;
 
@@ -579,6 +591,10 @@ static ENode* CRTTI_ParseCast(DeclInfo* di) {
     tk = lex();
     return expr;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 static void CRTTI_IncompleteCheck(Type* type) {
     if (IS_TYPE_POINTER_ONLY(type)) {
@@ -617,6 +633,10 @@ static inline Boolean CRTTI_IsSameType(Type* a, Type* b) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (965)
+#endif
 static ENode* CRTTI_UniversalCast(ENode* expr, Type* type, UInt32 qual, UInt8 mode) {
     Boolean isSimpleCast;
     Boolean needsTypcon;
@@ -730,6 +750,10 @@ static ENode* CRTTI_UniversalCast(ENode* expr, Type* type, UInt32 qual, UInt8 mo
 
     return do_typecast(expr, type, qual);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 ENode* CRTTI_Parse_dynamic_cast(void) {
     Boolean isRef;

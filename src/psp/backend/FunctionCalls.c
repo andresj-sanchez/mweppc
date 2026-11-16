@@ -150,9 +150,15 @@ ArgInfo* func_004A8C00(ENode* skip, ENodeList* args, FuncArg* argtypes) {
                     fpr++;
                 }
             }
+#if MWCCPS2_B52
         } else if (type->type == TYPEINT ||
                    type->type == TYPEENUM ||
                    type->type == TYPEPOINTER ||
+#else
+        } else if (type->type == TYPEINT ||
+                   type->type == TYPEENUM ||
+                   type->type == TYPEPOINTER ||
+#endif
                    (type->type == TYPEMEMBERPOINTER && type->size == 4)) {
             if (!argtypes || argtypes == &elipsis || argtypes == &oldstyle) {
                 if (type->size < 4) {
@@ -285,9 +291,15 @@ ArgInfo* func_004A9100(ENode* skip, ENodeList* args, FuncArg* argtypes) {
                     fpr++;
                 }
             }
+#if MWCCPS2_B52
         } else if (type->type == TYPEINT ||
                    type->type == TYPEENUM ||
                    type->type == TYPEPOINTER ||
+#else
+        } else if (type->type == TYPEINT ||
+                   type->type == TYPEENUM ||
+                   type->type == TYPEPOINTER ||
+#endif
                    (type->type == TYPEMEMBERPOINTER && type->size == 4)) {
             if (!argtypes || argtypes == &elipsis || argtypes == &oldstyle) {
                 if (type->size < 4) {
@@ -573,12 +585,21 @@ void func_004A8310(Object* func, int reg, UInt32* masks) {
 
 extern SInt16 data_00625E4C; // store word
 extern void (*data_005D0140[])(ENode* expr, void* target, VOperand* out);
+#if MWCCPS2_B52
 extern MPCode* func_004808E0(
     SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offset
 ); // store a GPR
 extern MPCode* func_004807C0(
     SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offset
 ); // store an FPR
+#else
+extern MPCode* func_004808E0(
+    SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offset
+); // store a GPR
+extern MPCode* func_004807C0(
+    SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offset
+); // store an FPR
+#endif
 extern void func_0052DE30(VOperand* dst, VOperand* src, SInt32 size, SInt32 align); // copy a block
 extern SInt16 CMach_GetTypeAlign(Type* type); // alignment
 
@@ -588,9 +609,16 @@ void func_004A8840(ArgInfo* info) {
     ENode* expr = info->expr;
     VOperand dst;
 
+#if MWCCPS2_B52
+
     if (type->type == TYPEINT ||
         type->type == TYPEENUM ||
         type->type == TYPEPOINTER ||
+#else
+    if (type->type == TYPEINT ||
+        type->type == TYPEENUM ||
+        type->type == TYPEPOINTER ||
+#endif
         (type->type == TYPEMEMBERPOINTER && type->size == 4)) {
         if (!info->unk34) {
             data_005D0140[expr->type](expr, NULL, &info->opnd);
@@ -605,14 +633,26 @@ void func_004A8840(ArgInfo* info) {
 #endif
             if (copts.littleendian) {
                 func_004808E0(data_00625E4C, info->opnd.reg, 29, NULL, info->offset);
+#if MWCCPS2_B52
                 func_004808E0(
                     data_00625E4C, info->opnd.regHi, 29, NULL, info->offset + data_00624788
                 );
+#else
+                func_004808E0(
+                    data_00625E4C, info->opnd.regHi, 29, NULL, info->offset + data_00624788
+                );
+#endif
             } else {
                 func_004808E0(data_00625E4C, info->opnd.regHi, 29, NULL, info->offset);
+#if MWCCPS2_B52
                 func_004808E0(
                     data_00625E4C, info->opnd.reg, 29, NULL, info->offset + data_00624788
                 );
+#else
+                func_004808E0(
+                    data_00625E4C, info->opnd.reg, 29, NULL, info->offset + data_00624788
+                );
+#endif
             }
         } else {
             func_004808E0(data_00625E4C, info->opnd.reg, 29, NULL, info->offset);
@@ -627,6 +667,7 @@ void func_004A8840(ArgInfo* info) {
         if (type->type == TYPEFLOAT && IS_SOFTFLOAT(type)) {
             if (IS_SINGLE(type) && !(info->flags & ArgInfoFlag_FloatStack)) {
 #if MWCCPS2 // b210: big-endian puts a single in the slot's second word
+#if MWCCPS2_B52
                 func_004808E0(
                     MACRO_OP(0x77),
                     info->opnd.reg,
@@ -634,6 +675,15 @@ void func_004A8840(ArgInfo* info) {
                     NULL,
                     copts.littleendian ? info->offset : info->offset + 4
                 );
+#else
+                func_004808E0(
+                    MACRO_OP(0x77),
+                    info->opnd.reg,
+                    29,
+                    NULL,
+                    copts.littleendian ? info->offset : info->offset + 4
+                );
+#endif
 #else
                 func_004808E0(MACRO_OP(0x77), info->opnd.reg, 29, NULL, info->offset);
 #endif
@@ -643,17 +693,30 @@ void func_004A8840(ArgInfo* info) {
 #endif
             } else if (copts.littleendian) {
                 func_004808E0(MACRO_OP(0x77), info->opnd.reg, 29, NULL, info->offset);
+#if MWCCPS2_B52
                 func_004808E0(
                     MACRO_OP(0x77), info->opnd.regHi, 29, NULL, info->offset + data_00624788
                 );
+#else
+                func_004808E0(
+                    MACRO_OP(0x77), info->opnd.regHi, 29, NULL, info->offset + data_00624788
+                );
+#endif
             } else {
                 func_004808E0(MACRO_OP(0x77), info->opnd.regHi, 29, NULL, info->offset);
+#if MWCCPS2_B52
                 func_004808E0(
                     MACRO_OP(0x77), info->opnd.reg, 29, NULL, info->offset + data_00624788
                 );
+#else
+                func_004808E0(
+                    MACRO_OP(0x77), info->opnd.reg, 29, NULL, info->offset + data_00624788
+                );
+#endif
             }
         } else if (IS_SINGLE(type) && !(info->flags & ArgInfoFlag_FloatStack)) {
 #if MWCCPS2
+#if MWCCPS2_B52
             func_004807C0(
                 MACRO_OP(0x79),
                 info->opnd.reg,
@@ -662,9 +725,19 @@ void func_004A8840(ArgInfo* info) {
                 copts.littleendian ? info->offset : info->offset + 4
             );
 #else
+            func_004807C0(
+                MACRO_OP(0x79),
+                info->opnd.reg,
+                29,
+                NULL,
+                copts.littleendian ? info->offset : info->offset + 4
+            );
+#endif
+#else
             func_004807C0(MACRO_OP(0x79), info->opnd.reg, 29, NULL, info->offset);
 #endif
         } else {
+#if MWCCPS2_B52
             func_004807C0(
                 (copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x70) : MACRO_OP(0x6C),
                 info->opnd.reg,
@@ -672,6 +745,15 @@ void func_004A8840(ArgInfo* info) {
                 NULL,
                 info->offset
             );
+#else
+            func_004807C0(
+                (copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x70) : MACRO_OP(0x6C),
+                info->opnd.reg,
+                29,
+                NULL,
+                info->offset
+            );
+#endif
         }
     } else {
         dst.kind = 2;
@@ -681,9 +763,15 @@ void func_004A8840(ArgInfo* info) {
         dst.offset = info->offset;
         if (!info->unk34) {
             if (ENODE_IS(info->expr, EINDIRECT)) {
+#if MWCCPS2_B52
                 data_005D0140[info->expr->data.monadic->type](
                     info->expr->data.monadic, NULL, &info->opnd
                 );
+#else
+                data_005D0140[info->expr->data.monadic->type](
+                    info->expr->data.monadic, NULL, &info->opnd
+                );
+#endif
             } else {
                 data_005D0140[info->expr->type](info->expr, NULL, &info->opnd);
             }
@@ -699,9 +787,15 @@ extern SInt32 data_00625010; // word size - 1
 extern SInt32 data_0062504C; // log2 of the word size
 extern void func_00480B40(SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offset); // load
 extern void func_00480230(SInt16 align, void* unk);
+#if MWCCPS2_B52
 extern VOperand func_0047FAA0(
     UInt16 op, int fpr, Boolean pair
 ); // the result registers after a call
+#else
+extern VOperand func_0047FAA0(
+    UInt16 op, int fpr, Boolean pair
+); // the result registers after a call
+#endif
 extern UInt8 func_00436B30(Type* type); // how a value of the type is returned
 extern Type* func_00464BE0(Type* type); // the type of the struct's only member
 extern void setpcodeflags(UInt32 flags);
@@ -778,11 +872,21 @@ void func_004A7400(ENode* expr, VOperand* out) {
         }
     }
     if (copts.mips_long64) {
+#if MWCCPS2_B52
         list =
             func_004A9100(thisexpr, expr->data.funccall.args, expr->data.funccall.functype->args);
+#else
+        list =
+            func_004A9100(thisexpr, expr->data.funccall.args, expr->data.funccall.functype->args);
+#endif
     } else {
+#if MWCCPS2_B52
         list =
             func_004A8C00(thisexpr, expr->data.funccall.args, expr->data.funccall.functype->args);
+#else
+        list =
+            func_004A8C00(thisexpr, expr->data.funccall.args, expr->data.funccall.functype->args);
+#endif
     }
 
     // arguments that call functions first
@@ -831,8 +935,13 @@ void func_004A7400(ENode* expr, VOperand* out) {
                 masks[0] |= BIT32(r);
             }
         } else if (kind == ArgInfoFlag_GPR &&
+#if MWCCPS2_B52
                    (type->type == TYPECLASS ||
                     type->type == TYPESTRUCT ||
+#else
+                   (type->type == TYPECLASS ||
+                    type->type == TYPESTRUCT ||
+#endif
                     (type->type == TYPEMEMBERPOINTER && type->size == 12)) &&
                    info->opnd.kind != 0) {
             // a struct in general registers, a word at a time
@@ -856,6 +965,7 @@ void func_004A7400(ENode* expr, VOperand* out) {
                     op = MACRO_OP(0x50);
                 }
                 for (i = 0; i < words; i++) {
+#if MWCCPS2_B52
                     func_00480B40(
                         op,
                         info->gpr + i,
@@ -863,6 +973,15 @@ void func_004A7400(ENode* expr, VOperand* out) {
                         (Object*)info->opnd.object,
                         data_00624788 * i + info->opnd.offset
                     );
+#else
+                    func_00480B40(
+                        op,
+                        info->gpr + i,
+                        info->opnd.reg,
+                        (Object*)info->opnd.object,
+                        data_00624788 * i + info->opnd.offset
+                    );
+#endif
                     func_00480230(CMach_GetTypeAlign(type), (void*)info->opnd.object);
                     masks[0] |= BIT32((info->gpr + i));
                 }
@@ -877,9 +996,15 @@ void func_004A7400(ENode* expr, VOperand* out) {
             switch (info->opnd.kind) {
                 case 0:
 #if MWCCPS2 // b210: a long long is in one 64-bit register
+#if MWCCPS2_B52
                     emitpcode(
                         type->size > 8 ? data_00625E74 : data_00625E48, info->gpr, info->opnd.reg
                     );
+#else
+                    emitpcode(
+                        type->size > 8 ? data_00625E74 : data_00625E48, info->gpr, info->opnd.reg
+                    );
+#endif
                     masks[0] |= BIT32(info->gpr);
                     break;
 #endif
@@ -898,11 +1023,19 @@ void func_004A7400(ENode* expr, VOperand* out) {
                         }
                         masks[0] |= 3 << info->gpr;
                     } else {
+#if MWCCPS2_B52
                         emitpcode(
                             type->size > 8 ? data_00625E74 : data_00625E48,
                             info->gpr,
                             info->opnd.reg
                         );
+#else
+                        emitpcode(
+                            type->size > 8 ? data_00625E74 : data_00625E48,
+                            info->gpr,
+                            info->opnd.reg
+                        );
+#endif
                         masks[0] |= BIT32(info->gpr);
                     }
                     break;
@@ -921,21 +1054,41 @@ void func_004A7400(ENode* expr, VOperand* out) {
                 case 1:
                     t = info->expr->rtype;
                     if (IS_SINGLE(t)) {
+#if MWCCPS2_B52
+                        emitpcode(OPC(0xA5), info->gpr, info->opnd.reg);
+#else
                         emitpcode(0xA5, info->gpr, info->opnd.reg);
+#endif
                         setpcodeflags(0x4000);
                         masks[0] |= BIT32(info->gpr);
                     } else {
                         if (copts.littleendian) {
+#if MWCCPS2_B52
+                            emitpcode(OPC(0xA5), info->gpr, info->opnd.reg);
+#else
                             emitpcode(0xA5, info->gpr, info->opnd.reg);
+#endif
                             data_006246B4->last->args[1].flags |= 0x8000;
                             setpcodeflags(0x100);
+#if MWCCPS2_B52
+                            emitpcode(OPC(0xA5), info->gpr + 1, info->opnd.reg);
+#else
                             emitpcode(0xA5, info->gpr + 1, info->opnd.reg);
+#endif
                             data_006246B4->last->args[1].flags |= 0xC000;
                         } else {
+#if MWCCPS2_B52
+                            emitpcode(OPC(0xA5), info->gpr + 1, info->opnd.reg);
+#else
                             emitpcode(0xA5, info->gpr + 1, info->opnd.reg);
+#endif
                             data_006246B4->last->args[1].flags |= 0x8000;
                             setpcodeflags(0x100);
+#if MWCCPS2_B52
+                            emitpcode(OPC(0xA5), info->gpr, info->opnd.reg);
+#else
                             emitpcode(0xA5, info->gpr, info->opnd.reg);
+#endif
                             data_006246B4->last->args[1].flags |= 0xC000;
                         }
                         setpcodeflags(0x100);
@@ -1012,11 +1165,21 @@ void func_004A7400(ENode* expr, VOperand* out) {
 #else
             if (copts.function_align16) {
 #endif
+#if MWCCPS2_B52
                 *out = func_0047FAA0(
                     rettype->size > 8 ? data_00625E74 : data_00625E48, 0, RESULT_PAIR(rettype)
                 );
+#else
+                *out = func_0047FAA0(
+                    rettype->size > 8 ? data_00625E74 : data_00625E48, 0, RESULT_PAIR(rettype)
+                );
+#endif
             } else {
+#if MWCCPS2_B52
                 *out = func_0047FAA0(data_00625E48, 0, RESULT_PAIR(rettype));
+#else
+                *out = func_0047FAA0(data_00625E48, 0, RESULT_PAIR(rettype));
+#endif
             }
         } else if (rc == 1) {
             out->kind = 3;

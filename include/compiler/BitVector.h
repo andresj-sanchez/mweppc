@@ -3,6 +3,9 @@
 
 #include "compiler/common.h"
 #include "compiler/CError.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +18,11 @@ struct BitVector {
 
 extern void Bv_AllocVector(BitVector** bv, UInt32 size);
 extern void Bv_ClearBit(UInt32 bit, BitVector* bv);
+#if MWCCPS2_B52
+extern void Bv_And(const BitVector* a, BitVector* b);
+extern void Bv_Or(const BitVector* a, BitVector* b);
+extern Boolean Bv_BitsInCommon(const BitVector* a, const BitVector* b);
+#else
 extern void Bv_And(const BitVector* a, BitVector* b);
 extern void Bv_Or(const BitVector* a, BitVector* b);
 #if MWCCPS2
@@ -41,6 +49,7 @@ HEADER_INLINE Boolean Bv_BitsInCommon_ps2(const BitVector* a, const BitVector* b
 #else
 extern Boolean Bv_BitsInCommon(const BitVector* a, const BitVector* b);
 #endif
+#endif
 extern Boolean Bv_Compare(const BitVector* a, const BitVector* b);
 extern void Bv_Minus(const BitVector* a, BitVector* b);
 extern void Bv_Copy(const BitVector* src, BitVector* dst);
@@ -51,12 +60,18 @@ extern Boolean Bv_IsEmpty(const BitVector* bv);
 
 HEADER_INLINE void Bv_SetBit(UInt32 bit, BitVector* bv) {
     if ((bit / 32) < bv->size) {
+#if MWCCPS2_B52
+        bv->data[bit / 32] |= 1 << (bit & 31);
+    } else {
+        CError_FATAL(80); // 3.0.1: "BitVector.h", 0x50
+#else
         bv->data[bit / 32] |= 1 << (bit & 31);
     } else {
 #if MWCCPSP
         CError_FATAL(80); // 3.0.1: "BitVector.h", 0x50
 #else
         CError_FATAL(56);
+#endif
 #endif
     }
 }
@@ -68,4 +83,7 @@ HEADER_INLINE void Bv_SetBit(UInt32 bit, BitVector* bv) {
 }
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

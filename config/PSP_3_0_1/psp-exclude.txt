@@ -37,3 +37,8 @@ src/compiler/driver/cc-eabi-ppc.c
 src/compiler/driver/cc-eabi-ppc-mw.c
 src/driver/libimp-eabi-ppc.c
 src/compiler/driver/ParserGlue-eabi-ppc-cc.c
+# b52 only (MWCCPS2_B52; tools/mwccps2/b52/units.txt)
+src/psp/backend/BETrace.c
+src/psp/backend/InlineAsmMnemonics.c
+src/psp/backend/LocalCSE.c
+src/psp/frontend/FEInterfaceB52.c

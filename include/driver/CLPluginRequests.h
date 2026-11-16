@@ -28,6 +28,11 @@ extern Boolean SendParserRequest(
     const char* build_time,
     const ToolVersionInfo* build_tool
 );
+#if MWCCPS2_B52
+extern Boolean SendCompilerRequest(Plugin* plugin, File* file, SInt16 stage);
+extern Boolean SendTargetInfoRequest(Target* targ, Plugin* linker, SInt32 dropinflags);
+extern Boolean SendLinkerRequest(Plugin* plugin, SInt32 dropinflags, CWTargetInfo* targetInfo);
+#else
 extern Boolean SendCompilerRequest(Plugin* plugin, File* file, SInt16 stage);
 extern Boolean SendTargetInfoRequest(Target* targ, Plugin* linker, SInt32 dropinflags);
 #if MWCCPSP
@@ -36,6 +41,7 @@ extern Boolean SendLinkerRequest(
 );
 #else
 extern Boolean SendLinkerRequest(Plugin* plugin, SInt32 dropinflags, CWTargetInfo* targetInfo);
+#endif
 #endif
 extern Boolean SendDisassemblerRequest(Plugin* linker, File* file);
 extern Boolean SendInitOrTermRequest(Plugin* plugin, Boolean reqIsInitialize);

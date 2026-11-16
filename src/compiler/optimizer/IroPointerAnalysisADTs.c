@@ -13,15 +13,26 @@
 #include <string.h>
 
 #if MWCCPSP
-#define ASSERT_FUNCNAME 0,
-#else
-#endif
-#if MWCCPSP
+#if MWCCPS2_B52
+#define ASSERT_FUNCNAME
 #define IRO_ASSERT(line, expr) \
     ((expr) ? (void)0 \
             : __assertion_failed( \
                   #expr, "IroPointerAnalysisADTs.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
               ))
+#else
+#define ASSERT_FUNCNAME 0,
+#endif
+#else
+#endif
+#if MWCCPSP
+#if !MWCCPS2_B52
+#define IRO_ASSERT(line, expr) \
+    ((expr) ? (void)0 \
+            : __assertion_failed( \
+                  #expr, "IroPointerAnalysisADTs.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
+              ))
+#endif
 #else
 #define IRO_ASSERT(line, expr) \
     ((expr) ? (void)0 \
@@ -29,6 +40,7 @@
 #endif
 
 #if MWCCPSP
+#if MWCCPS2_B52
 #define IRO_ASSERT_T(line, expr) \
     ((expr) ? 0 \
             : (__assertion_failed( \
@@ -40,6 +52,19 @@
             : __assertion_failed( \
                   text, "IroPointerAnalysisADTs.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
               ))
+#else
+#define IRO_ASSERT_T(line, expr) \
+    ((expr) ? 0 \
+            : (__assertion_failed( \
+                   #expr, "IroPointerAnalysisADTs.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
+               ), \
+               0))
+#define IRO_ASSERT_MSG(line, expr, text) \
+    ((expr) ? (void)0 \
+            : __assertion_failed( \
+                  text, "IroPointerAnalysisADTs.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
+              ))
+#endif
 #else
 #define IRO_ASSERT_T(line, expr) \
     ((expr) \

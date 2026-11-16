@@ -8,19 +8,30 @@
 #include "compiler/Switch.h"
 
 #if MWCCPSP
+#if MWCCPS2_B52
+static Boolean CheckChain(CLabel** labelptr) {
+#else
 // 3.0.1 (0x58D6E0): CheckChain; a goto that ends a loop (IROLF_EndLoop) is
 // not followed
 Boolean func_0058D6E0(CLabel** labelptr) {
+#endif
     IRONode* node;
+#if !MWCCPS2_B52
     IROLinear* linear;
     CLabel* lab;
     CLabel* label;
+#endif
 
     for (node = IRO_FirstNode; node; node = node->nextnode) {
         if (node->first &&
             node->first->type == IROLinearLabel &&
             node->first->u.label.label == *labelptr) {
+#if MWCCPS2_B52
+            IROLinear* linear;
+            CLabel* lab;
+#else
             label = *labelptr;
+#endif
             for (linear = node->first->next, lab = NULL;
                  linear && (linear->type == IROLinearLabel || linear->type == IROLinearNop);
                  linear = linear->next) {
@@ -29,15 +40,23 @@ Boolean func_0058D6E0(CLabel** labelptr) {
                 }
             }
 
+#if MWCCPS2_B52
+            if (linear->type == IROLinearGoto && *labelptr != linear->u.label.label) {
+#else
             if (linear->type == IROLinearGoto &&
                 !(linear->flags & IROLF_EndLoop) &&
                 label != linear->u.label.label) {
+#endif
                 *labelptr = linear->u.label.label;
                 IRO_Dump("Chaining goto at %d\n", linear->index);
                 return TRUE;
             }
 
+#if MWCCPS2_B52
+            if (lab && *labelptr != lab) {
+#else
             if (lab && label != lab) {
+#endif
                 *labelptr = lab;
             }
             return FALSE;
@@ -64,45 +83,67 @@ Boolean IRO_DoJumpChaining(void) {
                 linear = node->last;
                 switch (linear->type) {
                     case IROLinearGoto:
+#if MWCCPS2_B52
+                        if (CheckChain(&linear->u.label.label)) {
+#else
                         if (!(linear->flags & IROLF_EndLoop)) {
                             if (func_0058D6E0(&linear->u.label.label)) {
-                                changed = TRUE;
-                            }
-                        }
-                        break;
-                    case IROLinearIf:
-                    case IROLinearIfNot:
-                        if (func_0058D6E0(&linear->u.label.label)) {
+#endif
                             changed = TRUE;
                         }
-                        break;
-                    case IROLinearSwitch:
-                        info = linear->u.swtch.info;
-                        for (curcase = info->cases; curcase; curcase = curcase->next) {
-                            if (func_0058D6E0(&curcase->label)) {
-                                changed = TRUE;
-                            }
-                        }
-                        if (func_0058D6E0(&info->defaultlabel)) {
-                            changed = TRUE;
-                        }
-                        break;
-                    default:
-                        break;
+#if !MWCCPS2_B52
                 }
+#endif
+                break;
+                case IROLinearIf:
+                case IROLinearIfNot:
+#if MWCCPS2_B52
+                    if (CheckChain(&linear->u.label.label)) {
+#else
+                                if (func_0058D6E0(&linear->u.label.label)) {
+#endif
+                        changed = TRUE;
+                    }
+                    break;
+                case IROLinearSwitch:
+                    info = linear->u.swtch.info;
+                    for (curcase = info->cases; curcase; curcase = curcase->next) {
+#if MWCCPS2_B52
+                        if (CheckChain(&curcase->label)) {
+#else
+                                    if (func_0058D6E0(&curcase->label)) {
+#endif
+                            changed = TRUE;
+                        }
+                    }
+#if MWCCPS2_B52
+                    if (CheckChain(&info->defaultlabel)) {
+#else
+                                if (func_0058D6E0(&info->defaultlabel)) {
+#endif
+                        changed = TRUE;
+                    }
+                    break;
+                default:
+                    break;
             }
         }
-        result |= changed;
-        IRO_CheckForUserBreak();
-    } while (changed);
-
-    // 3.0.1 recomputes the graph once anything was chained
-    if (result) {
-        IRO_ComputeSuccPred();
-        IRO_ComputeDom();
     }
+    result |= changed;
+    IRO_CheckForUserBreak();
+}
+while (changed)
+    ;
 
-    return result;
+#if !MWCCPS2_B52
+// 3.0.1 recomputes the graph once anything was chained
+if (result) {
+    IRO_ComputeSuccPred();
+    IRO_ComputeDom();
+}
+
+#endif
+return result;
 }
 #else
 static Boolean CheckChain(CLabel** labelptr) {
@@ -375,9 +416,11 @@ Boolean IRO_RemoveRedundantJumps(void) {
             linear = node->last;
             switch (linear->type) {
                 case IROLinearGoto:
+#if !MWCCPS2_B52
                     if (linear->flags & IROLF_EndLoop) {
                         break;
                     }
+#endif
                     scan = linear->next;
                     while (scan &&
                            ((scan->type == IROLinearNop) ||
@@ -385,7 +428,17 @@ Boolean IRO_RemoveRedundantJumps(void) {
                              scan->u.label.label != linear->u.label.label))) {
                         scan = scan->next;
                     }
-                    while (scan && scan->type == IROLinearLabel) {
+#if MWCCPS2_B52
+                    while (1) {
+                        if (!scan) {
+                            break;
+                        }
+                        if (scan->type != IROLinearLabel) {
+                            break;
+                        }
+#else
+                        while (scan && scan->type == IROLinearLabel) {
+#endif
                         if (scan->u.label.label == linear->u.label.label) {
                             IRO_Dump("Removing goto next at %d\n", linear->index);
                             linear->type = IROLinearNop;
@@ -402,7 +455,11 @@ Boolean IRO_RemoveRedundantJumps(void) {
                     while (scan && scan->type == IROLinearNop) {
                         scan = scan->next;
                     }
-                    if (scan && scan->type == IROLinearGoto && !(scan->flags & IROLF_EndLoop)) {
+#if MWCCPS2_B52
+                    if (scan && scan->type == IROLinearGoto) {
+#else
+                        if (scan && scan->type == IROLinearGoto && !(scan->flags & IROLF_EndLoop)) {
+#endif
                         scan2 = scan->next;
                         while (scan2 &&
                                ((scan2->type == IROLinearNop) ||
@@ -434,7 +491,17 @@ Boolean IRO_RemoveRedundantJumps(void) {
                              scan2->u.label.label != linear->u.label.label))) {
                         scan2 = scan2->next;
                     }
-                    while (scan2 && scan2->type == IROLinearLabel) {
+#if MWCCPS2_B52
+                    while (1) {
+                        if (!scan2) {
+                            break;
+                        }
+                        if (scan2->type != IROLinearLabel) {
+                            break;
+                        }
+#else
+                        while (scan2 && scan2->type == IROLinearLabel) {
+#endif
                         if (scan2->u.label.label == linear->u.label.label) {
                             IRO_Dump("Removing If/IfNot_Goto next at %d\n", linear->index);
                             linear->type = IROLinearNop;

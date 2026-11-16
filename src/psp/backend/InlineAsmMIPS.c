@@ -15,8 +15,32 @@ extern char volatileasm; // 0x625E8E
 extern UInt8 data_00625E7F; // the assembler's nomacro
 extern UInt8 data_00625E98;
 extern char data_00625EAC;
+#if MWCCPS2_B52
+// b69's 0x5455D0 is InlineAsm.c's allow_array_expressions (symbols.manual.txt)
+#define data_005D161C allow_array_expressions
+extern int allow_array_expressions;
+#else
 extern SInt32 data_005D161C;
+#endif
 extern struct MPCode* data_00624C3C; // the last branch, whose delay slot noreorder code fills
+#if MWCCPS2_B52
+// b69's opcode numbering (kept by the source-only/native links' assembler,
+// INLINEASM_OURS: OpcodeMap69.c): 0x3B5 real opcodes, the macros right after them
+// (.set is 0x461; the set-up's table bound is 0x462)
+#define ASM_MACRO_OP(k) (0x3B5 + (k))
+// b69's CError_Error numbers for the same messages are 3.0.1's + 0x63
+// ("identifier expected" 0x6B, "illegal operand" 0x90, "unknown assembler
+// instruction mnemonic" 0x105)
+#define ASM_ERR(n) ((n) + 0x63)
+// b69's name tables are GC-style units (InlineAsmMnemonics.c, 0x50C1B0..;
+// InlineAsmRegisters.c, 0x50ABA0..)
+#define func_0053EB40 InlineAsm_InitializeMnemonics
+#define func_0053E9C0 InlineAsm_InsertMnemonic
+#define func_0053E980 InlineAsm_LookupMnemonic
+#define func_0053EC50 InlineAsm_InitializeRegisters
+#define func_0053EC00 InlineAsm_InsertRegister
+#define func_0053EBB0 InlineAsm_LookupRegister
+#endif
 extern void func_0053EB40(void); // clear the mnemonics
 extern void* func_0053E9C0(char* name, SInt32 opcode); // add a mnemonic
 extern void func_0053EC50(void); // clear the registers
@@ -32,6 +56,7 @@ typedef struct AsmRegName {
 } AsmRegName;
 
 static AsmRegName asm_regnames[] = {
+#if MWCCPS2_B52
     {"r0", 0, 0, 0},      {"r1", 0, 1, 0},      {"r2", 0, 2, 0},      {"r3", 0, 3, 0},
     {"r4", 0, 4, 0},      {"r5", 0, 5, 0},      {"r6", 0, 6, 0},      {"r7", 0, 7, 0},
     {"r8", 0, 8, 0},      {"r9", 0, 9, 0},      {"r10", 0, 10, 0},    {"r11", 0, 11, 0},
@@ -226,6 +251,202 @@ static AsmRegName asm_regnames[] = {
     {"e710", 5, 4710, 0}, {"e711", 5, 4711, 0}, {"e712", 5, 4712, 0}, {"e713", 5, 4713, 0},
     {"e720", 5, 4720, 0}, {"e721", 5, 4721, 0}, {"e722", 5, 4722, 0}, {"e723", 5, 4723, 0},
     {"e730", 5, 4730, 0}, {"e731", 5, 4731, 0}, {"e732", 5, 4732, 0}, {"e733", 5, 4733, 0},
+#else
+    {"r0", 0, 0, 0},      {"r1", 0, 1, 0},      {"r2", 0, 2, 0},      {"r3", 0, 3, 0},
+    {"r4", 0, 4, 0},      {"r5", 0, 5, 0},      {"r6", 0, 6, 0},      {"r7", 0, 7, 0},
+    {"r8", 0, 8, 0},      {"r9", 0, 9, 0},      {"r10", 0, 10, 0},    {"r11", 0, 11, 0},
+    {"r12", 0, 12, 0},    {"r13", 0, 13, 0},    {"r14", 0, 14, 0},    {"r15", 0, 15, 0},
+    {"r16", 0, 16, 0},    {"r17", 0, 17, 0},    {"r18", 0, 18, 0},    {"r19", 0, 19, 0},
+    {"r20", 0, 20, 0},    {"r21", 0, 21, 0},    {"r22", 0, 22, 0},    {"r23", 0, 23, 0},
+    {"r24", 0, 24, 0},    {"r25", 0, 25, 0},    {"r26", 0, 26, 0},    {"r27", 0, 27, 0},
+    {"r28", 0, 28, 0},    {"r29", 0, 29, 0},    {"r30", 0, 30, 0},    {"r31", 0, 31, 0},
+    {"zero", 0, 0, 0},    {"at", 0, 1, 0},      {"AT", 0, 1, 0},      {"v0", 0, 2, 0},
+    {"v1", 0, 3, 0},      {"a0", 0, 4, 0},      {"a1", 0, 5, 0},      {"a2", 0, 6, 0},
+    {"a3", 0, 7, 0},      {"a4", 0, 8, 0},      {"a5", 0, 9, 0},      {"a6", 0, 10, 0},
+    {"a7", 0, 11, 0},     {"t0", 0, 8, 0},      {"t1", 0, 9, 0},      {"t2", 0, 10, 0},
+    {"t3", 0, 11, 0},     {"t4", 0, 12, 0},     {"t5", 0, 13, 0},     {"t6", 0, 14, 0},
+    {"t7", 0, 15, 0},     {"s0", 0, 16, 0},     {"s1", 0, 17, 0},     {"s2", 0, 18, 0},
+    {"s3", 0, 19, 0},     {"s4", 0, 20, 0},     {"s5", 0, 21, 0},     {"s6", 0, 22, 0},
+    {"s7", 0, 23, 0},     {"t8", 0, 24, 0},     {"t9", 0, 25, 0},     {"kt0", 0, 26, 0},
+    {"k0", 0, 26, 0},     {"kt1", 0, 27, 0},    {"k1", 0, 27, 0},     {"gp", 0, 28, 0},
+    {"sp", 0, 29, 0},     {"s8", 0, 30, 0},     {"fp", 0, 30, 0},     {"ra", 0, 31, 0},
+    {"f0", 1, 0, 0},      {"f1", 1, 1, 0},      {"f2", 1, 2, 0},      {"f3", 1, 3, 0},
+    {"f4", 1, 4, 0},      {"f5", 1, 5, 0},      {"f6", 1, 6, 0},      {"f7", 1, 7, 0},
+    {"f8", 1, 8, 0},      {"f9", 1, 9, 0},      {"f10", 1, 10, 0},    {"f11", 1, 11, 0},
+    {"f12", 1, 12, 0},    {"f13", 1, 13, 0},    {"f14", 1, 14, 0},    {"f15", 1, 15, 0},
+    {"f16", 1, 16, 0},    {"f17", 1, 17, 0},    {"f18", 1, 18, 0},    {"f19", 1, 19, 0},
+    {"f20", 1, 20, 0},    {"f21", 1, 21, 0},    {"f22", 1, 22, 0},    {"f23", 1, 23, 0},
+    {"f24", 1, 24, 0},    {"f25", 1, 25, 0},    {"f26", 1, 26, 0},    {"f27", 1, 27, 0},
+    {"f28", 1, 28, 0},    {"f29", 1, 29, 0},    {"f30", 1, 30, 0},    {"f31", 1, 31, 0},
+    {"d0", 1, 0, 0},      {"d1", 1, 1, 0},      {"d2", 1, 2, 0},      {"d3", 1, 3, 0},
+    {"d4", 1, 4, 0},      {"d5", 1, 5, 0},      {"d6", 1, 6, 0},      {"d7", 1, 7, 0},
+    {"d8", 1, 8, 0},      {"d9", 1, 9, 0},      {"d10", 1, 10, 0},    {"d11", 1, 11, 0},
+    {"d12", 1, 12, 0},    {"d13", 1, 13, 0},    {"d14", 1, 14, 0},    {"d15", 1, 15, 0},
+    {"d16", 1, 16, 0},    {"d17", 1, 17, 0},    {"d18", 1, 18, 0},    {"d19", 1, 19, 0},
+    {"d20", 1, 20, 0},    {"d21", 1, 21, 0},    {"d22", 1, 22, 0},    {"d23", 1, 23, 0},
+    {"d24", 1, 24, 0},    {"d25", 1, 25, 0},    {"d26", 1, 26, 0},    {"d27", 1, 27, 0},
+    {"d28", 1, 28, 0},    {"d29", 1, 29, 0},    {"d30", 1, 30, 0},    {"d31", 1, 31, 0},
+    {"s000", 5, 0, 0},    {"s001", 5, 32, 0},   {"s002", 5, 64, 0},   {"s003", 5, 96, 0},
+    {"s010", 5, 1, 0},    {"s011", 5, 33, 0},   {"s012", 5, 65, 0},   {"s013", 5, 97, 0},
+    {"s020", 5, 2, 0},    {"s021", 5, 34, 0},   {"s022", 5, 66, 0},   {"s023", 5, 98, 0},
+    {"s030", 5, 3, 0},    {"s031", 5, 35, 0},   {"s032", 5, 67, 0},   {"s033", 5, 99, 0},
+    {"s100", 5, 4, 0},    {"s101", 5, 36, 0},   {"s102", 5, 68, 0},   {"s103", 5, 100, 0},
+    {"s110", 5, 5, 0},    {"s111", 5, 37, 0},   {"s112", 5, 69, 0},   {"s113", 5, 101, 0},
+    {"s120", 5, 6, 0},    {"s121", 5, 38, 0},   {"s122", 5, 70, 0},   {"s123", 5, 102, 0},
+    {"s130", 5, 7, 0},    {"s131", 5, 39, 0},   {"s132", 5, 71, 0},   {"s133", 5, 103, 0},
+    {"s200", 5, 8, 0},    {"s201", 5, 40, 0},   {"s202", 5, 72, 0},   {"s203", 5, 104, 0},
+    {"s210", 5, 9, 0},    {"s211", 5, 41, 0},   {"s212", 5, 73, 0},   {"s213", 5, 105, 0},
+    {"s220", 5, 10, 0},   {"s221", 5, 42, 0},   {"s222", 5, 74, 0},   {"s223", 5, 106, 0},
+    {"s230", 5, 11, 0},   {"s231", 5, 43, 0},   {"s232", 5, 75, 0},   {"s233", 5, 107, 0},
+    {"s300", 5, 12, 0},   {"s301", 5, 44, 0},   {"s302", 5, 76, 0},   {"s303", 5, 108, 0},
+    {"s310", 5, 13, 0},   {"s311", 5, 45, 0},   {"s312", 5, 77, 0},   {"s313", 5, 109, 0},
+    {"s320", 5, 14, 0},   {"s321", 5, 46, 0},   {"s322", 5, 78, 0},   {"s323", 5, 110, 0},
+    {"s330", 5, 15, 0},   {"s331", 5, 47, 0},   {"s332", 5, 79, 0},   {"s333", 5, 111, 0},
+    {"s400", 5, 16, 0},   {"s401", 5, 48, 0},   {"s402", 5, 80, 0},   {"s403", 5, 112, 0},
+    {"s410", 5, 17, 0},   {"s411", 5, 49, 0},   {"s412", 5, 81, 0},   {"s413", 5, 113, 0},
+    {"s420", 5, 18, 0},   {"s421", 5, 50, 0},   {"s422", 5, 82, 0},   {"s423", 5, 114, 0},
+    {"s430", 5, 19, 0},   {"s431", 5, 51, 0},   {"s432", 5, 83, 0},   {"s433", 5, 115, 0},
+    {"s500", 5, 20, 0},   {"s501", 5, 52, 0},   {"s502", 5, 84, 0},   {"s503", 5, 116, 0},
+    {"s510", 5, 21, 0},   {"s511", 5, 53, 0},   {"s512", 5, 85, 0},   {"s513", 5, 117, 0},
+    {"s520", 5, 22, 0},   {"s521", 5, 54, 0},   {"s522", 5, 86, 0},   {"s523", 5, 118, 0},
+    {"s530", 5, 23, 0},   {"s531", 5, 55, 0},   {"s532", 5, 87, 0},   {"s533", 5, 119, 0},
+    {"s600", 5, 24, 0},   {"s601", 5, 56, 0},   {"s602", 5, 88, 0},   {"s603", 5, 120, 0},
+    {"s610", 5, 25, 0},   {"s611", 5, 57, 0},   {"s612", 5, 89, 0},   {"s613", 5, 121, 0},
+    {"s620", 5, 26, 0},   {"s621", 5, 58, 0},   {"s622", 5, 90, 0},   {"s623", 5, 122, 0},
+    {"s630", 5, 27, 0},   {"s631", 5, 59, 0},   {"s632", 5, 91, 0},   {"s633", 5, 123, 0},
+    {"s700", 5, 28, 0},   {"s701", 5, 60, 0},   {"s702", 5, 92, 0},   {"s703", 5, 124, 0},
+    {"s710", 5, 29, 0},   {"s711", 5, 61, 0},   {"s712", 5, 93, 0},   {"s713", 5, 125, 0},
+    {"s720", 5, 30, 0},   {"s721", 5, 62, 0},   {"s722", 5, 94, 0},   {"s723", 5, 126, 0},
+    {"s730", 5, 31, 0},   {"s731", 5, 63, 0},   {"s732", 5, 95, 0},   {"s733", 5, 127, 0},
+    {"c000", 5, 1000, 0}, {"c001", 5, 1001, 0}, {"c002", 5, 1002, 0}, {"c003", 5, 1003, 0},
+    {"c010", 5, 1010, 0}, {"c011", 5, 1011, 0}, {"c012", 5, 1012, 0}, {"c013", 5, 1013, 0},
+    {"c020", 5, 1020, 0}, {"c021", 5, 1021, 0}, {"c022", 5, 1022, 0}, {"c023", 5, 1023, 0},
+    {"c030", 5, 1030, 0}, {"c031", 5, 1031, 0}, {"c032", 5, 1032, 0}, {"c033", 5, 1033, 0},
+    {"c100", 5, 1100, 0}, {"c101", 5, 1101, 0}, {"c102", 5, 1102, 0}, {"c103", 5, 1103, 0},
+    {"c110", 5, 1110, 0}, {"c111", 5, 1111, 0}, {"c112", 5, 1112, 0}, {"c113", 5, 1113, 0},
+    {"c120", 5, 1120, 0}, {"c121", 5, 1121, 0}, {"c122", 5, 1122, 0}, {"c123", 5, 1123, 0},
+    {"c130", 5, 1130, 0}, {"c131", 5, 1131, 0}, {"c132", 5, 1132, 0}, {"c133", 5, 1133, 0},
+    {"c200", 5, 1200, 0}, {"c201", 5, 1201, 0}, {"c202", 5, 1202, 0}, {"c203", 5, 1203, 0},
+    {"c210", 5, 1210, 0}, {"c211", 5, 1211, 0}, {"c212", 5, 1212, 0}, {"c213", 5, 1213, 0},
+    {"c220", 5, 1220, 0}, {"c221", 5, 1221, 0}, {"c222", 5, 1222, 0}, {"c223", 5, 1223, 0},
+    {"c230", 5, 1230, 0}, {"c231", 5, 1231, 0}, {"c232", 5, 1232, 0}, {"c233", 5, 1233, 0},
+    {"c300", 5, 1300, 0}, {"c301", 5, 1301, 0}, {"c302", 5, 1302, 0}, {"c303", 5, 1303, 0},
+    {"c310", 5, 1310, 0}, {"c311", 5, 1311, 0}, {"c312", 5, 1312, 0}, {"c313", 5, 1313, 0},
+    {"c320", 5, 1320, 0}, {"c321", 5, 1321, 0}, {"c322", 5, 1322, 0}, {"c323", 5, 1323, 0},
+    {"c330", 5, 1330, 0}, {"c331", 5, 1331, 0}, {"c332", 5, 1332, 0}, {"c333", 5, 1333, 0},
+    {"c400", 5, 1400, 0}, {"c401", 5, 1401, 0}, {"c402", 5, 1402, 0}, {"c403", 5, 1403, 0},
+    {"c410", 5, 1410, 0}, {"c411", 5, 1411, 0}, {"c412", 5, 1412, 0}, {"c413", 5, 1413, 0},
+    {"c420", 5, 1420, 0}, {"c421", 5, 1421, 0}, {"c422", 5, 1422, 0}, {"c423", 5, 1423, 0},
+    {"c430", 5, 1430, 0}, {"c431", 5, 1431, 0}, {"c432", 5, 1432, 0}, {"c433", 5, 1433, 0},
+    {"c500", 5, 1500, 0}, {"c501", 5, 1501, 0}, {"c502", 5, 1502, 0}, {"c503", 5, 1503, 0},
+    {"c510", 5, 1510, 0}, {"c511", 5, 1511, 0}, {"c512", 5, 1512, 0}, {"c513", 5, 1513, 0},
+    {"c520", 5, 1520, 0}, {"c521", 5, 1521, 0}, {"c522", 5, 1522, 0}, {"c523", 5, 1523, 0},
+    {"c530", 5, 1530, 0}, {"c531", 5, 1531, 0}, {"c532", 5, 1532, 0}, {"c533", 5, 1533, 0},
+    {"c600", 5, 1600, 0}, {"c601", 5, 1601, 0}, {"c602", 5, 1602, 0}, {"c603", 5, 1603, 0},
+    {"c610", 5, 1610, 0}, {"c611", 5, 1611, 0}, {"c612", 5, 1612, 0}, {"c613", 5, 1613, 0},
+    {"c620", 5, 1620, 0}, {"c621", 5, 1621, 0}, {"c622", 5, 1622, 0}, {"c623", 5, 1623, 0},
+    {"c630", 5, 1630, 0}, {"c631", 5, 1631, 0}, {"c632", 5, 1632, 0}, {"c633", 5, 1633, 0},
+    {"c700", 5, 1700, 0}, {"c701", 5, 1701, 0}, {"c702", 5, 1702, 0}, {"c703", 5, 1703, 0},
+    {"c710", 5, 1710, 0}, {"c711", 5, 1711, 0}, {"c712", 5, 1712, 0}, {"c713", 5, 1713, 0},
+    {"c720", 5, 1720, 0}, {"c721", 5, 1721, 0}, {"c722", 5, 1722, 0}, {"c723", 5, 1723, 0},
+    {"c730", 5, 1730, 0}, {"c731", 5, 1731, 0}, {"c732", 5, 1732, 0}, {"c733", 5, 1733, 0},
+    {"r000", 5, 2000, 0}, {"r001", 5, 2001, 0}, {"r002", 5, 2002, 0}, {"r003", 5, 2003, 0},
+    {"r010", 5, 2010, 0}, {"r011", 5, 2011, 0}, {"r012", 5, 2012, 0}, {"r013", 5, 2013, 0},
+    {"r020", 5, 2020, 0}, {"r021", 5, 2021, 0}, {"r022", 5, 2022, 0}, {"r023", 5, 2023, 0},
+    {"r030", 5, 2030, 0}, {"r031", 5, 2031, 0}, {"r032", 5, 2032, 0}, {"r033", 5, 2033, 0},
+    {"r100", 5, 2100, 0}, {"r101", 5, 2101, 0}, {"r102", 5, 2102, 0}, {"r103", 5, 2103, 0},
+    {"r110", 5, 2110, 0}, {"r111", 5, 2111, 0}, {"r112", 5, 2112, 0}, {"r113", 5, 2113, 0},
+    {"r120", 5, 2120, 0}, {"r121", 5, 2121, 0}, {"r122", 5, 2122, 0}, {"r123", 5, 2123, 0},
+    {"r130", 5, 2130, 0}, {"r131", 5, 2131, 0}, {"r132", 5, 2132, 0}, {"r133", 5, 2133, 0},
+    {"r200", 5, 2200, 0}, {"r201", 5, 2201, 0}, {"r202", 5, 2202, 0}, {"r203", 5, 2203, 0},
+    {"r210", 5, 2210, 0}, {"r211", 5, 2211, 0}, {"r212", 5, 2212, 0}, {"r213", 5, 2213, 0},
+    {"r220", 5, 2220, 0}, {"r221", 5, 2221, 0}, {"r222", 5, 2222, 0}, {"r223", 5, 2223, 0},
+    {"r230", 5, 2230, 0}, {"r231", 5, 2231, 0}, {"r232", 5, 2232, 0}, {"r233", 5, 2233, 0},
+    {"r300", 5, 2300, 0}, {"r301", 5, 2301, 0}, {"r302", 5, 2302, 0}, {"r303", 5, 2303, 0},
+    {"r310", 5, 2310, 0}, {"r311", 5, 2311, 0}, {"r312", 5, 2312, 0}, {"r313", 5, 2313, 0},
+    {"r320", 5, 2320, 0}, {"r321", 5, 2321, 0}, {"r322", 5, 2322, 0}, {"r323", 5, 2323, 0},
+    {"r330", 5, 2330, 0}, {"r331", 5, 2331, 0}, {"r332", 5, 2332, 0}, {"r333", 5, 2333, 0},
+    {"r400", 5, 2400, 0}, {"r401", 5, 2401, 0}, {"r402", 5, 2402, 0}, {"r403", 5, 2403, 0},
+    {"r410", 5, 2410, 0}, {"r411", 5, 2411, 0}, {"r412", 5, 2412, 0}, {"r413", 5, 2413, 0},
+    {"r420", 5, 2420, 0}, {"r421", 5, 2421, 0}, {"r422", 5, 2422, 0}, {"r423", 5, 2423, 0},
+    {"r430", 5, 2430, 0}, {"r431", 5, 2431, 0}, {"r432", 5, 2432, 0}, {"r433", 5, 2433, 0},
+    {"r500", 5, 2500, 0}, {"r501", 5, 2501, 0}, {"r502", 5, 2502, 0}, {"r503", 5, 2503, 0},
+    {"r510", 5, 2510, 0}, {"r511", 5, 2511, 0}, {"r512", 5, 2512, 0}, {"r513", 5, 2513, 0},
+    {"r520", 5, 2520, 0}, {"r521", 5, 2521, 0}, {"r522", 5, 2522, 0}, {"r523", 5, 2523, 0},
+    {"r530", 5, 2530, 0}, {"r531", 5, 2531, 0}, {"r532", 5, 2532, 0}, {"r533", 5, 2533, 0},
+    {"r600", 5, 2600, 0}, {"r601", 5, 2601, 0}, {"r602", 5, 2602, 0}, {"r603", 5, 2603, 0},
+    {"r610", 5, 2610, 0}, {"r611", 5, 2611, 0}, {"r612", 5, 2612, 0}, {"r613", 5, 2613, 0},
+    {"r620", 5, 2620, 0}, {"r621", 5, 2621, 0}, {"r622", 5, 2622, 0}, {"r623", 5, 2623, 0},
+    {"r630", 5, 2630, 0}, {"r631", 5, 2631, 0}, {"r632", 5, 2632, 0}, {"r633", 5, 2633, 0},
+    {"r700", 5, 2700, 0}, {"r701", 5, 2701, 0}, {"r702", 5, 2702, 0}, {"r703", 5, 2703, 0},
+    {"r710", 5, 2710, 0}, {"r711", 5, 2711, 0}, {"r712", 5, 2712, 0}, {"r713", 5, 2713, 0},
+    {"r720", 5, 2720, 0}, {"r721", 5, 2721, 0}, {"r722", 5, 2722, 0}, {"r723", 5, 2723, 0},
+    {"r730", 5, 2730, 0}, {"r731", 5, 2731, 0}, {"r732", 5, 2732, 0}, {"r733", 5, 2733, 0},
+    {"m000", 5, 3000, 0}, {"m001", 5, 3001, 0}, {"m002", 5, 3002, 0}, {"m003", 5, 3003, 0},
+    {"m010", 5, 3010, 0}, {"m011", 5, 3011, 0}, {"m012", 5, 3012, 0}, {"m013", 5, 3013, 0},
+    {"m020", 5, 3020, 0}, {"m021", 5, 3021, 0}, {"m022", 5, 3022, 0}, {"m023", 5, 3023, 0},
+    {"m030", 5, 3030, 0}, {"m031", 5, 3031, 0}, {"m032", 5, 3032, 0}, {"m033", 5, 3033, 0},
+    {"m100", 5, 3100, 0}, {"m101", 5, 3101, 0}, {"m102", 5, 3102, 0}, {"m103", 5, 3103, 0},
+    {"m110", 5, 3110, 0}, {"m111", 5, 3111, 0}, {"m112", 5, 3112, 0}, {"m113", 5, 3113, 0},
+    {"m120", 5, 3120, 0}, {"m121", 5, 3121, 0}, {"m122", 5, 3122, 0}, {"m123", 5, 3123, 0},
+    {"m130", 5, 3130, 0}, {"m131", 5, 3131, 0}, {"m132", 5, 3132, 0}, {"m133", 5, 3133, 0},
+    {"m200", 5, 3200, 0}, {"m201", 5, 3201, 0}, {"m202", 5, 3202, 0}, {"m203", 5, 3203, 0},
+    {"m210", 5, 3210, 0}, {"m211", 5, 3211, 0}, {"m212", 5, 3212, 0}, {"m213", 5, 3213, 0},
+    {"m220", 5, 3220, 0}, {"m221", 5, 3221, 0}, {"m222", 5, 3222, 0}, {"m223", 5, 3223, 0},
+    {"m230", 5, 3230, 0}, {"m231", 5, 3231, 0}, {"m232", 5, 3232, 0}, {"m233", 5, 3233, 0},
+    {"m300", 5, 3300, 0}, {"m301", 5, 3301, 0}, {"m302", 5, 3302, 0}, {"m303", 5, 3303, 0},
+    {"m310", 5, 3310, 0}, {"m311", 5, 3311, 0}, {"m312", 5, 3312, 0}, {"m313", 5, 3313, 0},
+    {"m320", 5, 3320, 0}, {"m321", 5, 3321, 0}, {"m322", 5, 3322, 0}, {"m323", 5, 3323, 0},
+    {"m330", 5, 3330, 0}, {"m331", 5, 3331, 0}, {"m332", 5, 3332, 0}, {"m333", 5, 3333, 0},
+    {"m400", 5, 3400, 0}, {"m401", 5, 3401, 0}, {"m402", 5, 3402, 0}, {"m403", 5, 3403, 0},
+    {"m410", 5, 3410, 0}, {"m411", 5, 3411, 0}, {"m412", 5, 3412, 0}, {"m413", 5, 3413, 0},
+    {"m420", 5, 3420, 0}, {"m421", 5, 3421, 0}, {"m422", 5, 3422, 0}, {"m423", 5, 3423, 0},
+    {"m430", 5, 3430, 0}, {"m431", 5, 3431, 0}, {"m432", 5, 3432, 0}, {"m433", 5, 3433, 0},
+    {"m500", 5, 3500, 0}, {"m501", 5, 3501, 0}, {"m502", 5, 3502, 0}, {"m503", 5, 3503, 0},
+    {"m510", 5, 3510, 0}, {"m511", 5, 3511, 0}, {"m512", 5, 3512, 0}, {"m513", 5, 3513, 0},
+    {"m520", 5, 3520, 0}, {"m521", 5, 3521, 0}, {"m522", 5, 3522, 0}, {"m523", 5, 3523, 0},
+    {"m530", 5, 3530, 0}, {"m531", 5, 3531, 0}, {"m532", 5, 3532, 0}, {"m533", 5, 3533, 0},
+    {"m600", 5, 3600, 0}, {"m601", 5, 3601, 0}, {"m602", 5, 3602, 0}, {"m603", 5, 3603, 0},
+    {"m610", 5, 3610, 0}, {"m611", 5, 3611, 0}, {"m612", 5, 3612, 0}, {"m613", 5, 3613, 0},
+    {"m620", 5, 3620, 0}, {"m621", 5, 3621, 0}, {"m622", 5, 3622, 0}, {"m623", 5, 3623, 0},
+    {"m630", 5, 3630, 0}, {"m631", 5, 3631, 0}, {"m632", 5, 3632, 0}, {"m633", 5, 3633, 0},
+    {"m700", 5, 3700, 0}, {"m701", 5, 3701, 0}, {"m702", 5, 3702, 0}, {"m703", 5, 3703, 0},
+    {"m710", 5, 3710, 0}, {"m711", 5, 3711, 0}, {"m712", 5, 3712, 0}, {"m713", 5, 3713, 0},
+    {"m720", 5, 3720, 0}, {"m721", 5, 3721, 0}, {"m722", 5, 3722, 0}, {"m723", 5, 3723, 0},
+    {"m730", 5, 3730, 0}, {"m731", 5, 3731, 0}, {"m732", 5, 3732, 0}, {"m733", 5, 3733, 0},
+    {"e000", 5, 4000, 0}, {"e001", 5, 4001, 0}, {"e002", 5, 4002, 0}, {"e003", 5, 4003, 0},
+    {"e010", 5, 4010, 0}, {"e011", 5, 4011, 0}, {"e012", 5, 4012, 0}, {"e013", 5, 4013, 0},
+    {"e020", 5, 4020, 0}, {"e021", 5, 4021, 0}, {"e022", 5, 4022, 0}, {"e023", 5, 4023, 0},
+    {"e030", 5, 4030, 0}, {"e031", 5, 4031, 0}, {"e032", 5, 4032, 0}, {"e033", 5, 4033, 0},
+    {"e100", 5, 4100, 0}, {"e101", 5, 4101, 0}, {"e102", 5, 4102, 0}, {"e103", 5, 4103, 0},
+    {"e110", 5, 4110, 0}, {"e111", 5, 4111, 0}, {"e112", 5, 4112, 0}, {"e113", 5, 4113, 0},
+    {"e120", 5, 4120, 0}, {"e121", 5, 4121, 0}, {"e122", 5, 4122, 0}, {"e123", 5, 4123, 0},
+    {"e130", 5, 4130, 0}, {"e131", 5, 4131, 0}, {"e132", 5, 4132, 0}, {"e133", 5, 4133, 0},
+    {"e200", 5, 4200, 0}, {"e201", 5, 4201, 0}, {"e202", 5, 4202, 0}, {"e203", 5, 4203, 0},
+    {"e210", 5, 4210, 0}, {"e211", 5, 4211, 0}, {"e212", 5, 4212, 0}, {"e213", 5, 4213, 0},
+    {"e220", 5, 4220, 0}, {"e221", 5, 4221, 0}, {"e222", 5, 4222, 0}, {"e223", 5, 4223, 0},
+    {"e230", 5, 4230, 0}, {"e231", 5, 4231, 0}, {"e232", 5, 4232, 0}, {"e233", 5, 4233, 0},
+    {"e300", 5, 4300, 0}, {"e301", 5, 4301, 0}, {"e302", 5, 4302, 0}, {"e303", 5, 4303, 0},
+    {"e310", 5, 4310, 0}, {"e311", 5, 4311, 0}, {"e312", 5, 4312, 0}, {"e313", 5, 4313, 0},
+    {"e320", 5, 4320, 0}, {"e321", 5, 4321, 0}, {"e322", 5, 4322, 0}, {"e323", 5, 4323, 0},
+    {"e330", 5, 4330, 0}, {"e331", 5, 4331, 0}, {"e332", 5, 4332, 0}, {"e333", 5, 4333, 0},
+    {"e400", 5, 4400, 0}, {"e401", 5, 4401, 0}, {"e402", 5, 4402, 0}, {"e403", 5, 4403, 0},
+    {"e410", 5, 4410, 0}, {"e411", 5, 4411, 0}, {"e412", 5, 4412, 0}, {"e413", 5, 4413, 0},
+    {"e420", 5, 4420, 0}, {"e421", 5, 4421, 0}, {"e422", 5, 4422, 0}, {"e423", 5, 4423, 0},
+    {"e430", 5, 4430, 0}, {"e431", 5, 4431, 0}, {"e432", 5, 4432, 0}, {"e433", 5, 4433, 0},
+    {"e500", 5, 4500, 0}, {"e501", 5, 4501, 0}, {"e502", 5, 4502, 0}, {"e503", 5, 4503, 0},
+    {"e510", 5, 4510, 0}, {"e511", 5, 4511, 0}, {"e512", 5, 4512, 0}, {"e513", 5, 4513, 0},
+    {"e520", 5, 4520, 0}, {"e521", 5, 4521, 0}, {"e522", 5, 4522, 0}, {"e523", 5, 4523, 0},
+    {"e530", 5, 4530, 0}, {"e531", 5, 4531, 0}, {"e532", 5, 4532, 0}, {"e533", 5, 4533, 0},
+    {"e600", 5, 4600, 0}, {"e601", 5, 4601, 0}, {"e602", 5, 4602, 0}, {"e603", 5, 4603, 0},
+    {"e610", 5, 4610, 0}, {"e611", 5, 4611, 0}, {"e612", 5, 4612, 0}, {"e613", 5, 4613, 0},
+    {"e620", 5, 4620, 0}, {"e621", 5, 4621, 0}, {"e622", 5, 4622, 0}, {"e623", 5, 4623, 0},
+    {"e630", 5, 4630, 0}, {"e631", 5, 4631, 0}, {"e632", 5, 4632, 0}, {"e633", 5, 4633, 0},
+    {"e700", 5, 4700, 0}, {"e701", 5, 4701, 0}, {"e702", 5, 4702, 0}, {"e703", 5, 4703, 0},
+    {"e710", 5, 4710, 0}, {"e711", 5, 4711, 0}, {"e712", 5, 4712, 0}, {"e713", 5, 4713, 0},
+    {"e720", 5, 4720, 0}, {"e721", 5, 4721, 0}, {"e722", 5, 4722, 0}, {"e723", 5, 4723, 0},
+    {"e730", 5, 4730, 0}, {"e731", 5, 4731, 0}, {"e732", 5, 4732, 0}, {"e733", 5, 4733, 0},
+#endif
 };
 
 // before any inline assembly in a function
@@ -240,16 +461,36 @@ void func_00483F30(void) {
     UInt16 op;
     int i;
 
+#if !MWCCPS2_B52
     volatileasm |= copts.volatileasm;
+#endif
     data_00625E7F = copts.nomacro;
     data_00625E98 = 0;
+#if !MWCCPS2_B52
     data_00625EAC = 0;
+#endif
     data_005D161C = 1;
     data_00624C3C = 0;
 
+#if MWCCPS2_B52
+    b69_asm_sync_opcodes();
+#endif
     func_0053EB40();
 #if MWCCPS2
+#if MWCCPS2_B52
+    if (getenv("MWCCPSP_TRACE")) {
+        fprintf(
+            stderr,
+            "asm init: op 0 name %s op 1 name %s nop %s\n",
+            data_006115F8[0].name ? data_006115F8[0].name : "-",
+            data_006115F8[1].name ? data_006115F8[1].name : "-",
+            data_006115F8[0x16].name ? data_006115F8[0x16].name : "-"
+        );
+    }
+    for (op = 0; op < ASM_MACRO_OP(0xAD); op++) {
+#else
     for (op = 0; op < MACRO_OP(0xAD); op++) {
+#endif
         char* name = data_006115F8[op].name;
         if (name && name[0] != '_') {
             func_0053E9C0(name, op);
@@ -663,11 +904,19 @@ void func_00483F30(void) {
     func_0053EC00("vf29w", 5, 16573, NULL);
     func_0053EC00("vf30w", 5, 16574, NULL);
     func_0053EC00("vf31w", 5, 16575, NULL);
+#if MWCCPS2_B52
+    func_0053EC00("I", 6, 0, NULL);
+    func_0053EC00("Q", 6, 1, NULL);
+    func_0053EC00("R", 6, 3, NULL);
+    func_0053EC00("ACC", 6, 2, NULL);
+    func_0053EC00("acc", 6, 2, NULL);
+#else
     func_0053EC00("I", 6, 1, NULL);
     func_0053EC00("Q", 6, 2, NULL);
     func_0053EC00("R", 6, 4, NULL);
     func_0053EC00("ACC", 6, 3, NULL);
     func_0053EC00("acc", 6, 3, NULL);
+#endif
 #else
     for (i = 0; i < sizeof(asm_regnames) / sizeof(asm_regnames[0]); i++) {
         func_0053EC00(
@@ -693,9 +942,15 @@ void func_00483F30(void) {
 // a mnemonic's record (InlineAsmTables.c)
 typedef struct AsmMnemonicRec {
     char* name;
+#if !MWCCPS2_B52
     SInt32 capacity;
+#endif
     SInt32 count;
+#if MWCCPS2_B52
+    SInt32 opcodes[1]; // +8, inline (InlineAsmMnemonics.c)
+#else
     SInt32* opcodes;
+#endif
 } AsmMnemonicRec;
 
 extern Boolean InlineAsm_gccmode;
@@ -714,8 +969,13 @@ void func_00483B20(void) {
     char mnemonic[0x12C];
     Statement* stmt;
     AsmMnemonicRec* m;
+#if !MWCCPS2_B52
     volatile SInt32 tries;
+#endif
     SInt32 state;
+#if MWCCPS2_B52
+    volatile SInt32 tries;
+#endif
 
     if (tk == '}' || tk == ')') {
         return;
@@ -729,7 +989,11 @@ void func_00483B20(void) {
     InlineAsm_SkipComment();
     func_00487F60(mnemonic);
     if (!(m = func_0053E980(mnemonic))) {
+#if MWCCPS2_B52
+        CError_Error(0x105); // b69's error numbers are GC's
+#else
         CError_Error(0xA2);
+#endif
     }
 
     stmt = CFunc_AppendStatement((StatementType)16); // ST_ASM
@@ -758,6 +1022,10 @@ void func_00487F60(char* buf) {
     int i;
     AsmMnemonicRec* m;
     char* p;
+#if MWCCPS2_B52
+    OpcodeDef* def;
+    char* fmt;
+#endif
 
     for (i = 0; tkidentifier->name[i]; i++) {
         buf[i] = tolower(tkidentifier->name[i]);
@@ -766,33 +1034,66 @@ void func_00487F60(char* buf) {
 
     data_00625EA1 = 0;
     data_00625ECD = 0;
+#if MWCCPS2_B52
+    if ((m = func_0053E980(buf)) &&
+        (def = &data_006115F8[m->opcodes[0]], fmt = def->format, *fmt) == '&') {
+        if (lookahead() == '.') {
+#else
     if ((m = func_0053E980(buf)) && data_006115F8[m->opcodes[0]].format[0] == '&') {
         if (lookahead() != '.') {
             data_00625EA1 = 0xF;
             return;
         }
-        tk = lex();
-        tk = lex();
-        if (tk != TK_IDENTIFIER) {
+#endif
+            tk = lex();
+            tk = lex();
+            if (tk != TK_IDENTIFIER) {
+#if MWCCPS2_B52
+                CError_Error(ASM_ERR(8));
+#else
             CError_Error(8);
-        }
-#if MWCCPS2
-        // b210 (0x4945A0): an unknown letter is reported without advancing
-        for (p = tkidentifier->name; *p;) {
-            if (*p == 'x') {
-                data_00625EA1 |= 8;
-            } else if (*p == 'y') {
-                data_00625EA1 |= 4;
-            } else if (*p == 'z') {
-                data_00625EA1 |= 2;
-            } else if (*p == 'w') {
-                data_00625EA1 |= 1;
-            } else {
-                CError_Error(8);
-                continue;
+#endif
             }
-            p++;
+#if MWCCPS2
+            // b210 (0x4945A0): an unknown letter is reported without advancing
+            for (p = tkidentifier->name; *p;) {
+                if (*p == 'x') {
+                    data_00625EA1 |= 8;
+#if MWCCPS2_B52
+                    p++;
+#endif
+                } else if (*p == 'y') {
+                    data_00625EA1 |= 4;
+#if MWCCPS2_B52
+                    p++;
+#endif
+                } else if (*p == 'z') {
+                    data_00625EA1 |= 2;
+#if MWCCPS2_B52
+                    p++;
+#endif
+                } else if (*p == 'w') {
+                    data_00625EA1 |= 1;
+#if MWCCPS2_B52
+                    p++;
+#endif
+                } else {
+#if MWCCPS2_B52
+                    CError_Error(ASM_ERR(8)); // without advancing
+#else
+                    CError_Error(8);
+                    continue;
+#endif
+                }
+#if !MWCCPS2_B52
+                p++;
+#endif
+            }
+#if MWCCPS2_B52
+        } else {
+            data_00625EA1 = 0xF;
         }
+#endif
 #else
         for (p = tkidentifier->name; *p; p++) {
             if (*p == 'x') {
@@ -816,7 +1117,11 @@ void func_00487F60(char* buf) {
         strcat(buf, ".");
         tk = lex();
         if (tk != TK_IDENTIFIER) {
+#if MWCCPS2_B52
+            CError_Error(ASM_ERR(8));
+#else
             CError_Error(8);
+#endif
         }
         for (i = 0; tkidentifier->name[i]; i++) {
             tkidentifier->name[i] = tolower(tkidentifier->name[i]);
@@ -848,80 +1153,138 @@ extern void InlineAsm_SyntaxError(short code);
 // 0x483C40: a directive (after '.'): .set's options; any other directive is
 // an instruction
 void func_00483C40(void) {
+#if !MWCCPS2_B52
     Statement* stmt;
+#endif
     AsmSetRecord* rec;
+#if MWCCPS2_B52
+    Statement* stmt;
+#else
     AsmSetState* st;
     char* name;
+#endif
 
     InlineAsm_SkipComment();
     tk = lex();
     if (tk != TK_IDENTIFIER) {
+#if MWCCPS2_B52
+        InlineAsm_SyntaxError(0x6B);
+#else
         InlineAsm_SyntaxError(8);
+#endif
     }
+#if MWCCPS2_B52
+    if (!strcmp(tkidentifier->name, "set")) {
+#else
     if (strcmp(tkidentifier->name, "set")) {
         func_00483B20();
         return;
     }
 
-    stmt = CFunc_AppendStatement((StatementType)16);
-    rec = lalloc(sizeof(AsmSetRecord));
-    memclrw(rec, sizeof(AsmSetRecord));
-    stmt->expr = (ENode*)rec;
+#endif
+        stmt = CFunc_AppendStatement((StatementType)16);
+        rec = lalloc(sizeof(AsmSetRecord));
+        memclrw(rec, sizeof(AsmSetRecord));
+        stmt->expr = (ENode*)rec;
+#if MWCCPS2_B52
+        rec->opcode = ASM_MACRO_OP(0xAC);
+#else
     rec->opcode = MACRO_OP(0xAC);
+#endif
 
-    InlineAsm_SkipComment();
-    tk = lex();
-    if (tk != TK_IDENTIFIER) {
+        InlineAsm_SkipComment();
+        tk = lex();
+        if (tk != TK_IDENTIFIER) {
+#if MWCCPS2_B52
+            InlineAsm_SyntaxError(0x6B);
+#else
         InlineAsm_SyntaxError(8);
-    }
+#endif
+        }
+#if MWCCPS2_B52
+        if (!strcmp(tkidentifier->name, "reorder")) {
+#else
     name = tkidentifier->name;
     if (!strcmp(name, "asm_volatile")) {
         rec->mode = 4;
     } else if (!strcmp(name, "asm_nonvolatile")) {
         rec->mode = 0x10;
     } else if (!strcmp(name, "reorder")) {
-        rec->mode = 1;
-    } else if (!strcmp(name, "noreorder")) {
-        rec->mode = 2;
-    } else if (!strcmp(name, "at")) {
-        data_00625E98 = 0;
-    } else if (!strcmp(name, "noat")) {
-        data_00625E98 = 1;
-    } else if (!strcmp(name, "nomacro")) {
-        data_00625E7F = 1;
-    } else if (!strcmp(name, "macro")) {
-        data_00625E7F = 0;
-#if !MWCCPS2 || MWCCPS2_BUILD >= 210 // b145 has no .set push/pop
-    } else if (!strcmp(name, "push")) {
-        if ((st = lalloc(sizeof(AsmSetState)))) {
-            st->next = data_005F0BC8;
-            st->volatileasm = volatileasm;
-            st->unk5 = data_00625EAC;
-            st->nomacro = data_00625E7F;
-            st->noat = data_00625E98;
-            st->unk8 = data_00625E5A;
-            data_005F0BC8 = st;
-        } else {
-#if MWCCPS2
-            CError_FATAL(3544);
+#endif
+            rec->mode = 1;
+#if MWCCPS2_B52
+        } else if (!strcmp(tkidentifier->name, "noreorder")) {
 #else
-            CError_FATAL(3586);
+    } else if (!strcmp(name, "noreorder")) {
+#endif
+            rec->mode = 2;
+#if MWCCPS2_B52
+        } else if (!strcmp(tkidentifier->name, "at")) {
+#else
+    } else if (!strcmp(name, "at")) {
+#endif
+            data_00625E98 = 0;
+#if MWCCPS2_B52
+        } else if (!strcmp(tkidentifier->name, "noat")) {
+#else
+    } else if (!strcmp(name, "noat")) {
+#endif
+            data_00625E98 = 1;
+#if MWCCPS2_B52
+        } else if (!strcmp(tkidentifier->name, "nomacro")) {
+#else
+    } else if (!strcmp(name, "nomacro")) {
+#endif
+            data_00625E7F = 1;
+#if MWCCPS2_B52
+        } else if (!strcmp(tkidentifier->name, "macro")) {
+#else
+    } else if (!strcmp(name, "macro")) {
+#endif
+            data_00625E7F = 0;
+#if !MWCCPS2 || MWCCPS2_BUILD >= 210 // b145 has no .set push/pop
+        } else if (!strcmp(name, "push")) {
+            if ((st = lalloc(sizeof(AsmSetState)))) {
+                st->next = data_005F0BC8;
+                st->volatileasm = volatileasm;
+                st->unk5 = data_00625EAC;
+                st->nomacro = data_00625E7F;
+                st->noat = data_00625E98;
+                st->unk8 = data_00625E5A;
+                data_005F0BC8 = st;
+            } else {
+#if MWCCPS2
+                CError_FATAL(3544);
+#else
+                    CError_FATAL(3586);
+#endif
+            }
+        } else if (!strcmp(name, "pop") && data_005F0BC8) {
+            st = data_005F0BC8;
+            data_005F0BC8 = st->next;
+            volatileasm = st->volatileasm;
+            data_00625EAC = st->unk5;
+            data_00625E7F = st->nomacro;
+            data_00625E98 = st->noat;
+            data_00625E5A = st->unk8;
+#endif
+        } else {
+#if MWCCPS2_B52
+            CError_Error(0x90);
+#else
+        CError_Error(0x2D);
 #endif
         }
-    } else if (!strcmp(name, "pop") && data_005F0BC8) {
-        st = data_005F0BC8;
-        data_005F0BC8 = st->next;
-        volatileasm = st->volatileasm;
-        data_00625EAC = st->unk5;
-        data_00625E7F = st->nomacro;
-        data_00625E98 = st->noat;
-        data_00625E5A = st->unk8;
-#endif
+        tk = lex();
+#if MWCCPS2_B52
+        return;
     } else {
-        CError_Error(0x2D);
+        func_00483B20();
+#endif
     }
-    tk = lex();
+#if MWCCPS2_B52
 }
+#endif
 
 #include "compiler/CInt64.h"
 #include "compiler/InlineAsmPPC.h"
@@ -951,352 +1314,542 @@ extern void func_00489DE0(MAsmOperand* op);
 // b210 (0x4947C0): the R5900 operand letters; "2+" picks VU0's other
 // register class for x/d/s/t, no VFPU constants or write-back forms
 #if MWCCPS2 && MWCCPS2_BUILD < 210
+#if MWCCPS2_B52
+// register operand ends a 2/2+ prefix (x/d/s/t, P)
+extern void InlineAsm_FloatOperand(MAsmOperand* op); // 0x4B3420
+extern void InlineAsm_IntOperand(MAsmOperand* op); // 0x4B3480
+
+// 0x4B3420: 'f', a float constant only, as its bits
+void InlineAsm_FloatOperand(MAsmOperand* op) {
+    float f;
+    SInt32 bits;
+
+    if (tk != TK_FLOATCONST) {
+        CError_Error(ASM_ERR(0x2D));
+    }
+    f = tkfloatconst.data.value;
+    bits = *(SInt32*)&f;
+    op->type = 0;
+    CInt64_SetLong(&op->u.imm, bits);
+    tk = lex();
+}
+
+// 0x4B3480: an integer expression
+void InlineAsm_IntOperand(MAsmOperand* op) {
+    op->type = 0;
+    op->u.imm = InlineAsm_Int64Expression();
+}
+
+#else
 #define ASM_LINE(line, b145) (b145)
+#endif
 #else
 #define ASM_LINE(line, b145) (line)
 #endif
 void* func_00488180(UInt16 opcode) {
-    OpcodeDef* def;
+#if MWCCPS2_B52
+    OpcodeDef* def = &data_006115F8[opcode];
+#else
+        OpcodeDef* def;
+#endif
     MAsmInstruction* rec;
     MAsmOperand* operand;
     char* fmt;
     SInt16 mode;
-    char vfpupair;
-    char pairplus;
-    char flag7;
+#if MWCCPS2_B52
+    char vfpupair = 0;
+    char pairplus = 0;
+    char flag7 = 0;
+#else
+        char vfpupair;
+        char pairplus;
+        char flag7;
+#endif
     UInt32 i;
 #if MWCCPS2 && MWCCPS2_BUILD < 210
+#if !MWCCPS2_B52
     union {
         float f;
         SInt32 i;
     } u;
 #endif
+#endif
 
-    def = &data_006115F8[opcode];
-    if (opcode >= 0x37E && opcode <= 0x3E5) {
-        InlineAsm_SyntaxError(0xA2);
+#if MWCCPS2_B52
+    if (opcode >= OPC(0x355) && opcode <= OPC(0x3BC)) {
+        InlineAsm_SyntaxError(0x105);
+#else
+        def = &data_006115F8[opcode];
+        if (opcode >= 0x37E && opcode <= 0x3E5) {
+            InlineAsm_SyntaxError(0xA2);
+#endif
     }
-    if (data_00625E7F && opcode >= BE_NUM_OPCODES) {
-        func_004C5890(1);
+#if MWCCPS2_B52
+    if (data_00625E7F && opcode >= OPC(0x3BD)) {
+        func_004C5890(0x64);
+#else
+        if (data_00625E7F && opcode >= BE_NUM_OPCODES) {
+            func_004C5890(1);
+#endif
     }
     if (data_00625E98 == 0) {
         if ((def->flags & 0x400000) && copts.warn_inlineasm) {
-            func_004C5890(3);
+#if MWCCPS2_B52
+            func_004C5890(0x66);
+#else
+                func_004C5890(3);
+#endif
         }
     } else if (data_00625E98 == 1 && (def->flags & 0x400000) && copts.warn_inlineasm) {
-        func_004C5940(2);
+#if MWCCPS2_B52
+        func_004C5940(0x65);
+#else
+            func_004C5940(2);
+#endif
     }
 
     rec = lalloc(def->nargs * sizeof(MAsmOperand) + 8);
     rec->opcode = opcode;
-    rec->flags = (volatileasm | data_00625EAC) ? 4 : 0;
+#if MWCCPS2_B52
+    rec->flags = volatileasm ? 4 : 0;
+#else
+        rec->flags = (volatileasm | data_00625EAC) ? 4 : 0;
+#endif
     rec->nops = 0;
     data_00624810 = 0;
+#if !MWCCPS2_B52
     fmt = def->format;
     operand = rec->ops;
+#endif
 
-    if (*fmt) {
-        do {
-            InlineAsm_SkipComment();
-            vfpupair = 0;
-            pairplus = 0;
-            flag7 = 0;
-            if (*fmt == ',') {
-                if (tk != ',') {
-                    InlineAsm_SyntaxError(0x11);
-                }
-                if (InlineAsm_gccmode && fmt[1] == 'p') {
-                    InlineAsm_labelref = 1;
-                    tk = lex();
-                    InlineAsm_labelref = 0;
-                } else {
-                    tk = lex();
-                }
-                fmt++;
+#if MWCCPS2_B52
+    for (fmt = def->format, operand = rec->ops; *fmt; fmt++) {
+#else
+        if (*fmt) {
+            do {
+#endif
+        InlineAsm_SkipComment();
+        vfpupair = 0;
+        pairplus = 0;
+        flag7 = 0;
+        if (*fmt == ',') {
+            if (tk != ',') {
+#if MWCCPS2_B52
+                InlineAsm_SyntaxError(ASM_ERR(0x11));
+#else
+                        InlineAsm_SyntaxError(0x11);
+#endif
             }
+            if (InlineAsm_gccmode && fmt[1] == 'p') {
+                InlineAsm_labelref = 1;
+                tk = lex();
+                InlineAsm_labelref = 0;
+            } else {
+                tk = lex();
+            }
+            fmt++;
+        }
 
-            mode = 1;
-            if (*fmt == '=') {
-                fmt++;
-                mode = 2;
-            } else if (*fmt == '+') {
-                mode = 3;
-                fmt++;
-            }
-            if (*fmt == '!') {
-                mode |= 0x8000;
-                fmt++;
-                if (copts.mips_option1A) {
-                    mode |= 0x20;
-                }
-            }
-            if (*fmt == '$') {
-                mode |= 0x2000;
-                fmt++;
-            }
-            if (*fmt == '2') {
-                fmt++;
-                vfpupair = 1;
-                if (*fmt == '+') {
-                    pairplus = 1;
+        mode = 1;
+        if (*fmt == '=') {
+#if MWCCPS2_B52
+            mode = 2, ++fmt;
+#else
                     fmt++;
-                }
+                    mode = 2;
+#endif
+        } else if (*fmt == '+') {
+#if MWCCPS2_B52
+            mode = 3, ++fmt;
+#else
+                    mode = 3;
+                    fmt++;
+#endif
+        }
+        if (*fmt == '!') {
+#if MWCCPS2_B52
+            mode |= 0x8000, ++fmt;
+#else
+                    mode |= 0x8000;
+                    fmt++;
+#endif
+            if (copts.mips_option1A) {
+                mode |= 0x20;
             }
-            if (*fmt == '\'') {
-                fmt++;
-                flag7 = 1;
-            } else if (*fmt == ';') {
-                break;
+        }
+#if !MWCCPS2_B52
+        if (*fmt == '$') {
+            mode |= 0x2000;
+            fmt++;
+        }
+#endif
+        if (*fmt == '2') {
+#if MWCCPS2_B52
+            vfpupair = 1, fmt++;
+#else
+                    fmt++;
+                    vfpupair = 1;
+#endif
+            if (*fmt == '+') {
+#if MWCCPS2_B52
+                pairplus = 1, fmt++;
+#else
+                        pairplus = 1;
+                        fmt++;
+#endif
             }
+        }
+        if (*fmt == '\'') {
+#if MWCCPS2_B52
+            flag7 = 1, fmt++;
+#else
+                    fmt++;
+                    flag7 = 1;
+#endif
+        } else if (*fmt == ';') {
+            break;
+        }
 
-            switch (*fmt) {
-                case '-':
-                    if (tk != TK_DECREMENT) {
-                        InlineAsm_SyntaxError(0x2D);
-                    }
-                    tk = lex();
-                    break;
-                case '|':
-                    if (tk != TK_INCREMENT) {
-                        InlineAsm_SyntaxError(0x2D);
-                    }
-                    tk = lex();
-                    break;
-                case '&':
-                    operand->type = 0;
-                    CInt64_SetLong(&operand->u.imm, (signed char)data_00625EA1);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case '(':
-                    if (tk != '(') {
-                        InlineAsm_SyntaxError(0xF);
-                    }
-                    tk = lex();
-                    break;
-                case ')':
-                    if (tk != ')') {
-                        InlineAsm_SyntaxError(0x10);
-                    }
-                    tk = lex();
-                    break;
-                case '>':
-                    if (opcode == 0x3EE || opcode == 0x3EF) {
-                        func_0048AA50(operand, 0, 0x1F);
-                    } else {
-                        func_0048AA50(operand, -0x10, 0xF);
-                    }
-                    rec->nops++;
-                    operand++;
-                    break;
-                case '<':
-                case 'k':
-                    func_0048AA50(operand, 0, 0x1F);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case '@':
-                    func_0048AA50(operand, 1, 0x20);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'l':
-                    func_00488EB0(operand, 0);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'c':
-                    func_0048AA50(operand, 0, 0x3FF);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'i':
-                    func_0048AA50(operand, 0, vfpupair ? 0x3FFFF : 0xFFFF);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'X':
-                    func_0048AA50(operand, 0, 0x1F);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'B':
-                    func_0048AA50(operand, 0, 0xFFFFF);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'C':
-                    func_0048AA50(operand, 0, 0x1FFFFFF);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'f':
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-                    // b145: a float constant only, no sign or integer
-                    if (tk != TK_FLOATCONST) {
-                        CError_Error(0x2D);
-                    }
-                    u.f = tkfloatconst.data.value;
-                    operand->type = 0;
-                    CInt64_SetLong(&operand->u.imm, u.i);
-                    tk = lex();
+        switch (*fmt) {
+            case '-':
+                if (tk != TK_DECREMENT) {
+#if MWCCPS2_B52
+                    InlineAsm_SyntaxError(ASM_ERR(0x2D));
 #else
-                    func_004896F0(operand);
+                            InlineAsm_SyntaxError(0x2D);
+#endif
+                }
+                tk = lex();
+                break;
+            case '|':
+                if (tk != TK_INCREMENT) {
+#if MWCCPS2_B52
+                    InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                            InlineAsm_SyntaxError(0x2D);
+#endif
+                }
+                tk = lex();
+                break;
+            case '&':
+                operand->type = 0;
+                CInt64_SetLong(&operand->u.imm, (signed char)data_00625EA1);
+                rec->nops++;
+                operand++;
+                break;
+            case '(':
+                if (tk != '(') {
+#if MWCCPS2_B52
+                    InlineAsm_SyntaxError(ASM_ERR(0xF));
+#else
+                            InlineAsm_SyntaxError(0xF);
+#endif
+                }
+                tk = lex();
+                break;
+            case ')':
+                if (tk != ')') {
+#if MWCCPS2_B52
+                    InlineAsm_SyntaxError(ASM_ERR(0x10));
+#else
+                            InlineAsm_SyntaxError(0x10);
+#endif
+                }
+                tk = lex();
+                break;
+            case '>':
+#if !MWCCPS2_B52
+                if (opcode == 0x3EE || opcode == 0x3EF) {
+                    func_0048AA50(operand, 0, 0x1F);
+                } else {
+#endif
+                    func_0048AA50(operand, -0x10, 0xF);
+#if !MWCCPS2_B52
+                }
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case '<':
+            case 'k':
+                func_0048AA50(operand, 0, 0x1F);
+                rec->nops++;
+                operand++;
+                break;
+#if !MWCCPS2_B52
+            case '@':
+                func_0048AA50(operand, 1, 0x20);
+                rec->nops++;
+                operand++;
+                break;
+#endif
+            case 'l':
+                func_00488EB0(operand, 0);
+                rec->nops++;
+                operand++;
+                break;
+            case 'c':
+                func_0048AA50(operand, 0, 0x3FF);
+                rec->nops++;
+                operand++;
+                break;
+            case 'i':
+                func_0048AA50(operand, 0, vfpupair ? 0x3FFFF : 0xFFFF);
+                rec->nops++;
+                operand++;
+                break;
+            case 'X':
+                func_0048AA50(operand, 0, 0x1F);
+                rec->nops++;
+                operand++;
+                break;
+            case 'B':
+                func_0048AA50(operand, 0, 0xFFFFF);
+                rec->nops++;
+                operand++;
+                break;
+            case 'C':
+                func_0048AA50(operand, 0, 0x1FFFFFF);
+                rec->nops++;
+                operand++;
+                break;
+            case 'f':
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+#if MWCCPS2_B52
+                InlineAsm_FloatOperand(operand);
+#else
+                // b145: a float constant only, no sign or integer
+                if (tk != TK_FLOATCONST) {
+                    CError_Error(0x2D);
+                }
+                u.f = tkfloatconst.data.value;
+                operand->type = 0;
+                CInt64_SetLong(&operand->u.imm, u.i);
+                tk = lex();
+#endif
+#else
+                        func_004896F0(operand);
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case 'I':
+                if (vfpupair) {
+#if MWCCPS2_B52
+                    func_004890B0(operand, 6, 0, mode);
+#else
+                            func_004890B0(operand, 6, 1, mode);
+#endif
+                } else {
+#if MWCCPS2_B52
+                    InlineAsm_IntOperand(operand);
+#else
+                            operand->type = 0;
+                            operand->u.imm = InlineAsm_Int64Expression();
+#endif
+                }
+                rec->nops++;
+                operand++;
+                break;
+            case 'Q':
+                if (vfpupair) {
+#if MWCCPS2_B52
+                    func_004890B0(operand, 6, 1, mode);
+#else
+                            func_004890B0(operand, 6, 2, mode);
 #endif
                     rec->nops++;
                     operand++;
-                    break;
-                case 'I':
-                    if (vfpupair) {
-                        func_004890B0(operand, 6, 1, mode);
-                    } else {
-                        operand->type = 0;
-                        operand->u.imm = InlineAsm_Int64Expression();
-                    }
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'Q':
-                    if (vfpupair) {
-                        func_004890B0(operand, 6, 2, mode);
-                        rec->nops++;
-                        operand++;
-                    }
-                    break;
-                case 'R':
-                    if (vfpupair) {
-                        func_004890B0(operand, 6, 4, mode);
-                        rec->nops++;
-                        operand++;
-                    }
-                    break;
-                case 'j':
-                    func_0048AA50(operand, -0x8000, 0x7FFF);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'p':
-                    func_00488EB0(operand, 0);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'x':
-                    CError_ASSERT(ASM_LINE(2061, 1038), vfpupair);
-                case 'd':
-                case 's':
-                case 't':
-                    func_004890B0(operand, vfpupair ? (pairplus ? 4 : 3) : 0, -1, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'P':
-                    func_004890B0(operand, 0, -2, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case '9':
-                    func_004890B0(operand, 4, 0x1B, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'D':
-                case 'E':
-                case 'S':
-                case 'T':
-                case 'V':
-                case 'W':
-                    func_004890B0(operand, vfpupair ? 5 : 1, flag7 ? -1 : -3, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'N':
-                    i = def->unk10 & 3;
-                    if (i == 0) {
-                        data_00625ECD |= 8;
-                    } else if (i == 1) {
-                        data_00625ECD |= 4;
-                    } else if (i == 2) {
-                        data_00625ECD |= 2;
-                    } else if (i == 3) {
-                        data_00625ECD |= 1;
-                    }
-                    func_004890B0(operand, vfpupair ? 5 : 1, flag7 ? -1 : -3, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'A':
-                    if (vfpupair) {
-                        func_004890B0(operand, 6, 3, mode);
-                        rec->nops++;
-                        operand++;
-                    } else {
-                        func_00489410(operand, 0, mode);
-                        rec->nops++;
-                        operand++;
-                    }
-                    break;
-                case 'U':
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-                    func_00489410(operand, 1, mode); // b145: as 'o'
+                }
+                break;
+            case 'R':
+                if (vfpupair) {
+#if MWCCPS2_B52
+                    func_004890B0(operand, 6, 3, mode);
 #else
+                            func_004890B0(operand, 6, 4, mode);
+#endif
+                    rec->nops++;
+                    operand++;
+                }
+                break;
+            case 'j':
+                func_0048AA50(operand, -0x8000, 0x7FFF);
+                rec->nops++;
+                operand++;
+                break;
+            case 'p':
+                func_00488EB0(operand, 0);
+                rec->nops++;
+                operand++;
+                break;
+            case 'x':
+#if MWCCPS2_B52
+                CError_ASSERT(858, vfpupair);
+#else
+                        CError_ASSERT(ASM_LINE(2061, 1038), vfpupair);
+#endif
+            case 'd':
+            case 's':
+            case 't':
+#if MWCCPS2_B52
+                func_004890B0(
+                    operand, vfpupair ? (pairplus ? (char)4 : (char)3) : (char)0, -1, mode
+                );
+                vfpupair = pairplus = 0;
+#else
+                        func_004890B0(operand, vfpupair ? (pairplus ? 4 : 3) : 0, -1, mode);
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case 'P':
+                func_004890B0(operand, 0, -2, mode);
+#if MWCCPS2_B52
+                vfpupair = 0;
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case '9':
+                func_004890B0(operand, 4, 0x1B, mode);
+                rec->nops++;
+                operand++;
+                break;
+            case 'D':
+            case 'E':
+            case 'S':
+            case 'T':
+            case 'V':
+            case 'W':
+#if MWCCPS2_B52
+                func_004890B0(operand, vfpupair ? (char)5 : (char)1, flag7 ? -1 : -3, mode);
+#else
+                        func_004890B0(operand, vfpupair ? 5 : 1, flag7 ? -1 : -3, mode);
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case 'N':
+                i = def->unk10 & 3;
+                if (i == 0) {
+                    data_00625ECD |= 8;
+                } else if (i == 1) {
+                    data_00625ECD |= 4;
+                } else if (i == 2) {
+                    data_00625ECD |= 2;
+                } else if (i == 3) {
+                    data_00625ECD |= 1;
+                }
+#if MWCCPS2_B52
+                func_004890B0(operand, vfpupair ? (char)5 : (char)1, flag7 ? -1 : -3, mode);
+#else
+                        func_004890B0(operand, vfpupair ? 5 : 1, flag7 ? -1 : -3, mode);
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case 'A':
+                if (vfpupair) {
+#if MWCCPS2_B52
+                    func_004890B0(operand, 6, 2, mode);
+#else
+                            func_004890B0(operand, 6, 3, mode);
+#endif
+                    rec->nops++;
+                    operand++;
+                } else {
                     func_00489410(operand, 0, mode);
-#endif
                     rec->nops++;
                     operand++;
-                    break;
-                case 'b':
-                    if (!vfpupair) {
-                        CError_FATAL(ASM_LINE(2144, 1121));
-                    } else {
-                        func_00488EB0(operand, 1);
-                        rec->nops++;
-                        operand++;
-                    }
-                    break;
-                case 'a':
-                case 'q':
+                }
+                break;
+            case 'U':
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+                func_00489410(operand, 1, mode); // b145: as 'o'
+#else
+                        func_00489410(operand, 0, mode);
+#endif
+                rec->nops++;
+                operand++;
+                break;
+            case 'b':
+#if MWCCPS2_B52
+                if (vfpupair) {
+#else
+                        if (!vfpupair) {
+                            CError_FATAL(ASM_LINE(2144, 1121));
+                        } else {
+#endif
                     func_00488EB0(operand, 1);
                     rec->nops++;
                     operand++;
-                    break;
-                case 'G':
-                    func_004890B0(operand, 0, -1, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'o':
-                    func_00489410(operand, 1, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'v':
-                    func_0048AA50(operand, 0, 0x10);
-                    rec->nops++;
-                    operand++;
-                    break;
-                case 'J':
-                case 'L':
-                    func_004890B0(operand, 6, -3, mode);
-                    rec->nops++;
-                    operand++;
-                    break;
-                default:
-                    CError_FATAL(ASM_LINE(2186, 1158));
-                    break;
-            }
-            fmt++;
-        } while (*fmt);
+#if MWCCPS2_B52
+                } else {
+                    CError_FATAL(935);
+#endif
+                }
+                break;
+            case 'a':
+            case 'q':
+                func_00488EB0(operand, 1);
+                rec->nops++;
+                operand++;
+                break;
+            case 'G':
+                func_004890B0(operand, 0, -1, mode);
+                rec->nops++;
+                operand++;
+                break;
+            case 'o':
+                func_00489410(operand, 1, mode);
+                rec->nops++;
+                operand++;
+                break;
+#if !MWCCPS2_B52
+            case 'v':
+                func_0048AA50(operand, 0, 0x10);
+                rec->nops++;
+                operand++;
+                break;
+            case 'J':
+            case 'L':
+                func_004890B0(operand, 6, -3, mode);
+                rec->nops++;
+                operand++;
+                break;
+#endif
+            default:
+#if MWCCPS2_B52
+                CError_FATAL(959);
+#else
+                        CError_FATAL(ASM_LINE(2186, 1158));
+#endif
+                break;
+        }
+#if !MWCCPS2_B52
+        fmt++;
     }
-
-    if (tk == ',') {
-        InlineAsm_SyntaxError(0xA2);
-    }
-    if (data_00624810) {
-        rec->flags |= 8;
-    }
-    return rec;
+    while (*fmt)
+        ;
+#endif
 }
+
+if (tk == ',') {
+#if MWCCPS2_B52
+    InlineAsm_SyntaxError(0x105);
+#else
+                InlineAsm_SyntaxError(0xA2);
+#endif
+}
+if (data_00624810) {
+    rec->flags |= 8;
+}
+return rec;
+}
+#if !MWCCPS2_B52
 #undef ASM_LINE
+#endif
 #else
 void* func_00488180(UInt16 opcode) {
     OpcodeDef* def;
@@ -1714,31 +2267,57 @@ vfpu_cc_done:
 // 0x48AA50: an immediate operand in [min, max]; in a GCC asm statement also
 // ?N, %N and %hi()/%lo()
 void func_0048AA50(MAsmOperand* op, SInt32 min, SInt32 max) {
+#if !MWCCPS2_B52
     MLookupResult result;
+#endif
     CInt64 value;
 #if !MWCCPS2
     CInt64 qconst;
     CInt64 intconst;
 #endif
+#if MWCCPS2_B52
+    MLookupResult result;
+#else
     char* name;
+#endif
     SInt32 v = 0;
     SInt32 n;
+#if MWCCPS2_B52
+    SInt32 lo;
+#endif
 
     if (InlineAsm_gccmode && tk == '?') {
         tk = lex();
+#if MWCCPS2_B52
+        if (tk != TK_INTCONST) {
+            InlineAsm_SyntaxError(ASM_ERR(0x2D));
+        } else {
+#else
         if (tk == TK_INTCONST) {
+#endif
 #if MWCCPS2
             value = tkintconst; // b210 copies token constants through the one CInt64 local
-            n = value.lo;
+#if MWCCPS2_B52
+            n = CInt64_GetULong(&value);
+#else
+                    n = value.lo;
+#endif
 #else
             qconst = tkintconst;
             n = qconst.lo;
 #endif
             if (n < 0) {
+#if MWCCPS2_B52
+                InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
                 InlineAsm_SyntaxError(0x2D);
+#endif
             }
-        } else {
+#if !MWCCPS2_B52
+        }
+        else {
             InlineAsm_SyntaxError(0x2D);
+#endif
         }
         op->type = MOpnd_GCCImm;
         op->u.gcc.num = n;
@@ -1749,58 +2328,116 @@ void func_0048AA50(MAsmOperand* op, SInt32 min, SInt32 max) {
     if (InlineAsm_gccmode && tk == '%') {
         tk = lex();
         if (tk == TK_IDENTIFIER) {
+#if MWCCPS2_B52
+            if (!strcmp(tkidentifier->name, "hi") || !strcmp(tkidentifier->name, "lo")) {
+                if (!strcmp(tkidentifier->name, "hi")) {
+#else
             name = tkidentifier->name;
             if (!strcmp(name, "hi") || !strcmp(name, "lo")) {
                 if (!strcmp(name, "hi")) {
+#endif
                     data_00625E5A = 1;
                 } else {
                     data_00625E5A = 2;
                 }
-                tk = lex();
-                if (tk == '(') {
+#if MWCCPS2_B52
+                if (tk = lex() == '(') {
+#endif
                     tk = lex();
-                    if (tk == TK_INTCONST) {
-                        op->type = MOpnd_Imm;
-                        if (data_00625E5A & 1) {
-                            v = (UInt32)tkintconst.lo >> 16;
-                        } else {
-                            v = (UInt16)tkintconst.lo;
-                        }
-                    } else if (tk == TK_IDENTIFIER) {
-                        InlineAsm_LookupSymbolMIPS(tkidentifier, &result);
-                        if (!result.object) {
-                            InlineAsm_SyntaxError(0x2D);
-                        }
-                        if (result.object->datatype == DDATA &&
-                            (result.object->qual & Q_INLINE_DATA)) {
+#if !MWCCPS2_B52
+                    if (tk == '(') {
+                        tk = lex();
+#endif
+                        if (tk == TK_INTCONST) {
+                            op->type = MOpnd_Imm;
                             if (data_00625E5A & 1) {
-                                v = (UInt32)result.object->u.data.u.intconst.lo >> 16;
+#if MWCCPS2_B52
+                                v = CInt64_GetULong(&tkintconst) >> 16;
+#else
+                        v = (UInt32)tkintconst.lo >> 16;
+#endif
                             } else {
-                                v = (UInt16)result.object->u.data.u.intconst.lo;
+#if MWCCPS2_B52
+                                v = CInt64_GetULong(&tkintconst) & 0xFFFF;
+#else
+                        v = (UInt16)tkintconst.lo;
+#endif
+                            }
+                        } else if (tk == TK_IDENTIFIER) {
+                            InlineAsm_LookupSymbolMIPS(tkidentifier, &result);
+                            if (!result.object) {
+#if MWCCPS2_B52
+                                InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                        InlineAsm_SyntaxError(0x2D);
+#endif
+                            }
+#if MWCCPS2_B52
+                            if (result.object->datatype == DDATA &&
+                                (result.object->qual & Q_INLINE_DATA)) {
+#else
+                    if (result.object->datatype == DDATA && (result.object->qual & Q_INLINE_DATA)) {
+#endif
+                                if (data_00625E5A & 1) {
+#if MWCCPS2_B52
+                                    v = CInt64_GetULong(&result.object->u.data.u.intconst) >> 16;
+#else
+                            v = (UInt32)result.object->u.data.u.intconst.lo >> 16;
+#endif
+                                } else {
+#if MWCCPS2_B52
+                                    v = CInt64_GetULong(&result.object->u.data.u.intconst) & 0xFFFF;
+#else
+                            v = (UInt16)result.object->u.data.u.intconst.lo;
+#endif
+                                }
+                            } else {
+#if MWCCPS2_B52
+                                InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                        InlineAsm_SyntaxError(0x2D);
+#endif
                             }
                         } else {
-                            InlineAsm_SyntaxError(0x2D);
+#if MWCCPS2_B52
+                            InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                    InlineAsm_SyntaxError(0x2D);
+#endif
                         }
-                    } else {
-                        InlineAsm_SyntaxError(0x2D);
-                    }
-                    CInt64_SetLong(&op->u.imm, v);
-                    tk = lex();
-                    if (tk != ')') {
-                        InlineAsm_SyntaxError(0x10);
+                        CInt64_SetLong(&op->u.imm, v);
+#if MWCCPS2_B52
+                        if (tk = lex() != ')') {
+                            InlineAsm_SyntaxError(ASM_ERR(0x10));
+                        } else {
+#endif
+                            tk = lex();
+#if MWCCPS2_B52
+                        }
+#else
+                if (tk != ')') {
+                    InlineAsm_SyntaxError(0x10);
+#endif
                         return;
                     }
+#if !MWCCPS2_B52
                     tk = lex();
+#endif
                 }
             }
+#if !MWCCPS2_B52
         } else if (tk == TK_INTCONST) {
+#endif
 #if MWCCPS2
+#if !MWCCPS2_B52
             value = tkintconst; // b210 copies token constants through the one CInt64 local
             n = value.lo;
-#else
-            intconst = tkintconst;
-            n = intconst.lo;
 #endif
+#else
+        intconst = tkintconst;
+        n = intconst.lo;
+#endif
+#if !MWCCPS2_B52
             if (n < 0) {
                 CError_Error(0x2D);
             }
@@ -1809,14 +2446,23 @@ void func_0048AA50(MAsmOperand* op, SInt32 min, SInt32 max) {
             op->u.gcc.num = n;
             tk = lex();
         }
+#endif
     } else {
         value = InlineAsm_Int64Expression();
+#if MWCCPS2_B52
+        if (CInt64_IsInRange(value, 4) && (lo = CInt64_GetULong(&value)) >= min && lo <= max) {
+#else
         if (CInt64_IsInRange(value, 4) && (SInt32)value.lo >= min && (SInt32)value.lo <= max) {
+#endif
             op->type = MOpnd_Imm;
             op->u.imm = value;
             return;
         }
+#if MWCCPS2_B52
+        InlineAsm_SyntaxError(ASM_ERR(0x37));
+#else
         InlineAsm_SyntaxError(0x37);
+#endif
     }
 }
 
@@ -1862,6 +2508,7 @@ void* func_0048AD70(char* name) {
             break;
     }
 
+#if MWCCPS2_B52
     if (c &&
         name[1] >= '0' &&
         name[1] <= '7' &&
@@ -1870,6 +2517,16 @@ void* func_0048AD70(char* name) {
         name[3] >= '0' &&
         name[3] <= '3' &&
         name[4] == 0) {
+#else
+    if (c &&
+        name[1] >= '0' &&
+        name[1] <= '7' &&
+        name[2] >= '0' &&
+        name[2] <= '3' &&
+        name[3] >= '0' &&
+        name[3] <= '3' &&
+        name[4] == 0) {
+#endif
         buf[0] = c;
         buf[1] = name[1];
         buf[2] = name[2];
@@ -1884,8 +2541,13 @@ void* func_0048AD70(char* name) {
                 lex();
                 if (lookahead() == TK_IDENTIFIER && tkidentifier->name) {
                     ch = tkidentifier->name[0];
+#if MWCCPS2_B52
                     if ((ch == 's' || ch == 'p' || ch == 't' || ch == 'q') &&
                         tkidentifier->name[1] == 0) {
+#else
+                    if ((ch == 's' || ch == 'p' || ch == 't' || ch == 'q') &&
+                        tkidentifier->name[1] == 0) {
+#endif
                         sized = TRUE;
                     }
                 }
@@ -1906,9 +2568,15 @@ void* func_0048AD70(char* name) {
 #include "compiler/CMachine.h"
 #include <stdio.h>
 
+#if MWCCPS2_B52
 extern void func_00481EE0(
     Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, Boolean after
 );
+#else
+extern void func_00481EE0(
+    Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, Boolean after
+);
+#endif
 extern HashNameNode* MakeLocalLabel(CInt64 num);
 extern CLabel* InlineAsm_LookupLabel(HashNameNode* name);
 extern CLabel* InlineAsm_DeclareLabel(HashNameNode* name);
@@ -1959,18 +2627,32 @@ void func_00488D60(Statement* stmt) {
 // 0x488EB0: a label operand: a numeric local label (1b, 1f) or a name; a
 // function's name too if allowed
 void func_00488EB0(MAsmOperand* op, Boolean allowfunc) {
+#if !MWCCPS2_B52
     char buf[0x50];
+#endif
     MLookupResult result;
+#if MWCCPS2_B52
+    char buf[0x50];
+#endif
     HashNameNode* name;
+#if !MWCCPS2_B52
     CLabel* label;
+#endif
     char ch;
     Boolean forward;
+#if MWCCPS2_B52
+    Boolean found;
+#endif
 
     if (tk == TK_INTCONST) {
         name = MakeLocalLabel(tkintconst);
         tk = lex();
         if (tk != TK_IDENTIFIER) {
+#if MWCCPS2_B52
+            InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
             InlineAsm_SyntaxError(0x2D);
+#endif
         }
         ch = tkidentifier->name[0];
         if (ch == 'b' || ch == 'B') {
@@ -1978,45 +2660,86 @@ void func_00488EB0(MAsmOperand* op, Boolean allowfunc) {
         } else if (ch == 'f' || ch == 'F') {
             forward = TRUE;
         } else {
+#if MWCCPS2_B52
+            CError_Error(ASM_ERR(0x2D));
+#else
             CError_Error(0x2D);
+#endif
         }
         if (tkidentifier->name[1]) {
+#if MWCCPS2_B52
+            CError_Error(ASM_ERR(0x2D));
+#else
             CError_Error(0x2D);
+#endif
         }
         tk = lex();
+#if MWCCPS2_B52
+        found = InlineAsm_LookupSymbolMIPS(name, &result);
+#else
         label = InlineAsm_LookupLabel(name);
+#endif
         if (forward) {
+#if MWCCPS2_B52
+            if (found) {
+                sprintf(buf, "%i", CInt64_GetULong(&tkintconst));
+                CError_Error(ASM_ERR(0x48), buf);
+#else
             if (label && label->stmt) {
                 sprintf(buf, "%i", tkintconst.lo);
                 CError_Error(0x48, buf);
+#endif
             }
+#if MWCCPS2_B52
+            result.label = InlineAsm_DeclareLabel(name);
+        } else if (!found) {
+            sprintf(buf, "%i", CInt64_GetULong(&tkintconst));
+            CError_Error(ASM_ERR(0x3C), buf);
+#else
             if (!label) {
                 label = InlineAsm_DeclareLabel(name);
-            }
-        } else if (!label || !label->stmt) {
-            sprintf(buf, "%i", tkintconst.lo);
-            CError_Error(0x3C, buf);
+#endif
         }
-        op->type = MOpnd_Lab;
-        op->u.lab.label = label;
-    } else if (tk == TK_IDENTIFIER) {
-        if (!InlineAsm_LookupSymbolMIPS(tkidentifier, &result)) {
-            result.label = InlineAsm_DeclareLabel(tkidentifier);
-        }
-        if (result.label) {
-            op->type = MOpnd_Lab;
-            op->u.lab.label = result.label;
-        } else if (allowfunc && result.object && result.object->datatype == DFUNC) {
-            op->type = MOpnd_GlobalObj;
-            op->u.obj.obj = result.object;
-            op->u.obj.offset = 0;
-        } else {
-            CError_Error(0x2D);
-        }
-        tk = lex();
-    } else {
-        InlineAsm_SyntaxError(0x2D);
+#if !MWCCPS2_B52
+    } else if (!label || !label->stmt) {
+        sprintf(buf, "%i", tkintconst.lo);
+        CError_Error(0x3C, buf);
     }
+#endif
+    op->type = MOpnd_Lab;
+#if MWCCPS2_B52
+    op->u.lab.label = result.label;
+#else
+            op->u.lab.label = label;
+#endif
+}
+else if (tk == TK_IDENTIFIER) {
+    if (!InlineAsm_LookupSymbolMIPS(tkidentifier, &result)) {
+        result.label = InlineAsm_DeclareLabel(tkidentifier);
+    }
+    if (result.label) {
+        op->type = MOpnd_Lab;
+        op->u.lab.label = result.label;
+    } else if (allowfunc && result.object && result.object->datatype == DFUNC) {
+        op->type = MOpnd_GlobalObj;
+        op->u.obj.obj = result.object;
+        op->u.obj.offset = 0;
+    } else {
+#if MWCCPS2_B52
+        CError_Error(ASM_ERR(0x2D));
+#else
+                CError_Error(0x2D);
+#endif
+    }
+    tk = lex();
+}
+else {
+#if MWCCPS2_B52
+    InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+            InlineAsm_SyntaxError(0x2D);
+#endif
+}
 }
 
 // a register's name table record, from its name field (InlineAsmTables.c)
@@ -2035,27 +2758,45 @@ extern Boolean func_0050CCC0(Object** obj, CInt64* offset); // a variable operan
 #if MWCCPS2
 
 // b210 (0x495320): VU0 registers take x/y/z/w field suffixes (stripped
+#if MWCCPS2_B52
+#define ASM_IS_XYZW(c) ((c) == 'x' || (c) == 'y' || (c) == 'z' || (c) == 'w')
+#else
 // from the name, checked against the instruction's mask), %N takes one too
+#endif
 void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
     CInt64 c;
+#if !MWCCPS2_B52
     CInt64 c2;
     CInt64 c3;
     Object* obj;
+#endif
     CInt64 offset;
     char name[0x100];
+#if MWCCPS2_B52
+    Object* obj;
+#endif
     AsmRegRec* reg;
     char* p;
     SInt32 n;
     Boolean numeric;
     Boolean fields;
 
+#if !MWCCPS2_B52
     offset = cint64_zero;
+#endif
     numeric = FALSE;
     fields = FALSE;
     obj = NULL;
+#if MWCCPS2_B52
+    offset = cint64_zero;
+#endif
     if (sub == -2) {
         numeric = TRUE;
-    } else if (sub == 3 && rclass == 6) {
+#if MWCCPS2_B52
+    } else if (sub == 2 && rclass == 6) {
+#else
+        } else if (sub == 3 && rclass == 6) {
+#endif
         fields = TRUE;
     } else if (sub == -3 && rclass == 5) {
         fields = TRUE;
@@ -2064,20 +2805,43 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
     if (tk == '$') {
         numeric = TRUE;
         tk = lex();
+#if MWCCPS2_B52
         if (!data_00625E98 &&
             (!strcmp("at", tkidentifier->name) || !strcmp("AT", tkidentifier->name))) {
-            func_004C5890(3);
+            func_004C5890(0x66);
+#else
+            if (!data_00625E98 &&
+                (!strcmp("at", tkidentifier->name) || !strcmp("AT", tkidentifier->name))) {
+                func_004C5890(3);
+#endif
         }
     } else if (tk == '%' && InlineAsm_gccmode) {
         tk = lex();
-        if (tk == TK_INTCONST) {
-            c = tkintconst;
-            n = c.lo;
-            if (n < 0) {
-                CError_Error(0x2D);
-            }
+#if MWCCPS2_B52
+        if (tk != TK_INTCONST) {
+            CError_Error(ASM_ERR(0x2D));
         } else {
+#else
+            if (tk == TK_INTCONST) {
+#endif
+            c = tkintconst;
+#if MWCCPS2_B52
+            n = CInt64_GetULong(&c);
+#else
+                n = c.lo;
+#endif
+            if (n < 0) {
+#if MWCCPS2_B52
+                CError_Error(ASM_ERR(0x2D));
+#else
+                    CError_Error(0x2D);
+#endif
+            }
+#if !MWCCPS2_B52
+        }
+        else {
             CError_Error(0x2D);
+#endif
         }
         data_00624810 = 1;
         op->type = MOpnd_GCCReg;
@@ -2096,7 +2860,11 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
             } else if (tkidentifier->name[0] == 'w') {
                 op->u.gcc.xyzw |= 8;
             } else {
-                CError_Error(0x2D);
+#if MWCCPS2_B52
+                CError_Error(ASM_ERR(0x2D));
+#else
+                    CError_Error(0x2D);
+#endif
             }
             if (op->u.gcc.xyzw) {
                 tk = lex();
@@ -2108,44 +2876,95 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
     if (tk == TK_IDENTIFIER) {
         strcpy(name, tkidentifier->name);
         if (fields) {
+#if MWCCPS2_B52
             for (p = name; *p; p++) {}
+#else
+                for (p = name; *p; p++) {}
+#endif
             p--;
             while (p > name) {
                 if (!data_00625ECD) {
                     if (!data_00625EA1) {
-                        if ((UInt8)(*p - 'w') <= 3) {
-                            *p-- = 0;
+#if MWCCPS2_B52
+                        if (ASM_IS_XYZW(*p)) {
+                            *p = 0, --p;
+#else
+                            if ((UInt8)(*p - 'w') <= 3) {
+                                *p-- = 0;
+#endif
                         } else {
                             break;
                         }
                     } else {
                         if (*p == 'x' && ((signed char)data_00625EA1 & 8)) {
-                            *p-- = 0;
+#if MWCCPS2_B52
+                            *p = 0, --p;
+#else
+                                *p-- = 0;
+#endif
                         } else if (*p == 'y' && ((signed char)data_00625EA1 & 4)) {
-                            *p-- = 0;
+#if MWCCPS2_B52
+                            *p = 0, --p;
+#else
+                                *p-- = 0;
+#endif
                         } else if (*p == 'z' && ((signed char)data_00625EA1 & 2)) {
-                            *p-- = 0;
+#if MWCCPS2_B52
+                            *p = 0, --p;
+#else
+                                *p-- = 0;
+#endif
                         } else if (*p == 'w' && ((signed char)data_00625EA1 & 1)) {
-                            *p-- = 0;
+#if MWCCPS2_B52
+                            *p = 0, --p;
+#else
+                                *p-- = 0;
+#endif
                         } else {
-                            if ((UInt8)(*p - 'w') <= 3) {
-                                CError_Error(0x2D);
+#if MWCCPS2_B52
+                            if (ASM_IS_XYZW(*p)) {
+                                CError_Error(ASM_ERR(0x2D));
+#else
+                                if ((UInt8)(*p - 'w') <= 3) {
+                                    CError_Error(0x2D);
+#endif
                             }
                             break;
                         }
                     }
                 } else {
                     if (*p == 'x' && ((signed char)data_00625ECD & 8)) {
-                        *p-- = 0;
+#if MWCCPS2_B52
+                        *p = 0, --p;
+#else
+                            *p-- = 0;
+#endif
                     } else if (*p == 'y' && ((signed char)data_00625ECD & 4)) {
-                        *p-- = 0;
+#if MWCCPS2_B52
+                        *p = 0, --p;
+#else
+                            *p-- = 0;
+#endif
                     } else if (*p == 'z' && ((signed char)data_00625ECD & 2)) {
-                        *p-- = 0;
+#if MWCCPS2_B52
+                        *p = 0, --p;
+#else
+                            *p-- = 0;
+#endif
                     } else if (*p == 'w' && ((signed char)data_00625ECD & 1)) {
-                        *p-- = 0;
+#if MWCCPS2_B52
+                        *p = 0, --p;
+#else
+                            *p-- = 0;
+#endif
                     } else {
-                        if ((UInt8)(*p - 'w') <= 3) {
-                            CError_Error(0x2D);
+#if MWCCPS2_B52
+                        if (ASM_IS_XYZW(*p)) {
+                            CError_Error(ASM_ERR(0x2D));
+#else
+                            if ((UInt8)(*p - 'w') <= 3) {
+                                CError_Error(0x2D);
+#endif
                         }
                         break;
                     }
@@ -2165,12 +2984,22 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
         }
         tk = lex();
     } else if (tk == TK_INTCONST) {
-        c2 = tkintconst;
-        n = c2.lo;
+#if MWCCPS2_B52
+        c = tkintconst;
+        n = CInt64_GetULong(&c);
+#else
+            c2 = tkintconst;
+            n = c2.lo;
+#endif
         tk = lex();
         if (n == 0 && tk == TK_INTCONST) {
-            c3 = tkintconst;
-            n = c3.lo;
+#if MWCCPS2_B52
+            c = tkintconst;
+            n = CInt64_GetULong(&c);
+#else
+                c3 = tkintconst;
+                n = c3.lo;
+#endif
             tk = lex();
         }
         if (numeric && n < data_00624744[rclass]) {
@@ -2180,10 +3009,18 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
             op->effect = mode;
             op->rclass = rclass;
         } else {
-            InlineAsm_SyntaxError(0x2D);
+#if MWCCPS2_B52
+            InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                InlineAsm_SyntaxError(0x2D);
+#endif
         }
     } else if (tk == TK_IDENTIFIER && func_0053EBB0(name)) {
-        InlineAsm_SyntaxError(0x2D);
+#if MWCCPS2_B52
+        InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+            InlineAsm_SyntaxError(0x2D);
+#endif
     } else if (func_0050CCC0(&obj, &offset)) {
         if (obj) {
             data_00624810 = 1;
@@ -2195,107 +3032,118 @@ void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
             op->xyzw = 0;
             obj->flags |= 1;
         } else {
-            InlineAsm_SyntaxError(0x2D);
+#if MWCCPS2_B52
+            InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+                InlineAsm_SyntaxError(0x2D);
+#endif
         }
     } else {
-        InlineAsm_SyntaxError(0x2D);
+#if MWCCPS2_B52
+        InlineAsm_SyntaxError(ASM_ERR(0x2D));
+#else
+            InlineAsm_SyntaxError(0x2D);
+#endif
     }
 }
+#if MWCCPS2_B52
+#undef ASM_IS_XYZW
+#endif
 #else
-void func_004890B0(MAsmOperand* op, char rclass, SInt32 sub, SInt16 mode) {
-    CInt64 c;
-    CInt64 offset;
-    CInt64 c3;
-    CInt64 c2;
-    Boolean numeric;
-    Object* obj;
-    char name[0x100];
-    AsmRegRec* reg;
-    SInt32 n;
+    void func_004890B0(MAsmOperand * op, char rclass, SInt32 sub, SInt16 mode) {
+        CInt64 c;
+        CInt64 offset;
+        CInt64 c3;
+        CInt64 c2;
+        Boolean numeric;
+        Object* obj;
+        char name[0x100];
+        AsmRegRec* reg;
+        SInt32 n;
 
-    numeric = FALSE;
-    obj = NULL;
-    offset = cint64_zero;
-    if (sub == -2) {
-        numeric = TRUE;
-    }
-
-    if (tk == '$') {
-        numeric = TRUE;
-        tk = lex();
-        if (!data_00625E98 &&
-            (!strcmp("at", tkidentifier->name) || !strcmp("AT", tkidentifier->name))) {
-            func_004C5890(3);
+        numeric = FALSE;
+        obj = NULL;
+        offset = cint64_zero;
+        if (sub == -2) {
+            numeric = TRUE;
         }
-    } else if (tk == '%' && InlineAsm_gccmode) {
-        tk = lex();
-        if (tk == TK_INTCONST) {
-            c = tkintconst;
-            n = c.lo;
-            if (n < 0) {
+
+        if (tk == '$') {
+            numeric = TRUE;
+            tk = lex();
+            if (!data_00625E98 &&
+                (!strcmp("at", tkidentifier->name) || !strcmp("AT", tkidentifier->name))) {
+                func_004C5890(3);
+            }
+        } else if (tk == '%' && InlineAsm_gccmode) {
+            tk = lex();
+            if (tk == TK_INTCONST) {
+                c = tkintconst;
+                n = c.lo;
+                if (n < 0) {
+                    CError_Error(0x2D);
+                }
+            } else {
                 CError_Error(0x2D);
             }
-        } else {
-            CError_Error(0x2D);
-        }
-        data_00624810 = 1;
-        op->type = MOpnd_GCCReg;
-        op->u.gcc.num = n;
-        op->u.gcc.effect = mode;
-        op->u.gcc.rclass = rclass;
-        tk = lex();
-        return;
-    }
-
-    if (tk == TK_IDENTIFIER) {
-        strcpy(name, tkidentifier->name);
-    }
-    if (tk == TK_IDENTIFIER && (reg = func_0048AD70(name)) && reg->rclass == rclass) {
-        op->type = MOpnd_Reg;
-        op->u.reg.object = reg->object;
-        op->u.reg.num = reg->num;
-        op->effect = mode;
-        op->rclass = rclass;
-        if (reg->object) {
-            reg->object->flags |= 1;
-        }
-        tk = lex();
-    } else if (tk == TK_INTCONST) {
-        c2 = tkintconst;
-        n = c2.lo;
-        tk = lex();
-        if (n == 0 && tk == TK_INTCONST) {
-            c3 = tkintconst;
-            n = c3.lo;
-            tk = lex();
-        }
-        if (numeric && n < data_00624744[rclass]) {
-            op->type = MOpnd_Reg;
-            op->u.reg.object = NULL;
-            op->u.reg.num = n;
-            op->effect = mode;
-            op->rclass = rclass;
-        } else {
-            InlineAsm_SyntaxError(0x2D);
-        }
-    } else if (tk == TK_IDENTIFIER && func_0048AD70(name)) {
-        InlineAsm_SyntaxError(0x2D);
-    } else if (func_0050CCC0(&obj, &offset)) {
-        if (obj) {
             data_00624810 = 1;
+            op->type = MOpnd_GCCReg;
+            op->u.gcc.num = n;
+            op->u.gcc.effect = mode;
+            op->u.gcc.rclass = rclass;
+            tk = lex();
+            return;
+        }
+
+        if (tk == TK_IDENTIFIER) {
+            strcpy(name, tkidentifier->name);
+        }
+        if (tk == TK_IDENTIFIER && (reg = func_0048AD70(name)) && reg->rclass == rclass) {
             op->type = MOpnd_Reg;
-            op->u.reg.object = obj;
-            op->u.reg.num = 0;
+            op->u.reg.object = reg->object;
+            op->u.reg.num = reg->num;
             op->effect = mode;
             op->rclass = rclass;
-            obj->flags |= 1;
+            if (reg->object) {
+                reg->object->flags |= 1;
+            }
+            tk = lex();
+        } else if (tk == TK_INTCONST) {
+            c2 = tkintconst;
+            n = c2.lo;
+            tk = lex();
+            if (n == 0 && tk == TK_INTCONST) {
+                c3 = tkintconst;
+                n = c3.lo;
+                tk = lex();
+            }
+            if (numeric && n < data_00624744[rclass]) {
+                op->type = MOpnd_Reg;
+                op->u.reg.object = NULL;
+                op->u.reg.num = n;
+                op->effect = mode;
+                op->rclass = rclass;
+            } else {
+                InlineAsm_SyntaxError(0x2D);
+            }
+        } else if (tk == TK_IDENTIFIER && func_0048AD70(name)) {
+            InlineAsm_SyntaxError(0x2D);
+        } else if (func_0050CCC0(&obj, &offset)) {
+            if (obj) {
+                data_00624810 = 1;
+                op->type = MOpnd_Reg;
+                op->u.reg.object = obj;
+                op->u.reg.num = 0;
+                op->effect = mode;
+                op->rclass = rclass;
+                obj->flags |= 1;
+            } else {
+                InlineAsm_SyntaxError(0x2D);
+            }
         } else {
             InlineAsm_SyntaxError(0x2D);
         }
-    } else {
-        InlineAsm_SyntaxError(0x2D);
     }
-}
 #endif
 
 #include "compiler/RegisterInfo.h"
@@ -2316,14 +3164,23 @@ void func_00489410(MAsmOperand* op, Boolean kind, SInt16 mode) {
         if (result.object) {
             if (result.object->datatype == DLOCAL) {
                 op->type = MOpnd_LocalObj;
-                Registers_GetVarInfo(result.object)->noregister = TRUE;
-                Registers_GetVarInfo(result.object)->used = TRUE;
+#if MWCCPS2_B52
+                result.object->u.var.info->noregister = TRUE;
+                result.object->u.var.info->used = TRUE;
+#else
+                    Registers_GetVarInfo(result.object)->noregister = TRUE;
+                    Registers_GetVarInfo(result.object)->used = TRUE;
+#endif
             } else {
                 op->type = MOpnd_GlobalObj;
                 op->effect = mode;
                 op->rclass = 0;
             }
-            result.object->u.var.offset = 0;
+#if MWCCPS2_B52
+            result.object->u.var.uid = 0; // b69 zeroes +0x2C (3.0.1: u.var.offset)
+#else
+                result.object->u.var.offset = 0;
+#endif
             op->u.obj.obj = result.object;
             op->u.obj.offset = 0;
             result.object->flags |= 1;
@@ -2348,14 +3205,31 @@ void func_00489410(MAsmOperand* op, Boolean kind, SInt16 mode) {
         }
     } else if (tk == '%' && InlineAsm_gccmode) {
         tk = lex();
-        if (tk == TK_INTCONST) {
-            c = tkintconst;
-            n = c.lo;
-            if (n < 0) {
-                CError_Error(0x2D);
-            }
+#if MWCCPS2_B52
+        if (tk != TK_INTCONST) {
+            CError_Error(ASM_ERR(0x2D));
         } else {
+#else
+            if (tk == TK_INTCONST) {
+#endif
+            c = tkintconst;
+#if MWCCPS2_B52
+            n = CInt64_GetULong(&c);
+#else
+                n = c.lo;
+#endif
+            if (n < 0) {
+#if MWCCPS2_B52
+                CError_Error(ASM_ERR(0x2D));
+#else
+                    CError_Error(0x2D);
+#endif
+            }
+#if !MWCCPS2_B52
+        }
+        else {
             CError_Error(0x2D);
+#endif
         }
         op->type = MOpnd_GCCReg;
         op->u.gcc.num = n;
@@ -2369,92 +3243,114 @@ void func_00489410(MAsmOperand* op, Boolean kind, SInt16 mode) {
         func_0048AA50(op, -0x8000, 0x7FFF);
     } else {
 #if MWCCPS2 && MWCCPS2_BUILD < 210
-        InlineAsm_SyntaxError(0x2D); // b145 declares no label here
+#if MWCCPS2_B52
+        InlineAsm_SyntaxError(ASM_ERR(0x2D));
 #else
-        tk = lex();
-        result.label = InlineAsm_DeclareLabel(tkidentifier);
-        op->type = MOpnd_Lab;
-        op->u.lab.label = result.label;
+        InlineAsm_SyntaxError(0x2D); // b145 declares no label here
+#endif
+#else
+            tk = lex();
+            result.label = InlineAsm_DeclareLabel(tkidentifier);
+            op->type = MOpnd_Lab;
+            op->u.lab.label = result.label;
 #endif
     }
 }
 #else
-void func_00489410(MAsmOperand* op, Boolean kind, SInt16 mode) {
-    MLookupResult result;
-    CInt64 c;
-    SInt32 n;
-    Boolean paren;
+    void func_00489410(MAsmOperand * op, Boolean kind, SInt16 mode) {
+        MLookupResult result;
+        CInt64 c;
+        SInt32 n;
+        Boolean paren;
 
-    paren = FALSE;
-    if (tk == '(') {
-        paren = TRUE;
-        tk = lex();
-    }
+        paren = FALSE;
+        if (tk == '(') {
+            paren = TRUE;
+            tk = lex();
+        }
 
-    if (tk == TK_IDENTIFIER && InlineAsm_LookupSymbolMIPS(tkidentifier, &result)) {
-        if (result.object) {
-            if (result.object->datatype == DLOCAL) {
-                op->type = MOpnd_LocalObj;
-                Registers_GetVarInfo(result.object)->noregister = TRUE;
-                Registers_GetVarInfo(result.object)->used = TRUE;
+        if (tk == TK_IDENTIFIER && InlineAsm_LookupSymbolMIPS(tkidentifier, &result)) {
+            if (result.object) {
+                if (result.object->datatype == DLOCAL) {
+                    op->type = MOpnd_LocalObj;
+                    Registers_GetVarInfo(result.object)->noregister = TRUE;
+                    Registers_GetVarInfo(result.object)->used = TRUE;
+                } else {
+                    op->type = MOpnd_GlobalObj;
+                    op->effect = mode;
+                    op->rclass = 0;
+                }
+                result.object->u.var.offset = 0;
+                op->u.obj.obj = result.object;
+                op->u.obj.offset = 0;
+                result.object->flags |= 1;
+                tk = lex();
+                if (tk == '.') {
+                    op->u.obj.offset += InlineAsm_StructMemberOffset(result.object->type);
+                }
+                if (tk == '+') {
+                    tk = lex();
+                    op->u.obj.offset += InlineAsm_ConstantExpression();
+                } else if (tk == '-') {
+                    tk = lex();
+                    op->u.obj.offset -= InlineAsm_ConstantExpression();
+                }
+                if (paren) {
+                    if (tk == ')') {
+                        tk = lex();
+                    } else {
+                        InlineAsm_SyntaxError(0x10);
+                    }
+                }
+                return;
+            }
+            if (result.label) {
+                tk = lex();
+                op->type = MOpnd_Lab;
+                op->u.lab.label = result.label;
+                if (paren) {
+                    if (tk == ')') {
+                        tk = lex();
+                    } else {
+                        InlineAsm_SyntaxError(0x10);
+                    }
+                }
+                return;
+            }
+        } else if (tk == '%' && InlineAsm_gccmode) {
+            tk = lex();
+            if (tk == TK_INTCONST) {
+                c = tkintconst;
+                n = c.lo;
+                if (n < 0) {
+                    CError_Error(0x2D);
+                }
             } else {
-                op->type = MOpnd_GlobalObj;
-                op->effect = mode;
-                op->rclass = 0;
-            }
-            result.object->u.var.offset = 0;
-            op->u.obj.obj = result.object;
-            op->u.obj.offset = 0;
-            result.object->flags |= 1;
-            tk = lex();
-            if (tk == '.') {
-                op->u.obj.offset += InlineAsm_StructMemberOffset(result.object->type);
-            }
-            if (tk == '+') {
-                tk = lex();
-                op->u.obj.offset += InlineAsm_ConstantExpression();
-            } else if (tk == '-') {
-                tk = lex();
-                op->u.obj.offset -= InlineAsm_ConstantExpression();
-            }
-            if (paren) {
-                if (tk == ')') {
-                    tk = lex();
-                } else {
-                    InlineAsm_SyntaxError(0x10);
-                }
-            }
-            return;
-        }
-        if (result.label) {
-            tk = lex();
-            op->type = MOpnd_Lab;
-            op->u.lab.label = result.label;
-            if (paren) {
-                if (tk == ')') {
-                    tk = lex();
-                } else {
-                    InlineAsm_SyntaxError(0x10);
-                }
-            }
-            return;
-        }
-    } else if (tk == '%' && InlineAsm_gccmode) {
-        tk = lex();
-        if (tk == TK_INTCONST) {
-            c = tkintconst;
-            n = c.lo;
-            if (n < 0) {
                 CError_Error(0x2D);
             }
-        } else {
-            CError_Error(0x2D);
+            op->type = MOpnd_GCCReg;
+            op->u.gcc.num = n;
+            op->u.gcc.effect = mode;
+            op->u.gcc.rclass = -1;
+            tk = lex();
+            if (paren) {
+                if (tk == ')') {
+                    tk = lex();
+                } else {
+                    InlineAsm_SyntaxError(0x10);
+                }
+            }
+            return;
         }
-        op->type = MOpnd_GCCReg;
-        op->u.gcc.num = n;
-        op->u.gcc.effect = mode;
-        op->u.gcc.rclass = -1;
-        tk = lex();
+
+        if (kind) {
+            func_0048AA50(op, -0x8000, 0x7FFF);
+        } else {
+            tk = lex();
+            result.label = InlineAsm_DeclareLabel(tkidentifier);
+            op->type = MOpnd_Lab;
+            op->u.lab.label = result.label;
+        }
         if (paren) {
             if (tk == ')') {
                 tk = lex();
@@ -2462,25 +3358,7 @@ void func_00489410(MAsmOperand* op, Boolean kind, SInt16 mode) {
                 InlineAsm_SyntaxError(0x10);
             }
         }
-        return;
     }
-
-    if (kind) {
-        func_0048AA50(op, -0x8000, 0x7FFF);
-    } else {
-        tk = lex();
-        result.label = InlineAsm_DeclareLabel(tkidentifier);
-        op->type = MOpnd_Lab;
-        op->u.lab.label = result.label;
-    }
-    if (paren) {
-        if (tk == ')') {
-            tk = lex();
-        } else {
-            InlineAsm_SyntaxError(0x10);
-        }
-    }
-}
 #endif
 
 // 0x4896F0: a single-precision immediate, as its bits
@@ -2632,10 +3510,17 @@ void func_00489920(MAsmOperand* op) {
                         absval[i] = 1;
                         used[i] = 1;
                     }
+#if MWCCPS2_B52
                 } else if ((i == 0 && (ch == 'x' || ch == 'X')) ||
                            (i == 1 && (ch == 'y' || ch == 'Y')) ||
                            (i == 2 && (ch == 'z' || ch == 'Z')) ||
                            (i == 3 && (ch == 'w' || ch == 'W'))) {
+#else
+                    } else if ((i == 0 && (ch == 'x' || ch == 'X')) ||
+                               (i == 1 && (ch == 'y' || ch == 'Y')) ||
+                               (i == 2 && (ch == 'z' || ch == 'Z')) ||
+                               (i == 3 && (ch == 'w' || ch == 'W'))) {
+#endif
                     if (used[i]) {
                         err = TRUE;
                     } else {
@@ -3236,8 +4121,12 @@ void func_0048A340(MAsmOperand* op, SInt32 n) {
 // mfc1 next to stmt, moving a variable between register
 // classes
 void func_00481EE0(Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, Boolean after) {
-    Statement* s;
-    OpcodeDef* def;
+#if MWCCPS2_B52
+    Statement* s = NULL;
+#else
+        Statement* s;
+        OpcodeDef* def;
+#endif
     MAsmInstruction* mi;
 
     if (after) {
@@ -3253,14 +4142,24 @@ void func_00481EE0(Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, B
     }
     s->expr = NULL;
 
-    def = tofloat ? &data_006115F8[0xAD] : &data_006115F8[0xA5];
-    mi = lalloc(def->nargs * sizeof(MAsmOperand) + 8);
+#if MWCCPS2_B52
+    mi = lalloc(
+        (tofloat ? &data_006115F8[0xAD] : &data_006115F8[0xA5])->nargs * sizeof(MAsmOperand) + 8
+    );
+#else
+        def = tofloat ? &data_006115F8[0xAD] : &data_006115F8[0xA5];
+        mi = lalloc(def->nargs * sizeof(MAsmOperand) + 8);
+#endif
     if (tofloat) {
         mi->opcode = 0xAD;
     } else {
         mi->opcode = 0xA5;
     }
-    mi->flags = 0x20;
+#if MWCCPS2_B52
+    mi->flags = 0;
+#else
+        mi->flags = 0x20;
+#endif
     mi->nops = 2;
     mi->ops[0].type = MOpnd_Reg;
     mi->ops[0].u.reg.num = 0;
@@ -3281,6 +4180,55 @@ void func_00481EE0(Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, B
 }
 
 // 0x481FE0: an instruction's mnemonic
+#if MWCCPS2_B52
+// variable and a VU0 register (class 5): b69 opcodes 0x23D (in) and 0x23B
+void ps2_gcc_quadmove(Statement* stmt, Object* var, Object* temp, Boolean in, Boolean after) {
+    Statement* s = NULL;
+    MAsmInstruction* mi;
+
+    if (after) {
+        s = CFunc_InsertStatement((StatementType)16, stmt);
+        if (curstmt == stmt && stmt->next) {
+            curstmt = stmt->next;
+        }
+    } else {
+        s = CFunc_InsertBeforeStatement((StatementType)16, stmt);
+        if (curstmt == stmt && stmt->next) {
+            curstmt = stmt->next;
+        }
+    }
+    s->expr = NULL;
+
+    mi = lalloc(
+        (in ? &data_006115F8[0x23D] : &data_006115F8[0x23B])->nargs * sizeof(MAsmOperand) + 8
+    );
+    if (in) {
+        mi->opcode = 0x23D;
+    } else {
+        mi->opcode = 0x23B;
+    }
+    mi->flags = 0;
+    mi->nops = 2;
+    mi->ops[0].type = MOpnd_Reg;
+    mi->ops[0].u.reg.num = 0;
+    mi->ops[0].u.reg.object = var;
+    mi->ops[1].type = MOpnd_Reg;
+    mi->ops[1].u.reg.num = 0;
+    mi->ops[1].u.reg.object = temp;
+    mi->ops[0].rclass = 0;
+    mi->ops[1].rclass = 5;
+    if (in) {
+        mi->ops[0].effect = 1;
+        mi->ops[1].effect = 2;
+    } else {
+        mi->ops[0].effect = 2;
+        mi->ops[1].effect = 1;
+    }
+    s->expr = (ENode*)mi;
+}
+
+// 0x481FE0: an instruction's mnemonic
+#endif
 char* func_00481FE0(MAsmInstruction* mi) {
     return data_006115F8[mi->opcode].name;
 }
@@ -3298,20 +4246,56 @@ extern void func_0046FA50(void);
 extern MPCode* func_00482330(MAsmInstruction* mi, int nargs);
 
 // 0x482000: an asm statement's instruction into PCode
+#if MWCCPS2_B52
+typedef MOperand AsmOperand69;
+#define ASM_OPND_FLAGS(op) ((op)->flags)
+#define ASM_OPND_REG(op) ((op)->reg)
+#define ASM_OPND_LABEL(op) ((MPCodeLabel*)(op)->ptr)
+// the pcode carries the tree's opcode; the assembler compares b69's
+#define ASM_PC_OP(pc) (mi->opcode)
+#define ASM_ARGS(pc) ((AsmOperand69*)(pc)->args)
+
+// b69 (0x4B7360): .set only reorders (volatileasm is the scanner's); under
+// noreorder every instruction is marked 0x100 (not 0x4000), and sync.l/sync.p/
+// sync (0x24F..0x251) make the block and the whole sequence so; a call's
+// clobbers skip class 5 by register count (0x4B3130)
+#endif
 void func_00482000(Statement* stmt) {
+#if !MWCCPS2_B52
     MAsmInstruction* mi;
     MPCode* pc;
     MOperand* arg;
     MPCodeLabel* label;
     SInt32 reg;
+#endif
     int nargs;
+#if MWCCPS2_B52
+    AsmOperand69* arg;
+#endif
     int rclass;
+#if MWCCPS2_B52
+    MAsmInstruction* mi;
+    SInt32 opcode;
+    MPCode* p;
+#endif
     int i;
+#if MWCCPS2_B52
+    MPCodeLabel* label;
+    MPCode* pc;
+    SInt32 reg;
+#endif
 
     mi = (MAsmInstruction*)stmt->expr;
-    nargs = data_006115F8[mi->opcode].nargs;
-    if (mi->opcode == MACRO_OP(0xAC)) {
+#if MWCCPS2_B52
+    opcode = mi->opcode;
+    nargs = data_006115F8[opcode].nargs;
+    if (opcode == ASM_MACRO_OP(0xAC)) {
+#else
+        nargs = data_006115F8[mi->opcode].nargs;
+        if (mi->opcode == MACRO_OP(0xAC)) {
+#endif
         // .set
+#if !MWCCPS2_B52
         if (((AsmSetRecord*)mi)->mode & 4) {
             volatileasm = 1;
         }
@@ -3320,133 +4304,237 @@ void func_00482000(Statement* stmt) {
         }
         if (((AsmSetRecord*)mi)->mode & 1) {
             data_00625EAC = 0;
+#endif
             func_0046FA50();
-            data_00625E56 &= 0xBF77;
+#if MWCCPS2_B52
+            if (((AsmSetRecord*)mi)->mode & 1) {
+#endif
+                data_00625E56 &= 0xBF77;
+#if !MWCCPS2_B52
+                data_006246B4->flags2E = data_00625E56;
+#endif
+            }
+            if (((AsmSetRecord*)mi)->mode & 2) {
+#if !MWCCPS2_B52
+                data_00625EAC = 1;
+                func_0046FA50();
+#endif
+                data_00625E56 |= 0x4088;
+#if !MWCCPS2_B52
+                data_006246B4->flags2E = data_00625E56;
+#endif
+            }
+#if MWCCPS2_B52
             data_006246B4->flags2E = data_00625E56;
+#endif
+            return;
         }
-        if (((AsmSetRecord*)mi)->mode & 2) {
-            data_00625EAC = 1;
-            func_0046FA50();
-            data_00625E56 |= 0x4088;
-            data_006246B4->flags2E = data_00625E56;
-        }
-        return;
-    }
 
+#if MWCCPS2_B52
+        if (data_006115F8[opcode].flags & 8) {
+            nargs += func_00461F50() - func_004B8990();
+#else
     if (data_006115F8[mi->opcode].flags & 8) {
         i = func_004B8990();
         nargs += func_00461F50() - i;
-    }
-    pc = func_00482330(mi, nargs);
+#endif
+        }
+        pc = func_00482330(mi, nargs);
+#if MWCCPS2_B52
+        // b52 (0x4CD626): vmove (b52 0x286, our 0x2AF) is never a plain move;
+        // vcallms/vcallmsr (b52 0x24F..0x251, our 0x278..0x27A) only mark the
+        // block (0x80); no per-instruction noreorder flag
+        // pc->op: the tree's number in the native (ASM_PC_OP is the assembler's
+        // there), b52's in the hybrid, as OPC() gives
+        if (pc->op == OPC(0x2AF)) {
+            pc->flags &= ~0x4010;
+        }
+#else
     pc->flags |= 0x200000;
-    appendpcode(data_006246B4, pc);
+#endif
+        appendpcode(data_006246B4, pc);
 #if MWCCPS2
-    // vcallms/vcallmsr (0x278..0x27A) mark the block as starting a VU0
-    // micro program
-    if ((UInt16)(pc->op - 0x278) <= 2) {
-        data_006246B4->flags2E |= 0x80;
-    }
+        // vcallms/vcallmsr (0x278..0x27A) mark the block as starting a VU0
+        // micro program
+#if MWCCPS2_B52
+        if (pc->op == OPC(0x278) || pc->op == OPC(0x279) || pc->op == OPC(0x27A)) {
+#else
+            if ((UInt16)(pc->op - 0x278) <= 2) {
+#endif
+            data_006246B4->flags2E |= 0x80;
+        }
 #endif
 
-    if (pc->flags & 1) {
+        if (pc->flags & 1) {
+#if MWCCPS2_B52
+            if (data_006115F8[ASM_PC_OP(pc)].flags & 8) {
+#else
         if (data_006115F8[pc->op].flags & 8) {
-            // a call: the registers it uses
+#endif
+                // a call: the registers it uses
+#if MWCCPS2_B52
+                for (arg = &ASM_ARGS(pc)[nargs - 1], rclass = 0; rclass < 7; rclass++) {
+                    for (i = 0; i < data_006241E0[rclass]; i++, --arg) {
+#else
             arg = &pc->args[nargs - 1];
             for (rclass = 0; rclass < 7; rclass++) {
                 for (i = 0; i < data_006241E0[rclass]; i++) {
-                    if (rclass == 5) {
-                        break;
-                    }
-                    reg = data_0060E038[rclass][i];
-                    arg->kind = 0;
-                    arg->rclass = rclass;
+#endif
+                        if (rclass == 5) {
+                            break;
+                        }
+                        reg = data_0060E038[rclass][i];
+                        arg->kind = 0;
+                        arg->rclass = rclass;
+#if MWCCPS2_B52
+                        ASM_OPND_REG(arg) = reg;
+                        ASM_OPND_FLAGS(arg) = 3;
+#else
                     arg->reg = reg;
                     arg->flags = 3;
                     arg--;
+#endif
+                    }
                 }
             }
-        }
+#if MWCCPS2_B52
+            if (ASM_PC_OP(pc) <= OPC(0x3BD)) {
+#else
         if (pc->op < MACRO_OP(0x00)) {
-            data_00624C3C = pc;
-        }
-        if (pc->flags & 0x10000000) {
-            label = makepclabel();
+#endif
+                data_00624C3C = pc;
+            }
+            if (pc->flags & 0x10000000) {
+                label = makepclabel();
+#if MWCCPS2_B52
+                for (arg = ASM_ARGS(pc);; arg++) {
+#else
             for (arg = pc->args;; arg++) {
-                if (arg->kind == 6) {
+#endif
+                    if (arg->kind == 6) {
+#if MWCCPS2_B52
+                        pcbranch(data_006246B4, ASM_OPND_LABEL(arg), 0);
+                        break;
+                    }
+                }
+#else
                     pcbranch(data_006246B4, (MPCodeLabel*)arg->ptr, 0);
-                    pcbranch(data_006246B4, label, 0);
-                    data_006246B4->flags2E |= data_00625E56;
-                    makepcblock();
-                    pclabel(data_006246B4, label);
+#endif
+                pcbranch(data_006246B4, label, 0);
+                data_006246B4->flags2E |= data_00625E56;
+                makepcblock();
+                pclabel(data_006246B4, label);
+#if MWCCPS2_B52
+            } else if (ASM_PC_OP(pc) == OPC(0x3B)) {
+#else
                     break;
                 }
             }
         } else if (pc->op == 0x3B) {
-            data_006246B4->flags2E |= data_00625E56;
-            makepcblock();
+#endif
+                data_006246B4->flags2E |= data_00625E56;
+                makepcblock();
+#if MWCCPS2_B52
+            } else if (ASM_ARGS(pc)[0].kind == 6) {
+                pcbranch(data_006246B4, ASM_OPND_LABEL(&ASM_ARGS(pc)[0]), 0);
+#else
         } else if (pc->args[0].kind == 6) {
             pcbranch(data_006246B4, (MPCodeLabel*)pc->args[0].ptr, 0);
-            data_006246B4->flags2E |= data_00625E56;
-            makepcblock();
+#endif
+                data_006246B4->flags2E |= data_00625E56;
+                makepcblock();
+            } else {
+                data_006246B4->flags2E |= data_00625E56;
+                func_0046FA50();
+            }
         } else {
+#if !MWCCPS2_B52
+            if (data_00624C3C &&
+                (data_00625E56 & 0x4000) &&
+                pc->op < MACRO_OP(0x00) &&
+                !data_00625E7E) {
+#endif
+                // noreorder: fill the delay slot of the branch before
+#if MWCCPS2_B52
+                // the macros) fills the delay slot
+                if (data_00624C3C &&
+                    (data_00625E56 & 0x4000) &&
+                    ASM_PC_OP(pc) < ASM_MACRO_OP(0) &&
+                    !data_00625E7E) {
+                    // noreorder: fill the delay slot of the branch before
+#endif
+                    deletepcode(pc);
+                    insertpcodebefore(data_00624C3C, pc);
+                    pc->flags |= 0x40000000;
+                }
+                data_00624C3C = NULL;
+            }
+
+            if (data_00625E7E) {
+                data_00625E7E = 0;
+            }
             data_006246B4->flags2E |= data_00625E56;
-            func_0046FA50();
+            data_00624C18 = data_006246B4;
         }
-    } else {
-        if (data_00624C3C &&
-            (data_00625E56 & 0x4000) &&
-            pc->op < MACRO_OP(0x00) &&
-            !data_00625E7E) {
-            // noreorder: fill the delay slot of the branch before
-            deletepcode(pc);
-            insertpcodebefore(data_00624C3C, pc);
-            pc->flags |= 0x40000000;
-        }
-        data_00624C3C = NULL;
-    }
+#if MWCCPS2_B52
+#undef ASM_ARGS
+#endif
 
-    if (data_00625E7E) {
-        data_00625E7E = 0;
-    }
-    data_006246B4->flags2E |= data_00625E56;
-    data_00624C18 = data_006246B4;
-}
+        // 0x4833E0: a VFPU register operand (class 5, numbered matrix*100 +
+        // column*10 + row) of a vector or matrix instruction, written out as one
+        // operand per element; src becomes the instruction's encoded register.
+        // Returns the element count, 0 if the register does not fit the operand.
+        int func_004833E0(MOperand * src, int index, UInt16 opcode, MOperand* out) {
+            int count;
+            int transpose;
+            int reg;
+            int mode;
+            int size;
+            int outer;
+            int mtx;
+            int col;
+            int row;
+            int base;
+            int i;
+            int j;
+            int rr;
+            int cc;
+            int a;
+            int b;
+            int num;
+            UInt8 kind;
 
-// 0x4833E0: a VFPU register operand (class 5, numbered matrix*100 +
-// column*10 + row) of a vector or matrix instruction, written out as one
-// operand per element; src becomes the instruction's encoded register.
-// Returns the element count, 0 if the register does not fit the operand.
-int func_004833E0(MOperand* src, int index, UInt16 opcode, MOperand* out) {
-    int count;
-    int transpose;
-    int reg;
-    int mode;
-    int size;
-    int outer;
-    int mtx;
-    int col;
-    int row;
-    int base;
-    int i;
-    int j;
-    int rr;
-    int cc;
-    int a;
-    int b;
-    int num;
-    UInt8 kind;
+            count = 0;
+            transpose = 0;
+            reg = src->reg;
+            mode = -1;
+            if (src->kind != 0 || src->rclass != 5) {
+                CError_FATAL(3705);
+                return 0;
+            }
 
-    count = 0;
-    transpose = 0;
-    reg = src->reg;
-    mode = -1;
-    if (src->kind != 0 || src->rclass != 5) {
-        CError_FATAL(3705);
-        return 0;
-    }
-
-    size = 0;
-    switch (opcode) {
+            size = 0;
+            switch (opcode) {
+#if MWCCPS2_B52
+                case OPC(0x454):
+                case 0x458:
+                case 0x459:
+                case 0x45B:
+                case 0x45C:
+                case 0x470:
+                case OPC(0x472):
+                case 0x473:
+                case 0x495:
+                case 0x498:
+                case 0x4AC:
+                case 0x4AD:
+                case 0x4D7:
+                case 0x4D9:
+                case 0x4DA:
+                case 0x4DC:
+                case 0x4F6:
+                case 0x4F7:
+#else
         case 0x454:
         case 0x458:
         case 0x459:
@@ -3465,11 +4553,24 @@ int func_004833E0(MOperand* src, int index, UInt16 opcode, MOperand* out) {
         case 0x4DC:
         case 0x4F6:
         case 0x4F7:
-            if (index == 0) {
-                size = 1;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 0) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x421):
+                case 0x42C:
+                case 0x432:
+                case 0x434:
+                case 0x4D8:
+                case 0x4DB:
+                case 0x4DD:
+                case 0x4F1:
+                case 0x4F2:
+                case 0x4F3:
+#else
         case 0x421:
         case 0x42C:
         case 0x432:
@@ -3480,114 +4581,194 @@ int func_004833E0(MOperand* src, int index, UInt16 opcode, MOperand* out) {
         case 0x4F1:
         case 0x4F2:
         case 0x4F3:
-            if (index == 0) {
-                size = 2;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 0) {
+                        size = 2;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x489):
+#else
         case 0x489:
-            if (index == 0) {
-                size = 2;
-                mode = 0;
-            } else if (index == 1) {
-                size = 1;
-                mode = 0;
-            }
-            break;
-        case 0x4C3:
-            if (index == 0) {
-                size = 3;
-                mode = 0;
-            } else if (index == 1) {
-                size = 1;
-                mode = 0;
-            }
-            break;
-        case 0x50E:
-            if (index == 0) {
-                size = 4;
-                mode = 0;
-            } else if (index == 1) {
-                size = 1;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 0) {
+                        size = 2;
+                        mode = 0;
+                    } else if (index == 1) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+                case 0x4C3:
+                    if (index == 0) {
+                        size = 3;
+                        mode = 0;
+                    } else if (index == 1) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+                case 0x50E:
+                    if (index == 0) {
+                        size = 4;
+                        mode = 0;
+                    } else if (index == 1) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x450):
+                case 0x451:
+                case 0x45A:
+                case 0x467:
+                case 0x46C:
+                case 0x46E:
+#else
         case 0x450:
         case 0x451:
         case 0x45A:
         case 0x467:
         case 0x46C:
         case 0x46E:
-            if (index == 0) {
-                size = 4;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 0) {
+                        size = 4;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x474):
+                case 0x47F:
+#else
         case 0x474:
         case 0x47F:
-            if (index == 1) {
-                size = 2;
-                mode = 1;
-            }
-            break;
+#endif
+                    if (index == 1) {
+                        size = 2;
+                        mode = 1;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x4AE):
+                case 0x4B9:
+#else
         case 0x4AE:
         case 0x4B9:
-            if (index == 1) {
-                size = 3;
-                mode = 1;
-            }
-            break;
+#endif
+                    if (index == 1) {
+                        size = 3;
+                        mode = 1;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case 0x4F8:
+                case 0x504:
+#else
         case 0x4F8:
         case 0x504:
-            if (index == 1) {
-                size = 4;
-                mode = 1;
-            }
-            break;
+#endif
+                    if (index == 1) {
+                        size = 4;
+                        mode = 1;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x478):
+                case 0x47A:
+                case 0x4B2:
+                case 0x4B4:
+                case 0x4FC:
+                case 0x4FF:
+#else
         case 0x478:
         case 0x47A:
         case 0x4B2:
         case 0x4B4:
         case 0x4FC:
         case 0x4FF:
-            if (index == 2) {
-                size = 1;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 2) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x418):
+#else
         case 0x418:
-            if (index == 0) {
-                size = 1;
-                mode = 0;
-            }
-            break;
+#endif
+                    if (index == 0) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
+#if MWCCPS2_B52
+                case OPC(0x40E):
+                case 0x40F:
+                case 0x419:
+#else
         case 0x40E:
         case 0x40F:
         case 0x419:
-            if (index == 1) {
-                size = 1;
-                mode = 0;
+#endif
+                    if (index == 1) {
+                        size = 1;
+                        mode = 0;
+                    }
+                    break;
             }
-            break;
-    }
 
-    if (size == 0) {
+            if (size == 0) {
+#if MWCCPS2_B52
+                if ((opcode >= OPC(0x41A) && opcode <= OPC(0x451)) || opcode == MACRO_OP(0xA2)) {
+#else
         if ((opcode >= 0x41A && opcode <= 0x451) || opcode == MACRO_OP(0xA2)) {
-            size = 1;
+#endif
+                    size = 1;
+#if MWCCPS2_B52
+                } else if (opcode >= OPC(0x452) && opcode <= OPC(0x492)) {
+#else
         } else if (opcode >= 0x452 && opcode <= 0x492) {
-            size = 2;
+#endif
+                    size = 2;
+#if MWCCPS2_B52
+                } else if (opcode >= OPC(0x493) && opcode <= 0x4CB) {
+#else
         } else if (opcode >= 0x493 && opcode <= 0x4CB) {
-            size = 3;
-        } else if (opcode >= 0x4CC && opcode <= 0x517) {
-            size = 4;
-        } else {
-            return 0;
-        }
-    }
+#endif
+                    size = 3;
+                } else if (opcode >= 0x4CC && opcode <= 0x517) {
+                    size = 4;
+                } else {
+                    return 0;
+                }
+            }
 
-    if (mode < 0) {
-        // the matrix instructions
-        switch (opcode) {
+            if (mode < 0) {
+                // the matrix instructions
+                switch (opcode) {
+#if MWCCPS2_B52
+                    case OPC(0x45E):
+                    case 0x477:
+                    case 0x478:
+                    case 0x48B:
+                    case 0x48C:
+                    case 0x48D:
+                    case 0x49A:
+                    case 0x4B1:
+                    case 0x4B2:
+                    case 0x4C4:
+                    case 0x4C5:
+                    case 0x4C6:
+                    case 0x4DF:
+                    case 0x4FB:
+                    case 0x4FC:
+                    case 0x510:
+                    case 0x511:
+                    case 0x512:
+#else
             case 0x45E:
             case 0x477:
             case 0x478:
@@ -3606,163 +4787,168 @@ int func_004833E0(MOperand* src, int index, UInt16 opcode, MOperand* out) {
             case 0x510:
             case 0x511:
             case 0x512:
-                mode = 1;
-                break;
-            default:
-                mode = 0;
-                break;
-        }
-    }
-
-    mtx = (reg / 100) % 10;
-    row = reg % 10;
-    col = (reg / 10) % 10;
-    if ((reg >= 2000 && reg <= 2733) || (reg >= 4000 && reg <= 4733)) {
-        transpose = 0x20; // row (R) and transposed matrix (E) forms
-    }
-
-    switch (size) {
-        case 1:
-            if (reg < 0x80) {
-                *out = *src;
-                return 1;
+#endif
+                        mode = 1;
+                        break;
+                    default:
+                        mode = 0;
+                        break;
+                }
             }
-            return 0;
-        case 2:
+
+            mtx = (reg / 100) % 10;
+            row = reg % 10;
+            col = (reg / 10) % 10;
+            if ((reg >= 2000 && reg <= 2733) || (reg >= 4000 && reg <= 4733)) {
+                transpose = 0x20; // row (R) and transposed matrix (E) forms
+            }
+
+            switch (size) {
+                case 1:
+                    if (reg < 0x80) {
+                        *out = *src;
+                        return 1;
+                    }
+                    return 0;
+                case 2:
+                    if (mode) {
+                        if ((row | col) & 1) {
+                            return 0;
+                        }
+                        kind = 5;
+                    } else if (transpose) {
+                        if (col & 1) {
+                            return 0;
+                        }
+                        kind = 2;
+                    } else {
+                        if (row & 1) {
+                            return 0;
+                        }
+                        kind = 2;
+                    }
+                    break;
+                case 3:
+                    if (mode) {
+                        if (row > 1 || col > 1) {
+                            return 0;
+                        }
+                        kind = 6;
+                    } else if (transpose) {
+                        if (col > 1) {
+                            return 0;
+                        }
+                        kind = 3;
+                    } else {
+                        if (row > 1) {
+                            return 0;
+                        }
+                        kind = 3;
+                    }
+                    break;
+                case 4:
+                    if (mode) {
+                        if (row | col) {
+                            return 0;
+                        }
+                        kind = 7;
+                    } else if (transpose) {
+                        if (col) {
+                            return 0;
+                        }
+                        kind = 4;
+                    } else {
+                        if (row) {
+                            return 0;
+                        }
+                        kind = 4;
+                    }
+                    break;
+                default:
+                    return 0;
+            }
+
             if (mode) {
-                if ((row | col) & 1) {
-                    return 0;
-                }
-                kind = 5;
+                outer = size;
             } else if (transpose) {
-                if (col & 1) {
-                    return 0;
-                }
-                kind = 2;
+                outer = size;
+                size = 1;
             } else {
-                if (row & 1) {
-                    return 0;
-                }
-                kind = 2;
+                outer = 1;
             }
-            break;
-        case 3:
-            if (mode) {
-                if (row > 1 || col > 1) {
-                    return 0;
-                }
-                kind = 6;
-            } else if (transpose) {
-                if (col > 1) {
-                    return 0;
-                }
-                kind = 3;
-            } else {
-                if (row > 1) {
-                    return 0;
-                }
-                kind = 3;
-            }
-            break;
-        case 4:
-            if (mode) {
-                if (row | col) {
-                    return 0;
-                }
-                kind = 7;
-            } else if (transpose) {
-                if (col) {
-                    return 0;
-                }
-                kind = 4;
-            } else {
-                if (row) {
-                    return 0;
-                }
-                kind = 4;
-            }
-            break;
-        default:
-            return 0;
-    }
 
-    if (mode) {
-        outer = size;
-    } else if (transpose) {
-        outer = size;
-        size = 1;
-    } else {
-        outer = 1;
-    }
-
-    for (i = 0; i < outer; i++) {
-        base = mtx << 2;
-        for (j = 0; j < size; j++) {
-            rr = row + i;
-            cc = col + j;
-            if (!transpose) {
-                a = cc;
-                b = rr;
-            } else {
-                a = rr;
-                b = cc;
-            }
-            num = (rr << 5) | (cc | base);
-            *out = *src;
-            out->reg = num;
-            out++;
-            if (count++ == 0) {
-                switch (kind) {
-                    case 0:
-                        return 0;
-                    case 1:
-                        src->reg = num;
-                        continue;
-                    case 2:
-                        src->reg = ((b & 2) << 5) | (a | base) | transpose;
-                        break;
-                    case 3:
-                        src->reg = ((b & 1) << 6) | (a | base) | transpose;
-                        break;
-                    case 4:
-                        src->reg = a | base | transpose;
-                        break;
-                    case 5:
-                        src->reg = ((b & 2) << 5) | ((a & 2) | base) | transpose;
-                        break;
-                    case 6:
-                        src->reg = ((b & 1) << 6) | ((a & 1) | base) | transpose;
-                        break;
-                    case 7:
-                        src->reg = transpose | base;
-                        break;
+            for (i = 0; i < outer; i++) {
+                base = mtx << 2;
+                for (j = 0; j < size; j++) {
+                    rr = row + i;
+                    cc = col + j;
+                    if (!transpose) {
+                        a = cc;
+                        b = rr;
+                    } else {
+                        a = rr;
+                        b = cc;
+                    }
+                    num = (rr << 5) | (cc | base);
+                    *out = *src;
+                    out->reg = num;
+                    out++;
+                    if (count++ == 0) {
+                        switch (kind) {
+                            case 0:
+                                return 0;
+                            case 1:
+                                src->reg = num;
+                                continue;
+                            case 2:
+                                src->reg = ((b & 2) << 5) | (a | base) | transpose;
+                                break;
+                            case 3:
+                                src->reg = ((b & 1) << 6) | (a | base) | transpose;
+                                break;
+                            case 4:
+                                src->reg = a | base | transpose;
+                                break;
+                            case 5:
+                                src->reg = ((b & 2) << 5) | ((a & 2) | base) | transpose;
+                                break;
+                            case 6:
+                                src->reg = ((b & 1) << 6) | ((a & 1) | base) | transpose;
+                                break;
+                            case 7:
+                                src->reg = transpose | base;
+                                break;
+                        }
+                        src->flags = 0;
+                    }
                 }
-                src->flags = 0;
             }
-        }
-    }
 
+#if MWCCPS2_B52
+            if (index == 1 && (opcode == OPC(0x477) || opcode == 0x4B1 || opcode == 0x4FB)) {
+#else
     if (index == 1 && (opcode == 0x477 || opcode == 0x4B1 || opcode == 0x4FB)) {
-        src->reg ^= 0x20;
-    }
-    return count;
-}
+#endif
+                src->reg ^= 0x20;
+            }
+            return count;
+        }
 
-extern SInt32 data_00624D84; // the current source position
-extern struct Alias* make_alias(Object* obj, SInt32 offset, SInt32 size);
-extern SInt32 func_0048FBE0(UInt16 op); // an opcode's memory access size
-extern Boolean is_volatile_object(Object* obj);
-extern Boolean is_const_object(Object* obj);
+        extern SInt32 data_00624D84; // the current source position
+        extern struct Alias* make_alias(Object * obj, SInt32 offset, SInt32 size);
+        extern SInt32 func_0048FBE0(UInt16 op); // an opcode's memory access size
+        extern Boolean is_volatile_object(Object * obj);
+        extern Boolean is_const_object(Object * obj);
 
-// the register number a variable was allocated to, or 0
-static SInt16 asm_var_reg(Object* obj) {
-    return obj->datatype == DLOCAL ? obj->u.var.info->reg : 0;
-}
+        // the register number a variable was allocated to, or 0
+        static SInt16 asm_var_reg(Object * obj) {
+            return obj->datatype == DLOCAL ? obj->u.var.info->reg : 0;
+        }
 
 // 0x482330: an asm instruction's PCode, its operands converted by the
 // opcode's format; VFPU vector operands also get one operand per element
 #if MWCCPS2
-extern Boolean ps2_IsQuadwordClassLocal(Object* obj);
+        extern Boolean ps2_IsQuadwordClassLocal(Object * obj);
 
 // b210 (0x4913A0): no VFPU element operands; VU0 registers (class 5) take
 // field suffixes and the vi/vf special numbers 0x4020..0x40BF.
@@ -3771,350 +4957,548 @@ extern Boolean ps2_IsQuadwordClassLocal(Object* obj);
 // takes no label; its asserts sit 1054..1078 lines earlier, unevenly
 #if MWCCPS2 && MWCCPS2_BUILD < 210
 #define ASM_LINE(line, b145) (b145)
+#if MWCCPS2_B52
+        // b69 (0x4B68E0, ASM_PIN_LOW_REG above): a register operand below its class's
+        // first virtual register (a real register written in the asm) pins the
+        // instruction: the scheduler leaves such asm in place
+        extern SInt32 data_00624744[7];
+#define ASM_PIN69(pc, arg) \
+    if ((arg)->reg < data_00624744[(arg)->rclass]) { \
+        (pc)->flags |= 0x100; \
+    }
+#endif
 #else
 #define ASM_LINE(line, b145) (line)
 #endif
-MPCode* func_00482330(MAsmInstruction* mi, int nargs) {
-    OpcodeDef* def;
-    MPCode* pc;
-    MAsmOperand* op;
-    MOperand* arg;
-    MOperand* a;
-    char* fmt;
-    ObjAddress addr;
-    SInt32 mode;
-    int size;
-    int isreg;
-    Boolean vfpupair;
-    Boolean pairplus;
-    Boolean flag7;
+        MPCode* func_00482330(MAsmInstruction * mi, int nargs) {
+            OpcodeDef* def;
+            MPCode* pc;
+            MAsmOperand* op;
+            MOperand* arg;
+            MOperand* a;
+            char* fmt;
+            ObjAddress addr;
+            SInt32 mode;
+            int size;
+            int isreg;
+            Boolean vfpupair;
+            Boolean pairplus;
+            Boolean flag7;
 
-    def = &data_006115F8[mi->opcode];
-    fmt = def->format;
-    vfpupair = FALSE;
-    flag7 = FALSE;
-    pairplus = FALSE;
-    if (*fmt == '#') {
-        CError_FATAL(ASM_LINE(4115, 3061));
-    }
-
-    size = PCODE_SIZE(nargs);
-    pc = lalloc(size);
-    memset(pc, 0, size);
-    pc->argcount = nargs;
-    pc->op = mi->opcode;
-    pc->unk20 = data_00624D84;
-    pc->flags |= def->flags;
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-    if ((volatileasm && !(mi->flags & 0x20)) || data_00625EAC) {
-        pc->flags |= 0x100;
-        pc->flags &= ~0x4010;
-    }
+#if MWCCPS2_B52
+            def = ASM_TREE_DEF(mi->opcode);
 #else
-    if (volatileasm || data_00625EAC || (mi->flags & 4)) {
-        if (!(mi->flags & 0x20)) {
-            pc->flags |= 0x100;
-            pc->flags &= ~0x4010;
-        }
-    }
+                def = &data_006115F8[mi->opcode];
 #endif
-
-    op = mi->ops;
-    arg = pc->args;
-    if (*fmt) {
-        do {
-            if (*fmt == ';') {
-                fmt++;
-            }
-            if (*fmt == ',') {
-                fmt++;
-            }
-            if (*fmt == '(' || *fmt == '[') {
-                fmt++;
-            }
-            mode = 1;
-            if (*fmt == '=') {
-                fmt++;
-                mode = 2;
-            } else if (*fmt == '+') {
-                mode = 3;
-                fmt++;
-            }
-            if (*fmt == '!') {
-                mode |= 0xFFFF8000;
-                fmt++;
-                if (copts.mips_option1A) {
-                    mode |= 0x20;
-                }
-            }
-            if (*fmt == '$') {
-                mode |= 0x2000;
-                fmt++;
-            }
-            if (*fmt == '2') {
-                fmt++;
-                vfpupair = TRUE;
-                if (*fmt == '+') {
-                    pairplus = TRUE;
-                    fmt++;
-                }
-            }
-            if (*fmt == '\'') {
-                fmt++;
-                flag7 = TRUE;
+            fmt = def->format;
+            vfpupair = FALSE;
+            flag7 = FALSE;
+            pairplus = FALSE;
+            if (*fmt == '#') {
+                CError_FATAL(ASM_LINE(4115, 3061));
             }
 
-            switch (*fmt) {
-                case '&':
-                    arg->kind = 2;
-                    arg->value = op->u.imm.lo;
-                    if (arg->value < 15) {
+            size = PCODE_SIZE(nargs);
+            pc = lalloc(size);
+            memset(pc, 0, size);
+            pc->argcount = nargs;
+#if MWCCPS2_B52
+            pc->op = ASM_BE_OP(mi->opcode);
+#else
+                pc->op = mi->opcode;
+#endif
+            pc->unk20 = data_00624D84;
+            pc->flags |= def->flags;
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+#if MWCCPS2_B52
+            // b52 (0x4CCB73): a volatile statement's instructions go in a block of
+            // their own, marked 0x80 (the passes skip 0x180 blocks); no 0x100
+            if ((UInt16)mi->flags & 4) {
+                pc->flags &= ~0x4000;
+                if (!(data_00625E56 & 0x80)) {
+                    func_0046FA50();
+#else
+            if ((volatileasm && !(mi->flags & 0x20)) || data_00625EAC) {
+                pc->flags |= 0x100;
+                pc->flags &= ~0x4010;
+#endif
+                }
+#if MWCCPS2_B52
+                data_00625E56 |= 0x80;
+            }
+#endif
+#else
+                if (volatileasm || data_00625EAC || (mi->flags & 4)) {
+                    if (!(mi->flags & 0x20)) {
+                        pc->flags |= 0x100;
                         pc->flags &= ~0x4010;
                     }
-                    op++;
-                    arg++;
-                    break;
-                case '<':
-                case '>':
-                case '@':
-                case 'X':
-                    arg->kind = 2;
-                    arg->value = op->u.imm.lo;
-                    op++;
-                    arg++;
-                    break;
-                case 'i':
-                case 'j':
-                case 'k':
-                    arg->kind = 3;
-                    *(CInt64*)&arg->value = op->u.imm;
-                    op++;
-                    arg++;
-                    break;
-                case 'B':
-                case 'C':
-                case 'M':
-                case 'c':
-                case 'v':
-                    arg->kind = 2;
-                    arg->value = op->u.imm.lo;
-                    op++;
-                    arg++;
-                    break;
-                case 'h':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 0;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case 'H':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 1;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case 'Y':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 6;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case 'Z':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 2;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case '1':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 3;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case 'r':
-                    arg->kind = 0;
-                    arg->rclass = 0;
-                    arg->reg = 31;
-                    arg->flags = mode;
-                    pc->flags |= 0x100;
-                    op++;
-                    arg++;
-                    break;
-                case '0':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = 4;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case 'Q':
-                case 'R':
-                    if (vfpupair) {
-                        arg->kind = 0;
-                        arg->rclass = 6;
-                        arg->reg = op->u.reg.num;
-                        arg->flags = mode;
-                    }
-                    op++;
-                    arg++;
-                    break;
-                case 'I':
-                    if (vfpupair) {
-                        arg->kind = 0;
-                        arg->rclass = 6;
-                        arg->reg = op->u.reg.num;
-                        arg->flags = mode;
-                    } else {
-                        arg->kind = 3;
-                        *(CInt64*)&arg->value = op->u.imm;
-                    }
-                    op++;
-                    arg++;
-                    break;
-                case 'K':
-                    // the condition register an FP compare/branch uses
-                    switch (pc->op) {
-                        case 0x68:
-                        case 0x69:
-                        case 0x6A:
-                        case 0x6B:
-                        case 0x1CD:
-                        case 0x1CE:
-                        case 0x1CF:
-                        case 0x1D0:
-                            arg->kind = 0;
-                            if (pc->args[1].reg == 0x14) {
-                                arg->rclass = 6;
-                                arg->reg = 4;
-                                arg->flags = mode;
-                            } else if (pc->args[1].reg == 0x15) {
-                                arg->rclass = 6;
-                                arg->reg = 1;
-                                arg->flags = mode;
-                            } else if (pc->args[1].reg == 0x16) {
-                                arg->rclass = 6;
-                                arg->reg = 2;
-                                arg->flags = mode;
-                            } else {
-                                arg->kind = 7;
-                            }
-                            break;
-                        case 0x26C:
-                        case 0x273:
-                        case 0x27C:
-                        case 0x296:
-                        case 0x29D:
-                        case 0x2B3:
-                        case 0x2BA:
-                        case 0x2C2:
-                        case 0x2C9:
-                        case 0x2D4:
-                        case 0x2D8:
-                        case 0x2DB:
-                        case 0x2E2:
-                            arg->kind = 0;
-                            arg->rclass = 4;
-                            arg->reg = 0x16;
-                            arg->flags = mode;
-                            break;
-                        case 0x26B:
-                        case 0x272:
-                        case 0x295:
-                        case 0x29C:
-                        case 0x2A3:
-                        case 0x2B2:
-                        case 0x2B9:
-                        case 0x2C1:
-                        case 0x2C8:
-                        case 0x2DA:
-                        case 0x2E1:
-                            arg->kind = 0;
-                            arg->rclass = 4;
-                            arg->reg = 0x15;
-                            arg->flags = mode;
-                            break;
-                        case 0x2D1:
-                        case 0x2D3:
-                        case 0x2D5:
-                            arg->kind = 0;
-                            arg->rclass = 4;
-                            arg->reg = 0x14;
-                            arg->flags = mode;
-                            break;
-                        default:
-                            CError_FATAL(ASM_LINE(4481, 3422));
-                            break;
-                    }
-                    op++;
-                    arg++;
-                    break;
-                case 'f':
-                    arg->kind = 3;
-                    *(CInt64*)&arg->value = op->u.imm;
-                    op++;
-                    arg++;
-                    break;
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-                case 'l':
-                case 'p':
-                    arg->kind = 6;
-                    MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                    if (!arg->value) {
-                        CError_FATAL(3441);
-                    }
-                    op++;
-                    arg++;
-                    break;
-#else
-                case 'p':
-                    arg->kind = 6;
-                    MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                    if (!arg->value) {
-                        CError_FATAL(4499);
-                    }
-                    op++;
-                    arg++;
-                    break;
-                case 'l':
-                    pc->unk38 = 2;
-                    arg->kind = 6;
-                    MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                    if (!arg->value) {
-                        CError_FATAL(4509);
-                    }
-                    op++;
-                    arg++;
-                    break;
+                }
 #endif
-                case 'b':
-                    if (vfpupair) {
-                        pc->unk38 = 0x77;
-                        if (op->type == MOpnd_Lab) {
-                            arg->kind = 6;
-                            MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+
+            op = mi->ops;
+            arg = pc->args;
+            if (*fmt) {
+                do {
+                    if (*fmt == ';') {
+                        fmt++;
+                    }
+                    if (*fmt == ',') {
+                        fmt++;
+                    }
+                    if (*fmt == '(' || *fmt == '[') {
+                        fmt++;
+                    }
+                    mode = 1;
+                    if (*fmt == '=') {
+                        fmt++;
+                        mode = 2;
+                    } else if (*fmt == '+') {
+                        mode = 3;
+                        fmt++;
+                    }
+                    if (*fmt == '!') {
+                        mode |= 0xFFFF8000;
+                        fmt++;
+                        if (copts.mips_option1A) {
+                            mode |= 0x20;
+                        }
+                    }
+                    if (*fmt == '$') {
+                        mode |= 0x2000;
+                        fmt++;
+                    }
+                    if (*fmt == '2') {
+                        fmt++;
+                        vfpupair = TRUE;
+                        if (*fmt == '+') {
+                            pairplus = TRUE;
+                            fmt++;
+                        }
+                    }
+                    if (*fmt == '\'') {
+                        fmt++;
+                        flag7 = TRUE;
+                    }
+
+                    switch (*fmt) {
+                        case '&':
+                            arg->kind = 2;
+                            arg->value = op->u.imm.lo;
+                            if (arg->value < 15) {
+                                pc->flags &= ~0x4010;
+                            }
                             op++;
                             arg++;
                             break;
-                        } else {
+                        case '<':
+                        case '>':
+                        case '@':
+                        case 'X':
+                            arg->kind = 2;
+                            arg->value = op->u.imm.lo;
+                            op++;
+                            arg++;
+                            break;
+                        case 'i':
+                        case 'j':
+                        case 'k':
+                            arg->kind = 3;
+                            *(CInt64*)&arg->value = op->u.imm;
+                            op++;
+                            arg++;
+                            break;
+                        case 'B':
+                        case 'C':
+                        case 'M':
+                        case 'c':
+                        case 'v':
+                            arg->kind = 2;
+                            arg->value = op->u.imm.lo;
+                            op++;
+                            arg++;
+                            break;
+                        case 'h':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 0;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case 'H':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 1;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case 'Y':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 6;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case 'Z':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 2;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case '1':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 3;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case 'r':
+                            arg->kind = 0;
+                            arg->rclass = 0;
+                            arg->reg = 31;
+                            arg->flags = mode;
+                            pc->flags |= 0x100;
+                            op++;
+                            arg++;
+                            break;
+                        case '0':
+                            arg->kind = 0;
+                            arg->rclass = 2;
+                            arg->reg = 4;
+                            arg->flags = mode;
+                            op++;
+                            arg++;
+                            break;
+                        case 'Q':
+                        case 'R':
+                            if (vfpupair) {
+                                arg->kind = 0;
+                                arg->rclass = 6;
+                                arg->reg = op->u.reg.num;
+                                arg->flags = mode;
+#if MWCCPS2_B52
+                                ASM_PIN69(pc, arg);
+#endif
+                            }
+                            op++;
+                            arg++;
+                            break;
+                        case 'I':
+                            if (vfpupair) {
+                                arg->kind = 0;
+                                arg->rclass = 6;
+                                arg->reg = op->u.reg.num;
+                                arg->flags = mode;
+                            } else {
+                                arg->kind = 3;
+                                *(CInt64*)&arg->value = op->u.imm;
+                            }
+                            op++;
+                            arg++;
+                            break;
+                        case 'K':
+                            // the condition register an FP compare/branch uses
+                            switch (pc->op) {
+#if MWCCPS2_B52
+                                case OPC(0x68):
+                                case 0x69:
+                                case 0x6A:
+                                case 0x6B:
+                                case OPC(0x1CD):
+                                case 0x1CE:
+                                case 0x1CF:
+                                case 0x1D0:
+#else
+                                    case 0x68:
+                                    case 0x69:
+                                    case 0x6A:
+                                    case 0x6B:
+                                    case 0x1CD:
+                                    case 0x1CE:
+                                    case 0x1CF:
+                                    case 0x1D0:
+#endif
+                                    arg->kind = 0;
+                                    if (pc->args[1].reg == 0x14) {
+                                        arg->rclass = 6;
+                                        arg->reg = 4;
+                                        arg->flags = mode;
+                                    } else if (pc->args[1].reg == 0x15) {
+                                        arg->rclass = 6;
+                                        arg->reg = 1;
+                                        arg->flags = mode;
+                                    } else if (pc->args[1].reg == 0x16) {
+                                        arg->rclass = 6;
+                                        arg->reg = 2;
+                                        arg->flags = mode;
+                                    } else {
+                                        arg->kind = 7;
+                                    }
+                                    break;
+#if MWCCPS2_B52
+                                case OPC(0x26C):
+                                case 0x273:
+                                case 0x27C:
+                                case 0x296:
+                                case 0x29D:
+                                case 0x2B3:
+                                case OPC(0x2BA):
+                                case 0x2C2:
+                                case 0x2C9:
+                                case 0x2D4:
+                                case 0x2D8:
+                                case 0x2DB:
+                                case OPC(0x2E2):
+#else
+                                    case 0x26C:
+                                    case 0x273:
+                                    case 0x27C:
+                                    case 0x296:
+                                    case 0x29D:
+                                    case 0x2B3:
+                                    case 0x2BA:
+                                    case 0x2C2:
+                                    case 0x2C9:
+                                    case 0x2D4:
+                                    case 0x2D8:
+                                    case 0x2DB:
+                                    case 0x2E2:
+#endif
+                                    arg->kind = 0;
+                                    arg->rclass = 4;
+                                    arg->reg = 0x16;
+                                    arg->flags = mode;
+                                    break;
+#if MWCCPS2_B52
+                                case OPC(0x26B):
+                                case 0x272:
+                                case 0x295:
+                                case 0x29C:
+                                case 0x2A3:
+                                case 0x2B2:
+                                case OPC(0x2B9):
+                                case 0x2C1:
+                                case 0x2C8:
+                                case 0x2DA:
+                                case 0x2E1:
+#else
+                                    case 0x26B:
+                                    case 0x272:
+                                    case 0x295:
+                                    case 0x29C:
+                                    case 0x2A3:
+                                    case 0x2B2:
+                                    case 0x2B9:
+                                    case 0x2C1:
+                                    case 0x2C8:
+                                    case 0x2DA:
+                                    case 0x2E1:
+#endif
+                                    arg->kind = 0;
+                                    arg->rclass = 4;
+                                    arg->reg = 0x15;
+                                    arg->flags = mode;
+                                    break;
+#if MWCCPS2_B52
+                                case OPC(0x2D1):
+                                case 0x2D3:
+                                case 0x2D5:
+#else
+                                    case 0x2D1:
+                                    case 0x2D3:
+                                    case 0x2D5:
+#endif
+                                    arg->kind = 0;
+                                    arg->rclass = 4;
+                                    arg->reg = 0x14;
+                                    arg->flags = mode;
+                                    break;
+                                default:
+                                    CError_FATAL(ASM_LINE(4481, 3422));
+                                    break;
+                            }
+                            op++;
+                            arg++;
+                            break;
+                        case 'f':
+                            arg->kind = 3;
+                            *(CInt64*)&arg->value = op->u.imm;
+                            op++;
+                            arg++;
+                            break;
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+                        case 'l':
+                        case 'p':
+                            arg->kind = 6;
+                            MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                            if (!arg->value) {
+                                CError_FATAL(3441);
+                            }
+                            op++;
+                            arg++;
+                            break;
+#else
+                            case 'p':
+                                arg->kind = 6;
+                                MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                if (!arg->value) {
+                                    CError_FATAL(4499);
+                                }
+                                op++;
+                                arg++;
+                                break;
+                            case 'l':
+                                pc->unk38 = 2;
+                                arg->kind = 6;
+                                MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                if (!arg->value) {
+                                    CError_FATAL(4509);
+                                }
+                                op++;
+                                arg++;
+                                break;
+#endif
+                        case 'b':
+                            if (vfpupair) {
+                                pc->unk38 = 0x77;
+                                if (op->type == MOpnd_Lab) {
+                                    arg->kind = 6;
+                                    MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                    op++;
+                                    arg++;
+                                    break;
+                                } else {
+                                    arg->kind = 4;
+                                    MOP_SETOBJ(*arg, op->u.obj.obj);
+                                    arg->value = op->u.obj.offset + op->u.obj.obj->u.var.offset;
+                                    pc->relobj = (Object*)MOP_OBJ(*arg);
+                                    if (pc->flags & 6) {
+                                        pc->alias = make_alias(
+                                            (Object*)MOP_OBJ(*arg),
+                                            arg->value - op->u.obj.obj->u.var.offset,
+                                            func_0048FBE0(pc->op)
+                                        );
+                                        if (is_volatile_object((Object*)MOP_OBJ(*arg))) {
+                                            pc->flags |= 0x80;
+                                        }
+                                        if (is_const_object((Object*)MOP_OBJ(*arg))) {
+                                            pc->flags |= 0x40;
+                                        }
+                                    }
+                                }
+                                op++;
+                                arg++;
+                                break;
+                            }
+                        case 'a':
+                            pc->unk38 = 4;
+                            if (op->type == MOpnd_Lab) {
+                                arg->kind = 6;
+                                MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                op++;
+                                arg++;
+                                break;
+                            }
+                            goto memory;
+                        case 'q':
+                            pc->unk38 = 0xA;
+                        case 'A':
+                        case 'o':
+memory:
+                            if (vfpupair) {
+                                arg->kind = 0;
+                                arg->rclass = 6;
+#if MWCCPS2_B52
+                                arg->reg =
+                                    2; // b69's ACC (its register table: I 0, Q 1, ACC 2, R 3)
+#else
+                                    arg->reg = 3;
+#endif
+                                arg->flags = mode;
+                                pc->flags |= 0x100;
+                            } else if (op->type == MOpnd_Lab) {
+                                arg->kind = 6;
+                                MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                pc->unk38 = 0;
+                            } else if (op->type == MOpnd_Imm) {
+                                arg->kind = 4;
+                                arg->value2 = 0;
+                                arg->value = op->u.imm.lo;
+                                pc->unk38 = 0;
+                            } else if (op->type == MOpnd_Reg) {
+                                // through the register a variable is in
+                                arg->kind = 4;
+                                arg->value2 = 0;
+                                arg->value = 0;
+                                arg++;
+                                arg->kind = 0;
+                                arg->rclass = 0;
+#if MWCCPS2_B52
+                                if (op->u.reg.object &&
+                                    Registers_GetVarInfo(op->u.reg.object) &&
+#else
+                                    if (op->u.reg.object &&
+                                        Registers_GetVarInfo(op->u.reg.object) &&
+#endif
+                                    Registers_GetVarInfo(op->u.reg.object)->reg) {
+                                    arg->reg = Registers_GetVarInfo(op->u.reg.object)->reg;
+                                }
+                                arg->flags = 1;
+                            } else {
+                                arg->kind = 4;
+                                MOP_SETOBJ(*arg, op->u.obj.obj);
+                                arg->value = op->u.obj.offset + op->u.obj.obj->u.var.offset;
+                                pc->relobj = (Object*)MOP_OBJ(*arg);
+                                if (pc->flags & 6) {
+                                    pc->alias = make_alias(
+                                        (Object*)MOP_OBJ(*arg),
+                                        arg->value - op->u.obj.obj->u.var.offset,
+                                        func_0048FBE0(pc->op)
+                                    );
+                                    if (is_volatile_object((Object*)MOP_OBJ(*arg))) {
+                                        pc->flags |= 0x80;
+                                    }
+                                    if (is_const_object((Object*)MOP_OBJ(*arg))) {
+                                        pc->flags |= 0x40;
+                                    }
+                                }
+                                ObjGen_GetObjectAddress(op->u.obj.obj, &addr);
+                                if (*fmt == 'A') {
+                                    arg++;
+                                    arg->kind = 0;
+                                    arg->rclass = 0;
+                                    arg->reg = addr.basereg;
+                                    arg->flags = 1;
+                                } else if (*fmt != 'a') {
+                                    op[1].u.reg.num = addr.basereg;
+                                }
+                            }
+                            op++;
+                            arg++;
+                            break;
+                        case 'U':
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+                        {
+#else
+                                if (op->type == MOpnd_Lab) {
+                                    arg->kind = 6;
+                                    MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
+                                } else {
+#endif
                             arg->kind = 4;
                             MOP_SETOBJ(*arg, op->u.obj.obj);
-                            arg->value = op->u.obj.offset + op->u.obj.obj->u.var.offset;
+                            arg->value = op->u.obj.offset;
                             pc->relobj = (Object*)MOP_OBJ(*arg);
                             if (pc->flags & 6) {
                                 pc->alias = make_alias(
@@ -4122,285 +5506,334 @@ MPCode* func_00482330(MAsmInstruction* mi, int nargs) {
                                     arg->value - op->u.obj.obj->u.var.offset,
                                     func_0048FBE0(pc->op)
                                 );
-                                if (is_volatile_object((Object*)MOP_OBJ(*arg))) {
-                                    pc->flags |= 0x80;
-                                }
-                                if (is_const_object((Object*)MOP_OBJ(*arg))) {
-                                    pc->flags |= 0x40;
-                                }
                             }
                         }
-                        op++;
-                        arg++;
-                        break;
-                    }
-                case 'a':
-                    pc->unk38 = 4;
-                    if (op->type == MOpnd_Lab) {
-                        arg->kind = 6;
-                        MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                        op++;
-                        arg++;
-                        break;
-                    }
-                    goto memory;
-                case 'q':
-                    pc->unk38 = 0xA;
-                case 'A':
-                case 'o':
-memory:
-                    if (vfpupair) {
-                        arg->kind = 0;
-                        arg->rclass = 6;
-                        arg->reg = 3;
-                        arg->flags = mode;
-                        pc->flags |= 0x100;
-                    } else if (op->type == MOpnd_Lab) {
-                        arg->kind = 6;
-                        MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                        pc->unk38 = 0;
-                    } else if (op->type == MOpnd_Imm) {
-                        arg->kind = 4;
-                        arg->value2 = 0;
-                        arg->value = op->u.imm.lo;
-                        pc->unk38 = 0;
-                    } else if (op->type == MOpnd_Reg) {
-                        // through the register a variable is in
-                        arg->kind = 4;
-                        arg->value2 = 0;
-                        arg->value = 0;
-                        arg++;
-                        arg->kind = 0;
-                        arg->rclass = 0;
-                        if (op->u.reg.object &&
-                            Registers_GetVarInfo(op->u.reg.object) &&
-                            Registers_GetVarInfo(op->u.reg.object)->reg) {
-                            arg->reg = Registers_GetVarInfo(op->u.reg.object)->reg;
-                        }
-                        arg->flags = 1;
-                    } else {
-                        arg->kind = 4;
-                        MOP_SETOBJ(*arg, op->u.obj.obj);
-                        arg->value = op->u.obj.offset + op->u.obj.obj->u.var.offset;
-                        pc->relobj = (Object*)MOP_OBJ(*arg);
-                        if (pc->flags & 6) {
-                            pc->alias = make_alias(
-                                (Object*)MOP_OBJ(*arg),
-                                arg->value - op->u.obj.obj->u.var.offset,
-                                func_0048FBE0(pc->op)
-                            );
-                            if (is_volatile_object((Object*)MOP_OBJ(*arg))) {
-                                pc->flags |= 0x80;
-                            }
-                            if (is_const_object((Object*)MOP_OBJ(*arg))) {
-                                pc->flags |= 0x40;
-                            }
-                        }
-                        ObjGen_GetObjectAddress(op->u.obj.obj, &addr);
-                        if (*fmt == 'A') {
+                            op++;
                             arg++;
+                            pc->unk38 = 2;
+                            break;
+                        case 'd':
+                        case 's':
+                        case 't':
+                        case 'x':
+                            if (op->u.reg.object) {
+                                op->u.reg.num = asm_var_reg(op->u.reg.object);
+                                if (!op->u.reg.num) {
+                                    CError_Error(0xA4, op->u.reg.object->name->name);
+                                }
+                            }
+                            arg->kind = 0;
+                            arg->rclass = vfpupair ? (pairplus ? 4 : 3) : 0;
+                            arg->reg = op->u.reg.num;
+                            arg->flags = mode;
+#if MWCCPS2_B52
+                            ASM_PIN69(pc, arg);
+#endif
+                            op++;
+                            arg++;
+                            break;
+                        case 'P':
                             arg->kind = 0;
                             arg->rclass = 0;
-                            arg->reg = addr.basereg;
-                            arg->flags = 1;
-                        } else if (*fmt != 'a') {
-                            op[1].u.reg.num = addr.basereg;
-                        }
+                            arg->reg = op->u.reg.num;
+                            arg->flags = mode;
+                            op++;
+                            arg++;
+                            break;
+                        case '9':
+                            arg->kind = 0;
+                            arg->rclass = 3;
+                            arg->reg = 0x1B;
+                            arg->flags = mode;
+                            op++;
+                            arg++;
+                            break;
+                        case 'D':
+                        case 'S':
+#if MWCCPS2_B52
+                            if (op->u.reg.object &&
+                                op->u.reg.object->type->type != TYPEFLOAT &&
+                                !vfpupair) {
+#else
+                                if (op->u.reg.object &&
+                                    op->u.reg.object->type->type != TYPEFLOAT &&
+                                    !vfpupair) {
+#endif
+                                op->u.reg.num = 0;
+                                CError_Error(0x2D);
+                            }
+                        case 'E':
+                        case 'N':
+                        case 'T':
+                        case 'V':
+                        case 'W':
+                            isreg = TRUE;
+                            if (op->u.reg.object) {
+                                op->u.reg.num = asm_var_reg(op->u.reg.object);
+                                isreg = FALSE;
+                                if (ps2_IsQuadwordClassLocal(op->u.reg.object) && !op->u.reg.num) {
+                                    func_004C5940(0xA, op->u.reg.object->name->name);
+                                } else if (!op->u.reg.num) {
+                                    CError_Error(0xA4, op->u.reg.object->name->name);
+                                }
+                            }
+                            arg->kind = 0;
+                            arg->rclass = vfpupair ? 5 : 1;
+                            arg->reg = op->u.reg.num;
+                            if ((mode & 2) && !(op->effect & 1) && (mode & 1)) {
+                                mode &= ~1;
+                            }
+                            arg->flags = mode;
+                            if (vfpupair) {
+#if MWCCPS2_B52
+                                // b69 (0x4B68E0): only a vmove (b69 0x286) whose mask,
+                                // the operand before, is partial gets flags 3; the
+                                // instruction stays a move
+                                if (arg > pc->args &&
+                                    (arg - 1)->kind == 2 &&
+                                    ((arg - 1)->value ^ 15) &&
+                                    pc->op == OPC(0x2AF)) {
+#else
+                                    if ((arg->flags & 2) &&
+                                        data_006115F8[pc->op].format[0] == '&') {
+                                        mode = 0;
+                                        a = arg;
+                                        while (a->kind != 2) {
+                                            if (++mode >= 5) {
+                                                CError_FATAL(ASM_LINE(4803, 3725));
+                                            }
+                                            a--;
+                                        }
+                                        if (a->value != 15) {
+                                            pc->flags &= ~0x4010;
+#endif
+                                    arg->flags |= 3;
+                                }
+#if !MWCCPS2_B52
+                            }
+#endif
+                            if (op->xyzw && flag7) {
+                                if (op->xyzw & 1) {
+                                    arg->flags |= 0x800;
+                                }
+                                if (op->xyzw & 2) {
+                                    arg->flags |= 0x400;
+                                }
+                                if (op->xyzw & 4) {
+                                    arg->flags |= 0x200;
+                                }
+                                if (op->xyzw & 8) {
+                                    arg->flags |= 0x100;
+                                }
+                            }
+                            if (arg->reg >= 0x4020 && arg->reg < 0x4040) {
+                                if (flag7) {
+                                    arg->flags |= 0x800;
+                                }
+                                if (isreg) {
+                                    arg->reg -= 0x4020;
+                                }
+                            } else if (arg->reg >= 0x4040 && arg->reg < 0x4060) {
+                                if (flag7) {
+                                    arg->flags |= 0x400;
+                                }
+                                if (isreg) {
+                                    arg->reg -= 0x4040;
+                                }
+                            } else if (arg->reg >= 0x4080 && arg->reg < 0x40A0) {
+                                if (flag7) {
+                                    arg->flags |= 0x200;
+                                }
+                                if (isreg) {
+                                    arg->reg -= 0x4080;
+                                }
+                            } else if (arg->reg >= 0x40A0 && arg->reg < 0x40C0) {
+                                if (flag7) {
+                                    arg->flags |= 0x100;
+                                }
+                                if (isreg) {
+                                    arg->reg -= 0x40A0;
+                                }
+                            }
                     }
+#if MWCCPS2_B52
+                    ASM_PIN69(pc, arg);
+#endif
                     op++;
                     arg++;
                     break;
-                case 'U':
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-                {
-#else
-                    if (op->type == MOpnd_Lab) {
-                        arg->kind = 6;
-                        MOP_SETLABEL(*arg, op->u.lab.label->pclabel);
-                    } else {
+                    case 'G':
+                        arg->kind = 0;
+                        arg->rclass = 2;
+                        arg->reg = op->u.reg.num;
+                        arg->flags = mode;
+#if MWCCPS2_B52
+                        ASM_PIN69(pc, arg);
 #endif
-                    arg->kind = 4;
-                    MOP_SETOBJ(*arg, op->u.obj.obj);
-                    arg->value = op->u.obj.offset;
-                    pc->relobj = (Object*)MOP_OBJ(*arg);
-                    if (pc->flags & 6) {
-                        pc->alias = make_alias(
-                            (Object*)MOP_OBJ(*arg),
-                            arg->value - op->u.obj.obj->u.var.offset,
-                            func_0048FBE0(pc->op)
-                        );
+                        op++;
+                        arg++;
+                        break;
+                    case 'J':
+                    case 'L':
+                        arg->kind = 0;
+                        arg->rclass = 6;
+                        arg->reg = op->u.reg.num;
+                        arg->flags = mode;
+                        op++;
+                        arg++;
+                        break;
+                    case '-':
+                    case '|':
+                        break;
+                    default:
+                        CError_FATAL(ASM_LINE(4960, 3882));
+                        break;
+                }
+
+                fmt++;
+                vfpupair = FALSE;
+                pairplus = FALSE;
+                flag7 = FALSE;
+                if (*fmt == ')' || *fmt == ']') {
+                    fmt++;
+                }
+            }
+            while (*fmt)
+                ;
+        }
+
+        if ((pc->flags & 6) && !pc->alias) {
+            pc->flags |= 0x20;
+        }
+        return pc;
+    }
+#undef ASM_LINE
+#if MWCCPS2_B52
+
+// b69 (0x4B7860..0x4B7AD2): the GCC asm statement's name lookup
+// (GCCInlineAsm.c's gcc_parse_name calls it for each operand name). As
+// InlineAsm_LookupSymbolMIPS, but a class object, a member variable, a
+// quadword argument (0x50C420) or a C++ pointer cannot be an operand as it
+// is: *needtemp is set and the lookup fails (the caller copies it through a
+// temporary). Then the enclosing classes' scopes (0x4B7A70) are tried.
+#include "compiler/CScope.h"
+#include "compiler/CInit.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+    extern Boolean gcc_IsQuadwordArg_b69_0050C420(Object * obj);
+
+    // 0x4B7A70: a class scope's name; a member variable needs a temporary
+    Boolean InlineAsm_GCCLookupMember(
+        NameSpace * nspace, HashNameNode * name, MLookupResult * result, Boolean * needtemp
+    ) {
+        NameSpaceObjectList* list;
+        NameSpace* scope;
+
+        result->name = name;
+        result->object = NULL;
+        result->label = NULL;
+        result->type = NULL;
+        result->has_value = FALSE;
+
+        for (scope = nspace; scope; scope = scope->parent) {
+            if ((list = CScope_FindName(scope, name))) {
+                if (list->object->otype == OT_MEMBERVAR) {
+                    *needtemp = TRUE;
+                    return FALSE;
+                }
+                return FALSE;
+            }
+        }
+        return FALSE;
+    }
+
+    Boolean InlineAsm_GCCLookupSymbol(
+        HashNameNode * name, MLookupResult * result, Boolean * needtemp
+    ) {
+        Boolean found = FALSE;
+        CInt64 value;
+        Object* object;
+        NameSpace* nspace;
+        NameSpaceObjectList* list;
+
+        result->name = name;
+        result->object = NULL;
+        result->label = NULL;
+        result->type = NULL;
+        result->has_value = FALSE;
+
+        if ((result->label = InlineAsm_LookupLabel(name))) {
+            return TRUE;
+        }
+
+        for (nspace = cscope_current; nspace; nspace = nspace->parent) {
+            if ((list = CScope_FindName(nspace, name))) {
+                switch (list->object->otype) {
+                    case OT_ENUMCONST:
+                        result->has_value = TRUE;
+                        result->value = OBJ_ENUM_CONST(list->object)->val;
+                        return TRUE;
+                    case OT_OBJECT:
+                        object = OBJECT(list->object);
+                        if (object->datatype == DABSOLUTE) {
+                            result->has_value = TRUE;
+                            CInt64_SetLong(&value, object->u.address);
+                            result->value = value;
+                        } else {
+                            if (object->datatype == DDATA && (object->qual & Q_INLINE_DATA)) {
+                                CInit_ExportConst(object);
+                            }
+                            if (object->datatype == DALIAS) {
+                                result->object = object->u.alias.object;
+                            } else {
+                                result->object = object;
+                            }
+                        }
+                        if (object->type->type == TYPECLASS) {
+                            *needtemp = TRUE;
+                            return FALSE;
+                        }
+                        if (gcc_IsQuadwordArg_b69_0050C420(object)) {
+                            *needtemp = TRUE;
+                            return FALSE;
+                        }
+                        if (object->type->type == TYPEPOINTER && copts.cplusplus) {
+                            *needtemp = TRUE;
+                            return FALSE;
+                        }
+                        return TRUE;
+                    case OT_TYPE:
+                        result->type = OBJ_TYPE(list->object)->type;
+                        return TRUE;
+                    case OT_TYPETAG:
+                    case OT_NAMESPACE:
+                        return FALSE;
+                    case OT_MEMBERVAR:
+                        *needtemp = TRUE;
+                        return FALSE;
+                    default:
+                        CError_FATAL(2655);
+                }
+            }
+        }
+
+        for (nspace = cscope_current; nspace; nspace = nspace->parent) {
+            if (nspace->theclass) {
+                if (InlineAsm_GCCLookupMember(nspace->theclass->nspace, name, result, needtemp)) {
+                    return TRUE;
+                }
+                if ((object = (Object*)nspace->theclass->bases)) {
+                    if (InlineAsm_GCCLookupMember(
+                            ((ClassList*)object)->base->nspace, name, result, needtemp
+                        )) {
+                        return TRUE;
                     }
                 }
-                    op++;
-                    arg++;
-                    pc->unk38 = 2;
-                    break;
-                case 'd':
-                case 's':
-                case 't':
-                case 'x':
-                    if (op->u.reg.object) {
-                        op->u.reg.num = asm_var_reg(op->u.reg.object);
-                        if (!op->u.reg.num) {
-                            CError_Error(0xA4, op->u.reg.object->name->name);
-                        }
-                    }
-                    arg->kind = 0;
-                    arg->rclass = vfpupair ? (pairplus ? 4 : 3) : 0;
-                    arg->reg = op->u.reg.num;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case 'P':
-                    arg->kind = 0;
-                    arg->rclass = 0;
-                    arg->reg = op->u.reg.num;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case '9':
-                    arg->kind = 0;
-                    arg->rclass = 3;
-                    arg->reg = 0x1B;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case 'D':
-                case 'S':
-                    if (op->u.reg.object &&
-                        op->u.reg.object->type->type != TYPEFLOAT &&
-                        !vfpupair) {
-                        op->u.reg.num = 0;
-                        CError_Error(0x2D);
-                    }
-                case 'E':
-                case 'N':
-                case 'T':
-                case 'V':
-                case 'W':
-                    isreg = TRUE;
-                    if (op->u.reg.object) {
-                        op->u.reg.num = asm_var_reg(op->u.reg.object);
-                        isreg = FALSE;
-                        if (ps2_IsQuadwordClassLocal(op->u.reg.object) && !op->u.reg.num) {
-                            func_004C5940(0xA, op->u.reg.object->name->name);
-                        } else if (!op->u.reg.num) {
-                            CError_Error(0xA4, op->u.reg.object->name->name);
-                        }
-                    }
-                    arg->kind = 0;
-                    arg->rclass = vfpupair ? 5 : 1;
-                    arg->reg = op->u.reg.num;
-                    if ((mode & 2) && !(op->effect & 1) && (mode & 1)) {
-                        mode &= ~1;
-                    }
-                    arg->flags = mode;
-                    if (vfpupair) {
-                        if ((arg->flags & 2) && data_006115F8[pc->op].format[0] == '&') {
-                            mode = 0;
-                            a = arg;
-                            while (a->kind != 2) {
-                                if (++mode >= 5) {
-                                    CError_FATAL(ASM_LINE(4803, 3725));
-                                }
-                                a--;
-                            }
-                            if (a->value != 15) {
-                                pc->flags &= ~0x4010;
-                                arg->flags |= 3;
-                            }
-                        }
-                        if (op->xyzw && flag7) {
-                            if (op->xyzw & 1) {
-                                arg->flags |= 0x800;
-                            }
-                            if (op->xyzw & 2) {
-                                arg->flags |= 0x400;
-                            }
-                            if (op->xyzw & 4) {
-                                arg->flags |= 0x200;
-                            }
-                            if (op->xyzw & 8) {
-                                arg->flags |= 0x100;
-                            }
-                        }
-                        if (arg->reg >= 0x4020 && arg->reg < 0x4040) {
-                            if (flag7) {
-                                arg->flags |= 0x800;
-                            }
-                            if (isreg) {
-                                arg->reg -= 0x4020;
-                            }
-                        } else if (arg->reg >= 0x4040 && arg->reg < 0x4060) {
-                            if (flag7) {
-                                arg->flags |= 0x400;
-                            }
-                            if (isreg) {
-                                arg->reg -= 0x4040;
-                            }
-                        } else if (arg->reg >= 0x4080 && arg->reg < 0x40A0) {
-                            if (flag7) {
-                                arg->flags |= 0x200;
-                            }
-                            if (isreg) {
-                                arg->reg -= 0x4080;
-                            }
-                        } else if (arg->reg >= 0x40A0 && arg->reg < 0x40C0) {
-                            if (flag7) {
-                                arg->flags |= 0x100;
-                            }
-                            if (isreg) {
-                                arg->reg -= 0x40A0;
-                            }
-                        }
-                    }
-                    op++;
-                    arg++;
-                    break;
-                case 'G':
-                    arg->kind = 0;
-                    arg->rclass = 2;
-                    arg->reg = op->u.reg.num;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case 'J':
-                case 'L':
-                    arg->kind = 0;
-                    arg->rclass = 6;
-                    arg->reg = op->u.reg.num;
-                    arg->flags = mode;
-                    op++;
-                    arg++;
-                    break;
-                case '-':
-                case '|':
-                    break;
-                default:
-                    CError_FATAL(ASM_LINE(4960, 3882));
-                    break;
             }
-
-            fmt++;
-            vfpupair = FALSE;
-            pairplus = FALSE;
-            flag7 = FALSE;
-            if (*fmt == ')' || *fmt == ']') {
-                fmt++;
-            }
-        } while (*fmt);
+        }
+        return found;
     }
-
-    if ((pc->flags & 6) && !pc->alias) {
-        pc->flags |= 0x20;
-    }
-    return pc;
-}
-#undef ASM_LINE
+#endif
 #else
 MPCode* func_00482330(MAsmInstruction* mi, int nargs) {
     OpcodeDef* def;

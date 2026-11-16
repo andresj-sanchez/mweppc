@@ -35,12 +35,18 @@ extern int __stdcall OS_Execute(
     const char* stdoutfile,
     const char* stderrfile,
     int* exitcode
+#if MWCCPS2_B52
+);
+extern char* __stdcall OS_GetDirPtr(char* path);
+extern int OS_CanonPath(const char* src, char* dst);
+#else
 );
 extern char* __stdcall OS_GetDirPtr(char* path);
 #if MWCCPSP
 extern int __stdcall OS_CanonPath(const char* src, char* dst);
 #else
 extern int OS_CanonPath(const char* src, char* dst);
+#endif
 #endif
 extern int __stdcall OS_IsFullPath(const char* path);
 extern int __stdcall OS_EqualPath(const char* a, const char* b);
@@ -72,12 +78,18 @@ extern void __stdcall OS_InvalidateHandle(OSHandle* hand);
 extern Boolean __stdcall OS_ValidHandle(OSHandle* hand);
 extern int __stdcall OS_OSErrorToMacError(int err);
 extern void __stdcall OS_TimeToMac(OSTime sectm, UInt32* secs);
+#if MWCCPS2_B52
+extern void __stdcall OS_MacToTime(UInt32 secs, OSTime* sectm);
+extern SInt16 __stdcall OS_RefToMac(int ref);
+extern int OS_MacToRef(SInt16 refnum);
+#else
 extern void __stdcall OS_MacToTime(UInt32 secs, OSTime* sectm);
 extern SInt16 __stdcall OS_RefToMac(int ref);
 #if MWCCPSP
 extern int __stdcall OS_MacToRef(SInt16 refnum);
 #else
 extern int OS_MacToRef(SInt16 refnum);
+#endif
 #endif
 extern int __stdcall OS_LoadMacResourceFork(const OSSpec* spec, void** file_data, SInt32* file_len);
 extern Boolean __stdcall OS_IsMultiByte(const char* str, const char* pos);

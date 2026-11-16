@@ -107,9 +107,15 @@ extern void func_00531C10(Object* obj, Boolean global, ELFSymbol* sym, SInt32 si
 #define INSTR_OFFSET(i) (*(SInt32*)&((MPCode*)(i))->offset) // +0x1C
 #define INSTR_OP28(i) (*(SInt16*)&((MPCode*)(i))->op) // +0x28
 #define INSTR_OP44(i) (*(SInt16*)&((MPCode*)(i))->args[0].reg) // +0x44
+#if MWCCPS2_B52
 SInt32 ObjGen_DefineSection(
     char* name, char* elfname, char* bssname, char* addressing, char* access
 );
+#else
+SInt32 ObjGen_DefineSection(
+    char* name, char* elfname, char* bssname, char* addressing, char* access
+);
+#endif
 extern SInt32 data_0062477C; // default text section
 extern SInt32 data_006241DC; // vtables
 extern SInt32 data_006250B4; // read-only data
@@ -162,7 +168,11 @@ void ObjGen_Setup(void) {
     ELF_Init(8, flags | 0x970000, copts.littleendian ? 1 : 2); // EM_MIPS
 #endif
     ELF_AddString(ELF_NewSection(".comment", SHT_PROGBITS, 0), "MW MIPS C Compiler (3.0.0)");
+#if MWCCPS2_B52
+    if (COPTS_X.mips_option132 == 1) {
+#else
     if (copts.mips_option132 == 1) {
+#endif
         func_00531A60();
     }
 }
@@ -184,9 +194,15 @@ ELFSymbol* ObjGen_GetELFSymbol(Object* obj) {
     data_005EAF98[name->hashval] = entry;
     entry->name = name;
     if (obj->datatype == DDATA) {
+#if MWCCPS2_B52
         entry->sym = ELF_NewUndefinedSymbol(
             name->name, 0, 1, 1, obj->type->size, 0
         ); // STB_GLOBAL, STT_OBJECT
+#else
+        entry->sym = ELF_NewUndefinedSymbol(
+            name->name, 0, 1, 1, obj->type->size, 0
+        ); // STB_GLOBAL, STT_OBJECT
+#endif
     } else {
         entry->sym = ELF_NewUndefinedSymbol(name->name, 0, 1, 0, 0, 0); // STB_GLOBAL, STT_NOTYPE
     }
@@ -225,8 +241,13 @@ void ObjGen_Finish(void) {
         obj = pf->object;
         type = obj->type;
         value = OBJECT_VALUE_PTR(obj);
+#if MWCCPS2_B52
         if (TYPE_INTEGRAL(type)->integral == IT_FLOAT ||
             (type->type == TYPEFLOAT && type->size == 4)) {
+#else
+        if (TYPE_INTEGRAL(type)->integral == IT_FLOAT ||
+            (type->type == TYPEFLOAT && type->size == 4)) {
+#endif
             f = value->data.value;
             buf.w[1] = *(SInt32*)&f;
             func_00462860(obj, &buf.w[1], 0, 4);
@@ -236,20 +257,68 @@ void ObjGen_Finish(void) {
         }
     }
 
+#if MWCCPS2_B52
+    if (COPTS_X.mips_option132 == 1) {
+#else
     if (copts.mips_option132 == 1) {
+#endif
         func_005317D0();
     }
     if (InitGList(&data_005EAF88, 0x8000)) {
         CError_NoMem();
     }
+#if MWCCPS2_B52
+    if (getenv("MWCCPSP_TRACE")) {
+        fprintf(
+            stderr,
+            "objgen: cparamblkptr %p &object.objectdata %p\n",
+            (void*)cparamblkptr,
+            (void*)&cparamblkptr->object.objectdata
+        );
+        fprintf(
+            stderr,
+            "objgen: glist %p data %p size %ld before ELF\n",
+            (void*)&data_005EAF88,
+            (void*)data_005EAF88.data,
+            (long)data_005EAF88.size
+        );
+    }
+#endif
     func_005303A0(&data_005EAF88);
+#if MWCCPS2_B52
+    if (getenv("MWCCPSP_TRACE")) {
+        void** rec = (void**)data_005EAF88.data;
+        fprintf(
+            stderr,
+            "objgen: glist data %p size %ld after ELF, first %02x; rec ptr %p mh %p mh->addr %p\n",
+            (void*)data_005EAF88.data,
+            (long)data_005EAF88.size,
+            data_005EAF88.data ? (unsigned char)(*data_005EAF88.data)[0] : 0,
+            rec[0],
+            rec[2],
+            rec[2] ? *(void**)rec[2] : NULL
+        );
+    }
+    // b69 0x48A02B: GC's parameter block takes the Handle itself (+0x34);
+    // CCompiler.c's store_compile_results attaches it
+    cparamblkptr->objectdata = (Handle)data_005EAF88.data;
+#else
     cparamblkptr->object.objectdata = COS_DetachHandle((Handle*)&data_005EAF88);
+#endif
     data_005EAF88.data = NULL;
+#if MWCCPS2_B52
     func_005302D0(
         &cparamblkptr->object.codesize,
         &cparamblkptr->object.idatasize,
         &cparamblkptr->object.udatasize
     );
+#else
+    func_005302D0(
+        &cparamblkptr->object.codesize,
+        &cparamblkptr->object.idatasize,
+        &cparamblkptr->object.udatasize
+    );
+#endif
     func_004A16D0();
 }
 
@@ -300,6 +369,10 @@ SInt32 ObjGen_GetObjectSection(Object* obj) {
     return sec;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-19)
+#endif
 void ObjGen_GetObjectAddress(Object* obj, ObjAddress* addr) {
     SInt32 sec;
 
@@ -318,9 +391,15 @@ void ObjGen_GetObjectAddress(Object* obj, ObjAddress* addr) {
 #else
         char* rv = *(char**)((char*)obj + 0x3C);
 #endif
+#if MWCCPS2_B52
         if (rv &&
             (*(SInt16*)PS2_VARINFO_AT(rv, 0x32) ||
              *PS2_VARINFO_AT(rv, 0x2E) == 5 ||
+#else
+        if (rv &&
+            (*(SInt16*)PS2_VARINFO_AT(rv, 0x32) ||
+             *PS2_VARINFO_AT(rv, 0x2E) == 5 ||
+#endif
              (*PS2_VARINFO_AT(rv, 0x2F) && !*PS2_VARINFO_AT(rv, 0x2E)))) {
             addr->basereg = -1;
             addr->near = 0;
@@ -376,6 +455,10 @@ void ObjGen_GetObjectAddress(Object* obj, ObjAddress* addr) {
             break;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void ObjGen_InitSections(void) {
     data_00625310 = 1;
@@ -407,17 +490,28 @@ void ObjGen_InitSections(void) {
         data_00624764 = ObjGen_DefineSection("data", ".data", ".bss", "far_absolute", "RW");
         data_006241DC = ObjGen_DefineSection("vtables", ".vtables", NULL, "far_absolute", "R");
     }
+#if MWCCPS2_B52
     data_00625880 =
         ObjGen_DefineSection("scratchpad", ".spad_data", ".spad_bss", "far_absolute", "RW");
+#else
+    data_00625880 =
+        ObjGen_DefineSection("scratchpad", ".spad_data", ".spad_bss", "far_absolute", "RW");
+#endif
 #if MWCCPS2
     ps2_vutext_636838 = ObjGen_DefineSection("vutext", ".vutext", NULL, "far_absolute", "RX");
     ps2_vudata_636D54 = ObjGen_DefineSection("vudata", ".vudata", ".vubss", "far_absolute", "RW");
 #endif
 }
 
+#if MWCCPS2_B52
 SInt32 ObjGen_DefineSection(
     char* name, char* elfname, char* bssname, char* addressing, char* access
 ) {
+#else
+SInt32 ObjGen_DefineSection(
+    char* name, char* elfname, char* bssname, char* addressing, char* access
+) {
+#endif
     UInt8 mode;
     UInt32 flags;
 #if MWCCPS2
@@ -548,9 +642,15 @@ void ObjGen_GenerateMWCats(Object* obj, SInt32 codesize) {
     count = 0;
     for (node = data_00624FD0; node; node = node->next) {
         instr = CODENODE_INSTR(node);
+#if MWCCPS2_B52
         if (instr &&
             (INSTR_FLAGS(instr) & 0x80000) &&
             !(INSTR_OP28(instr) == 0x3B && INSTR_OP44(instr) == 0x1F)) {
+#else
+        if (instr &&
+            (INSTR_FLAGS(instr) & 0x80000) &&
+            !(INSTR_OP28(instr) == 0x3B && INSTR_OP44(instr) == 0x1F)) {
+#endif
             count++;
         }
     }
@@ -584,9 +684,15 @@ void ObjGen_GenerateMWCats(Object* obj, SInt32 codesize) {
     if (count) {
         for (node = data_00624FD0; node; node = node->next) {
             instr = CODENODE_INSTR(node);
+#if MWCCPS2_B52
             if (instr &&
                 (INSTR_FLAGS(instr) & 0x80000) &&
                 !(INSTR_OP28(instr) == 0x3B && INSTR_OP44(instr) == 0x1F)) {
+#else
+            if (instr &&
+                (INSTR_FLAGS(instr) & 0x80000) &&
+                !(INSTR_OP28(instr) == 0x3B && INSTR_OP44(instr) == 0x1F)) {
+#endif
                 if (small) {
                     *(SInt16*)p = INSTR_OFFSET(instr);
                     p += 2;
@@ -600,9 +706,15 @@ void ObjGen_GenerateMWCats(Object* obj, SInt32 codesize) {
 
     name = galloc(strlen(linkname) + 10);
     sprintf(name, ".mwcats_%s", linkname);
+#if MWCCPS2_B52
     ELF_AddReloc(
         2, ELF_NewSymbol(name, section->index, 0, 3, size, buf, 4), addroffset, funcsym, 0
     ); // R_MIPS_32
+#else
+    ELF_AddReloc(
+        2, ELF_NewSymbol(name, section->index, 0, 3, size, buf, 4), addroffset, funcsym, 0
+    ); // R_MIPS_32
+#endif
 }
 
 // Emit an initialised (data != NULL) or uninitialised object.
@@ -699,7 +811,11 @@ void ObjGen_EmitData(Object* obj, void* data, ObjDataReloc* relocs, SInt32 size)
     }
 
     if (obj->datatype == DLOCAL || !strchr(func_0049F6E0(obj)->name, '$')) {
+#if MWCCPS2_B52
+        if (COPTS_X.mips_option132 == 1) {
+#else
         if (copts.mips_option132 == 1) {
+#endif
             func_00531C10(obj, bind != 0, elfsym, size);
         }
     }
@@ -871,7 +987,11 @@ void ObjGen_EmitCode(Object* obj, void* code, SInt32 size, ObjCodeReloc* relocs)
         }
     }
 
+#if MWCCPS2_B52
+    if (COPTS_X.mips_option132 == 1) {
+#else
     if (copts.mips_option132 == 1) {
+#endif
         func_00531D90(obj, bind != 0, elfsym, savedsize);
     }
 
@@ -1057,12 +1177,20 @@ int func_004642D0(HashNameNode* attr, Type* type, DeclInfo* declinfo) {
         } else if (!strcmp(name, "SI") || !strcmp(name, "__SI__")) {
             stype = TYPE(&stsignedint);
             utype = TYPE(&stunsignedint);
+#if MWCCPS2_B52
         } else if (!strcmp(name, "DI") ||
                    !strcmp(name, "__DI__") ||
                    !strcmp(name, "V2SI") ||
                    !strcmp(name, "__V2SI__")) {
+#else
+        } else if (!strcmp(name, "DI") ||
+                   !strcmp(name, "__DI__") ||
+                   !strcmp(name, "V2SI") ||
+                   !strcmp(name, "__V2SI__")) {
+#endif
             stype = TYPE(&stsignedlonglong);
             utype = TYPE(&stunsignedlonglong);
+#if MWCCPS2_B52
         } else if (!strcmp(name, "TI") ||
                    !strcmp(name, "__TI__") ||
                    !strcmp(name, "V4SF") ||
@@ -1075,6 +1203,20 @@ int func_004642D0(HashNameNode* attr, Type* type, DeclInfo* declinfo) {
                    !strcmp(name, "__V8HI__") ||
                    !strcmp(name, "V16QI") ||
                    !strcmp(name, "__V16QI__")) {
+#else
+        } else if (!strcmp(name, "TI") ||
+                   !strcmp(name, "__TI__") ||
+                   !strcmp(name, "V4SF") ||
+                   !strcmp(name, "__V4SF__") ||
+                   !strcmp(name, "V2DI") ||
+                   !strcmp(name, "__V2DI__") ||
+                   !strcmp(name, "V4SI") ||
+                   !strcmp(name, "__V4SI__") ||
+                   !strcmp(name, "V8HI") ||
+                   !strcmp(name, "__V8HI__") ||
+                   !strcmp(name, "V16QI") ||
+                   !strcmp(name, "__V16QI__")) {
+#endif
             stype = TYPE(&stint128);
             utype = TYPE(&stint128);
         } else if (!strcmp(name, "SF") || !strcmp(name, "__SF__")) {
@@ -1117,17 +1259,31 @@ int func_004642D0(HashNameNode* attr, Type* type, DeclInfo* declinfo) {
         declinfo->exportflags |= 0x10;
         return 1;
     }
+#if MWCCPS2_B52
     if (!strcmp(attr->name, "import") ||
         !strcmp(attr->name, "__import__") ||
         !strcmp(attr->name, "dllimport") ||
         !strcmp(attr->name, "__dllimport__")) {
+#else
+    if (!strcmp(attr->name, "import") ||
+        !strcmp(attr->name, "__import__") ||
+        !strcmp(attr->name, "dllimport") ||
+        !strcmp(attr->name, "__dllimport__")) {
+#endif
         declinfo->exportflags |= 0x20;
         return 1;
     }
+#if MWCCPS2_B52
     if (!strcmp(attr->name, "export") ||
         !strcmp(attr->name, "__export__") ||
         !strcmp(attr->name, "dllexport") ||
         !strcmp(attr->name, "__dllexport__")) {
+#else
+    if (!strcmp(attr->name, "export") ||
+        !strcmp(attr->name, "__export__") ||
+        !strcmp(attr->name, "dllexport") ||
+        !strcmp(attr->name, "__dllexport__")) {
+#endif
         declinfo->exportflags |= 0x40;
         return 1;
     }
@@ -1234,8 +1390,13 @@ void func_004624F0(Object* func, SInt32 codesize, void* data, SInt32 datasize, O
     }
     rec[0] = 0;
     rec[1] = codesize;
+#if MWCCPS2_B52
     rec[2] =
         (copts.mips_option08 || copts.mips_option07) ? ObjGen_ExceptionTableKind(data_00624FDC) : 0;
+#else
+    rec[2] =
+        (copts.mips_option08 || copts.mips_option07) ? ObjGen_ExceptionTableKind(data_00624FDC) : 0;
+#endif
     ixsym = ELF_NewSymbol(etname, ixsec->index, 0, 1, 12, rec, 4);
     ELF_AddReloc(2, ixsym, 0, ObjGen_GetELFSymbol(func), 0);
     ELF_AddReloc(2, ixsym, 8, exsym, 0);
@@ -1254,9 +1415,15 @@ void ObjGen_SetupSym(void) {}
 
 // 0x462F00: constant data: as other data, but the object file is marked as
 // having some (data_00625E9B)
+#if MWCCPS2_B52
 void ObjGen_DeclareReadOnlyData(
     Object* object, const void* data, OLinkList* list, unsigned int size
 ) {
+#else
+void ObjGen_DeclareReadOnlyData(
+    Object* object, const void* data, OLinkList* list, unsigned int size
+) {
+#endif
     data_00625E9B = 1;
     ObjGen_DeclareData(object, data, list, size);
 }

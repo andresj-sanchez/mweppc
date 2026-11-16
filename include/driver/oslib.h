@@ -8,6 +8,11 @@
 extern "C" {
 #endif
 
+#if MWCCPS2_B52
+#define OS_PATHSEP '\\'
+
+extern void __assertion_failed(char const* condition, char const* filename, int lineno);
+#else
 #define OS_PATHSEP '\\'
 
 #if MWCCPSP
@@ -19,7 +24,9 @@ extern void __assertion_failed(
 #else
 extern void __assertion_failed(char const* condition, char const* filename, int lineno);
 #endif
+#endif
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 #define OS_ASSERT(line, cond) \
     if (!(cond)) { \
@@ -31,13 +38,32 @@ extern void __assertion_failed(char const* condition, char const* filename, int 
         __assertion_failed(#cond, __FILE__, line); \
     }
 #endif
+#endif
+#if MWCCPS2_B52
+// b52's own line offsets, set around single functions (as CError_B52_SHIFT)
+#ifndef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
+#else
 
 #if MWCCPSP
 #define OPTION_ASSERT(line, cond) ((cond) ? (void)0 : OS_ASSERT_CALL(#cond, line))
 #else
 #define OPTION_ASSERT(line, cond) ((cond) ? (void)0 : __assertion_failed(#cond, __FILE__, line))
 #endif
+#endif
+#if MWCCPS2_B52
+#define OS_ASSERT(line, cond) \
+    if ((cond) == 0) { \
+        __assertion_failed(#cond, __FILE__, (line) + OS_B52_SHIFT); \
+    }
+#endif
 
+#if MWCCPS2_B52
+#define OPTION_ASSERT(line, cond) \
+    ((cond) ? (void)0 : __assertion_failed(#cond, __FILE__, (line) + OS_B52_SHIFT))
+
+#endif
 typedef SInt16 OSErr;
 typedef SInt16 ScriptCode;
 typedef UInt32 OSType;
@@ -118,11 +144,13 @@ typedef struct OSHandle {
     UInt32 used;
 } OSHandle;
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 // file text and object data: 3.0.1 keeps them in OS handles, 2.4.7 in Mac
 // handles (CLLoadAndCache, the include cache, VFiles, File)
 typedef OSHandle* DriverHandle;
 
+#endif
 #endif
 typedef struct OSFileHandle {
     OSSpec spec;

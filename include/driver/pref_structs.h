@@ -90,8 +90,10 @@ typedef struct PCmdLineCompiler {
     char sbmPath[256];
     Boolean canonicalIncludes;
     Boolean keepObjects;
+#if !MWCCPS2_B52
 #if MWCCPSP
     Boolean gccDepends; // +0x2D2: -gccdep: the dependency file goes with the object (GetOutputFile)
+#endif
 #endif
 } PCmdLineCompiler;
 
@@ -147,11 +149,13 @@ typedef struct PFrontEndC {
     Boolean objective_c;
     Boolean defer_codegen;
     Boolean templateparser;
+#if !MWCCPS2_B52
 #if MWCCPSP
     // 3.0.1: C99, bottom-up inlining and a prefix file name (0x140 bytes)
     Boolean c99;
     Boolean bottomupinline;
     char prefixname[256];
+#endif
 #endif
 } PFrontEndC;
 

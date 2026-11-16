@@ -1227,6 +1227,10 @@ void __stdcall OS_MacToTime(UInt32 secs, OSTime* sectm) {
     SystemTimeToFileTime(&st, (FILETIME*)sectm);
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (88)
+#endif
 SInt16 __stdcall OS_RefToMac(int ref) {
     if (ref == -1 || (long)ref < 0) {
         return 0;
@@ -1238,6 +1242,10 @@ SInt16 __stdcall OS_RefToMac(int ref) {
 #endif
     return ref + 1;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 #if MWCCPSP
 int __stdcall OS_MacToRef(SInt16 refnum) {

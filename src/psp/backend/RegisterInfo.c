@@ -40,10 +40,17 @@ extern char data_00625ECC; // register class being colored (Coloring.c)
 Boolean func_004B8980(Object* obj) {
     VarInfo* vi;
 
+#if MWCCPS2_B52
+    if (COPTS_X.mips_option43 &&
+        obj != NULL &&
+        (vi = obj->u.data.info) != NULL &&
+        obj->datatype == DDATA) {
+#else
     if (copts.mips_option43 &&
         obj != NULL &&
         (vi = obj->u.data.info) != NULL &&
         obj->datatype == DDATA) {
+#endif
         if (vi->reg != 0 || vi->unk24[2] == 5 || (vi->unk24[3] != 0 && vi->unk24[2] == 0)) {
             return TRUE;
         }

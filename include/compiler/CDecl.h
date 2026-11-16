@@ -4,6 +4,13 @@
 #include "compiler/common.h"
 #include "compiler/types.h"
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +31,7 @@ typedef struct DeclAccessCheck {
 #endif
 
 #pragma pack(push, 2)
+#endif
 struct ClassLayout {
     ObjBase** objlist;
     ObjMemberVar* vtable_ivar;
@@ -31,6 +39,17 @@ struct ClassLayout {
     UInt16 firstVirtualSlot;
     Boolean has_vtable;
 };
+#if MWCCPS2_B52
+
+struct DeclInfo {
+    Type* thetype;
+    UInt32 qual;
+    // b52 has 3.0.1's head (CDecl_UnpackDeclInfo 0x44A090: nspace +0x0C, name
+    // +0x14, expltargs +0x34, storageclass +0x4C, has_expltargs +0x5E; sizeof 0x78)
+    UInt32 qualseen;
+    NameSpace* nspace;
+    void* unk10;
+#else
 
 struct DeclInfo {
     Type* thetype;
@@ -42,6 +61,7 @@ struct DeclInfo {
 #else
     NameSpace* nspace;
 #endif
+#endif
     HashNameNode* name;
     Object* resolvedObject;
     NameSpaceObjectList* resolvedObjects;
@@ -52,18 +72,30 @@ struct DeclInfo {
     TemplClass* pendingClass;
     TemplArg* expltargs;
     TemplParam* templateParameters;
+#if MWCCPS2_B52
+    struct TemplateScopeState* templateScope;
+    TemplateFunction* templateFunction;
+    void* unk44list; // 3.0.1's
+#else
     struct TemplateScopeState* templateScope;
     TemplateFunction* templateFunction;
 #if MWCCPSP
     void* unk44list; // 3.0.1: a list CDecl_TypedefDeclarator hands to func_00500E90
 #endif
+#endif
     UInt8 requireTemplateClassMember;
+#if MWCCPS2_B52
+    SInt16 operator_token;
+    SInt16 storageclass;
+    UInt8 section;
+#else
     SInt16 operator_token;
     SInt16 storageclass;
 #if MWCCPSP
     UInt8 section; // 3.0.1: a byte
 #else
     SInt16 section;
+#endif
 #endif
     UInt8 exportflags;
     Boolean hasParameterNames;
@@ -79,6 +111,20 @@ struct DeclInfo {
     Boolean is_extern_c;
     Boolean isNewTypeId;
     Boolean allowZeroLengthArray;
+#if MWCCPS2_B52
+    Boolean allowTemplateArguments;
+    Boolean has_expltargs;
+    Boolean hasTypename;
+    Boolean isConversionOperator;
+    Boolean isTypeID;
+    Boolean allowTemplateName;
+    Boolean isTemplateName;
+    // b52's six more bytes before file (sizeof 0x78); 3.0.1 has unk64,
+    // defines_tag, 2 bytes, unk68 here. Placement unverified
+    Boolean unk64;
+    Boolean defines_tag;
+    SInt32 unk68;
+#else
     Boolean allowTemplateArguments;
     Boolean has_expltargs;
     Boolean hasTypename;
@@ -94,10 +140,12 @@ struct DeclInfo {
     UInt8 unk66[2];
     SInt32 unk68;
 #endif
+#endif
     CPrepFileInfo* file;
     CPrepFileInfo* file2;
     SInt32 sourceoffset;
     Boolean firstDeclaration;
+#if !MWCCPS2_B52
     UInt8 interruptflags;
     ObjRegInfo reginfo;
 #if MWCCPS2
@@ -108,6 +156,7 @@ struct DeclInfo {
         [4]; // mwccps2 b210: sizeof 0x80 (CDecl_UnpackDeclInfo clears 0x80); placement unverified
 #endif
 #endif
+#endif
 };
 
 struct BigDeclInfo {
@@ -115,8 +164,10 @@ struct BigDeclInfo {
     DeclInfo declinfo2;
     Boolean unused;
     Boolean valid;
+#if !MWCCPS2_B52
 #if MWCCPS2
     UInt8 ps2_pad[2]; // mwccps2 b210: sizeof 0x104 (scanstructdeclarationlist clears 0x104)
+#endif
 #endif
 };
 #pragma pack(pop)
@@ -145,12 +196,18 @@ extern void makememberpointertype(DeclInfo* declinfo, TypeClass* tclass, UInt32 
 extern void scandeclarator(DeclInfo* declinfo);
 extern void conversion_type_name(DeclInfo* declinfo);
 extern Object* CDecl_GetFunctionObject(
+#if MWCCPS2_B52
+    DeclInfo* declinfo, NameSpace* nspace, Boolean* firstDecl, Boolean matchTemplate
+);
+extern void CDecl_TypedefDeclarator(DeclInfo* declinfo);
+#else
     DeclInfo* declinfo, NameSpace* nspace, Boolean* firstDecl, Boolean matchTemplate
 );
 #if MWCCPSP
 extern void CDecl_TypedefDeclarator(DeclInfo* declinfo, AccessType access); // 3.0.1
 #else
 extern void CDecl_TypedefDeclarator(DeclInfo* declinfo);
+#endif
 #endif
 extern Boolean CDecl_FunctionDeclarator(
     DeclInfo* declinfo, NameSpace* nspace, Boolean allowDefinition, Boolean unused
@@ -162,6 +219,13 @@ extern void CDecl_ScanStructDeclarator(BigDeclInfo* bde);
 extern void scanstruct(DeclInfo* declinfo, short structtype);
 extern TypeMemberFunc* CDecl_MakeTypeMemberFunc(
     TypeFunc* tfunc, TypeClass* tclass, Boolean isStatic
+#if MWCCPS2_B52
+);
+extern void CDecl_PackDeclInfo(PackedDeclInfo* packed, DeclInfo* declinfo);
+extern void CDecl_UnpackDeclInfo(DeclInfo* declinfo, PackedDeclInfo* packed);
+#define CDecl_AddFriend CClass_AddFriend // b52 keeps friends in CClass.c, like 3.0.1
+extern void CClass_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendclass);
+#else
 );
 extern void CDecl_PackDeclInfo(PackedDeclInfo* packed, DeclInfo* declinfo);
 extern void CDecl_UnpackDeclInfo(DeclInfo* declinfo, PackedDeclInfo* packed);
@@ -170,6 +234,7 @@ extern void CDecl_UnpackDeclInfo(DeclInfo* declinfo, PackedDeclInfo* packed);
 extern void CClass_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendclass);
 #else
 extern void CDecl_AddFriend(TypeClass* tclass, Object* friendfunc, TypeClass* friendclass);
+#endif
 #endif
 extern Boolean CDecl_CheckCtorIntegrity(FuncArg* args, TypeClass* tclass);
 extern void CDecl_MakeVBaseList(TypeClass* tclass);

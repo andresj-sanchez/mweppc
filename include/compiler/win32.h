@@ -95,6 +95,11 @@ typedef struct HINSTANCE__* HINSTANCE;
 typedef HINSTANCE HMODULE;
 struct HRSRC__ {
     int unused;
+#if MWCCPS2_B52
+};
+typedef struct HRSRC__* HRSRC;
+#include <stdarg.h> // the host's va_list
+#else
 };
 typedef struct HRSRC__* HRSRC;
 #if MWCCPSP
@@ -108,6 +113,7 @@ typedef char* va_list;
 #ifndef __va_list__
 #define __va_list__
 typedef char* va_list;
+#endif
 #endif
 #endif
 
@@ -289,9 +295,11 @@ __declspec(dllimport) BOOL __stdcall GetFileTime(
 __declspec(dllimport) DWORD __stdcall GetFullPathNameA(
     LPCSTR lpFileName, DWORD nBufferLength, LPSTR lpBuffer, LPSTR* lpFilePart
 );
+#if !MWCCPS2_B52
 #if MWCCPSP
 __declspec(dllimport) LPSTR __stdcall GetEnvironmentStrings(void);
 __declspec(dllimport) BOOL __stdcall FreeEnvironmentStringsA(LPSTR lpszEnvironmentBlock);
+#endif
 #endif
 __declspec(dllimport) DWORD __stdcall GetLastError(void);
 __declspec(dllimport) HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName);
@@ -299,10 +307,12 @@ __declspec(dllimport) HANDLE __stdcall GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) UINT __stdcall GetSystemDirectoryA(LPSTR lpBuffer, UINT uSize);
 __declspec(dllimport) void __stdcall GetSystemTime(LPSYSTEMTIME lpSystemTime);
 __declspec(dllimport) DWORD __stdcall GetTickCount(void);
+#if !MWCCPS2_B52
 #if MWCCPSP
 __declspec(dllimport) int __stdcall LoadStringA(
     HINSTANCE hInstance, UINT uID, LPSTR lpBuffer, int cchBufferMax
 );
+#endif
 #endif
 __declspec(dllimport) DWORD __stdcall GetTimeZoneInformation(
     struct _TIME_ZONE_INFORMATION* lpTimeZoneInformation

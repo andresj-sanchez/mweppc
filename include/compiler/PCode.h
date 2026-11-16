@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 #if !MWCCPSP_NATIVE
 #pragma pack(push, 2)
 #endif
@@ -159,6 +162,9 @@ struct PCodeLabel {
     short resolved;
     UInt16 index;
 };
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #if !MWCCPSP_NATIVE
 #pragma pack(pop)
 #endif

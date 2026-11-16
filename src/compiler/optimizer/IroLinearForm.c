@@ -129,71 +129,107 @@ static void MarkAssigned(IROLinear* linear, Boolean isModify) {
                 }
             }
 #else
-            IRO_FindAddressObjRefs(inner, &objref, &numObjRefs, &numOther);
-            if (numObjRefs == 1) {
-                objref->flags |= IROLF_Assigned;
-                if (isModify) {
-                    linear->flags |= IROLF_Used;
-                    objref->flags |= IROLF_Used;
-                }
-            }
-#endif
-        }
-    }
-
-    if (IS_LINEAR_MONADIC(linear, EINDIRECT)) {
-        linear->flags |= IROLF_Assigned;
-        if (linear->u.monadic->type == IROLinearOperand) {
-            linear->u.monadic->flags |= IROLF_Assigned;
-            if (isModify) {
-                linear->flags |= IROLF_Used;
-                linear->u.monadic->flags |= IROLF_Used;
-            }
-        }
-    }
-
-    if (IS_LINEAR_MONADIC(linear, EINDIRECT)) {
-        linear->flags |= IROLF_Assigned;
-        inner = linear->u.monadic;
-
-        if (IS_LINEAR_DIADIC(inner, EADD)) {
-            if (IS_LINEAR_ENODE(inner->u.diadic.left, EOBJREF)) {
-                if (IRO_IsIntConstant(inner->u.diadic.right)) {
-                    inner->u.diadic.left->flags |= IROLF_Assigned;
-                }
-                if (isModify) {
-                    linear->flags |= IROLF_Used;
-                    inner->u.diadic.left->flags |= IROLF_Used;
-                }
-            }
-
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-            // b145 decomposes into an allocated address record
+#if MWCCPS2_B52
+            // b145 decomposes into an allocated address record; b52
+            // (0x4FE9DD) only when the one object is the sum's left operand
             {
                 IROAddrRecord301* rec = IRO_Alloc(sizeof(IROAddrRecord301));
                 func_005513A0(rec, inner);
                 func_005510D0(inner, rec, IRO_Alloc);
-                if (rec->numObjRefs == 1) {
+                if (rec->numObjRefs == 1 && IS_LINEAR_ENODE(inner->u.diadic.left, EOBJREF)) {
                     ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Assigned;
-                    if (isModify) {
-                        linear->flags |= IROLF_Used;
-                        ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Used;
-                    }
-                }
-            }
 #else
             IRO_FindAddressObjRefs(inner, &objref, &numObjRefs, &numOther);
             if (numObjRefs == 1) {
                 objref->flags |= IROLF_Assigned;
-                if (isModify) {
-                    linear->flags |= IROLF_Used;
+#endif
+                    if (isModify) {
+                        linear->flags |= IROLF_Used;
+#if MWCCPS2_B52
+                        ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Used;
+#else
                     objref->flags |= IROLF_Used;
+#endif
+                    }
                 }
-            }
 #endif
         }
     }
+#if MWCCPS2_B52
 }
+#endif
+
+if (IS_LINEAR_MONADIC(linear, EINDIRECT)) {
+    linear->flags |= IROLF_Assigned;
+    if (linear->u.monadic->type == IROLinearOperand) {
+        linear->u.monadic->flags |= IROLF_Assigned;
+        if (isModify) {
+            linear->flags |= IROLF_Used;
+            linear->u.monadic->flags |= IROLF_Used;
+        }
+    }
+}
+
+if (IS_LINEAR_MONADIC(linear, EINDIRECT)) {
+    linear->flags |= IROLF_Assigned;
+    inner = linear->u.monadic;
+
+    if (IS_LINEAR_DIADIC(inner, EADD)) {
+        if (IS_LINEAR_ENODE(inner->u.diadic.left, EOBJREF)) {
+            if (IRO_IsIntConstant(inner->u.diadic.right)) {
+                inner->u.diadic.left->flags |= IROLF_Assigned;
+            }
+            if (isModify) {
+                linear->flags |= IROLF_Used;
+                inner->u.diadic.left->flags |= IROLF_Used;
+            }
+        }
+
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+        // b145 decomposes into an allocated address record
+        {
+            IROAddrRecord301* rec = IRO_Alloc(sizeof(IROAddrRecord301));
+            func_005513A0(rec, inner);
+            func_005510D0(inner, rec, IRO_Alloc);
+            if (rec->numObjRefs == 1) {
+                ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Assigned;
+                if (isModify) {
+                    linear->flags |= IROLF_Used;
+                    ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Used;
+                }
+            }
+        }
+#else
+#if MWCCPS2_B52
+                // b145 decomposes into an allocated address record; b52
+                // (0x4FE9DD) only when the one object is the sum's left operand
+                {
+                    IROAddrRecord301* rec = IRO_Alloc(sizeof(IROAddrRecord301));
+                    func_005513A0(rec, inner);
+                    func_005510D0(inner, rec, IRO_Alloc);
+                    if (rec->numObjRefs == 1 && IS_LINEAR_ENODE(inner->u.diadic.left, EOBJREF)) {
+                        ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Assigned;
+#else
+            IRO_FindAddressObjRefs(inner, &objref, &numObjRefs, &numOther);
+            if (numObjRefs == 1) {
+                objref->flags |= IROLF_Assigned;
+#endif
+                        if (isModify) {
+                            linear->flags |= IROLF_Used;
+#if MWCCPS2_B52
+                            ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Used;
+#else
+                    objref->flags |= IROLF_Used;
+#endif
+                        }
+                    }
+#endif
+    }
+}
+}
+#if MWCCPS2_B52
+}
+#endif
 #else
 static void MarkAssigned(IROLinear* linear, Boolean isModify) {
     IROLinear* inner;
@@ -542,8 +578,13 @@ static void MarkSubs1(IROLinear* linear) {
     }
 
     if (IS_LINEAR_DIADIC(linear, EADD)) {
+#if MWCCPS2_B52
         if (IS_LINEAR_ENODE(linear->u.diadic.left, EOBJREF) &&
             IRO_IsIntConstant(linear->u.diadic.right)) {
+#else
+                if (IS_LINEAR_ENODE(linear->u.diadic.left, EOBJREF) &&
+                    IRO_IsIntConstant(linear->u.diadic.right)) {
+#endif
             linear->u.diadic.left->flags |= IROLF_Ind;
         }
 
@@ -558,13 +599,27 @@ static void MarkSubs1(IROLinear* linear) {
             }
         }
 #else
+#if MWCCPS2_B52
+                // b145 decomposes into an allocated address record; b52 (0x4FECE7)
+                // marks the one object only when it is the sum's left operand
+                {
+                    IROAddrRecord301* rec = IRO_Alloc(sizeof(IROAddrRecord301));
+                    func_005513A0(rec, linear);
+                    func_005510D0(linear, rec, IRO_Alloc);
+                    if (rec->numObjRefs == 1 && IS_LINEAR_ENODE(linear->u.diadic.left, EOBJREF)) {
+                        ((IROLinear*)rec->objRefs->element)->flags |= IROLF_Ind;
+#else
         IRO_FindAddressObjRefs(linear, &objref, &numObjRefs, &numOther);
         if (numObjRefs == 1) {
             objref->flags |= IROLF_Ind;
-        }
+#endif
+                    }
 #endif
     }
 }
+#if MWCCPS2_B52
+}
+#endif
 #else
 static void MarkSubs1(IROLinear* linear) {
     IROAddrRecord* rec;
@@ -1612,8 +1667,14 @@ static void GenerateNullcheckExprTempAssignment(ENode* enode, Object** objptr) {
     NullCheckListNode* n;
 
     if (IS_TYPE_VOID(enode->rtype)) {
+#if MWCCPS2_B52
         *objptr =
             create_temp_object(IRO_UnqualifiedType(enode->data.nullcheck.nullcheckexpr->rtype));
+#else
+                    *objptr = create_temp_object(
+                        IRO_UnqualifiedType(enode->data.nullcheck.nullcheckexpr->rtype)
+                    );
+#endif
     } else {
         *objptr = create_temp_object(IRO_UnqualifiedType(enode->rtype));
     }
@@ -1634,9 +1695,15 @@ static void GenerateNullcheckExprTempAssignment(ENode* enode, Object** objptr) {
     stmt = IRO_NewStatement(ST_EXPRESSION, IRO_NewENode(EASS));
     stmt->expr->data.diadic.left = ind;
     stmt->expr->data.diadic.right = enode->data.nullcheck.nullcheckexpr;
+#if MWCCPS2_B52
     if (!IRO_TypesEqual(
             stmt->expr->data.diadic.left->rtype, stmt->expr->data.diadic.right->rtype
         )) {
+#else
+                if (!IRO_TypesEqual(
+                        stmt->expr->data.diadic.left->rtype, stmt->expr->data.diadic.right->rtype
+                    )) {
+#endif
         conv = IRO_NewENode(ETYPCON);
         conv->data.monadic = stmt->expr->data.diadic.right;
         conv->rtype = IRO_UnqualifiedType(stmt->expr->data.diadic.left->rtype);
@@ -1660,9 +1727,16 @@ static void GenerateNullcheckCondExpr(ENode* enode, Object** objptr) {
         stmt = IRO_NewStatement(ST_EXPRESSION, IRO_NewENode(EASS));
         stmt->expr->data.diadic.left = ind;
         stmt->expr->data.diadic.right = enode->data.nullcheck.condexpr;
+#if MWCCPS2_B52
         if (!IRO_TypesEqual(
                 stmt->expr->data.diadic.left->rtype, stmt->expr->data.diadic.right->rtype
             )) {
+#else
+                    if (!IRO_TypesEqual(
+                            stmt->expr->data.diadic.left->rtype,
+                            stmt->expr->data.diadic.right->rtype
+                        )) {
+#endif
             conv = IRO_NewENode(ETYPCON);
             conv->data.monadic = stmt->expr->data.diadic.right;
             conv->rtype = IRO_UnqualifiedType(stmt->expr->data.diadic.left->rtype);
@@ -1675,9 +1749,15 @@ static void GenerateNullcheckCondExpr(ENode* enode, Object** objptr) {
 
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 17 // b145 asserts
+#if MWCCPS2_B52
 static void LinearizeExpr1(
     ENode* expr, ENode* parent, Boolean discardResult, Boolean checkArgument
 ) {
+#else
+            static void LinearizeExpr1(
+                ENode * expr, ENode * parent, Boolean discardResult, Boolean checkArgument
+            ) {
+#endif
     Statement* stmt;
     Boolean isAssign;
 
@@ -2185,6 +2265,7 @@ extern void RearrangeMultipleSubscripts(ENode* enode);
 
 // 0x5647A0: whether no optimization is enabled
 Boolean IRO_AllOptimizationsOff(void) {
+#if MWCCPS2_B52
     return !copts.multiplepasses &&
         !copts.opt_rotateloops &&
         !copts.opt_optimizenonregaccess &&
@@ -2208,6 +2289,31 @@ Boolean IRO_AllOptimizationsOff(void) {
         !copts.opt_foldconstants &&
         !copts.opt_optimizecontrolflow &&
         !copts.opt_markcounterloops &&
+#else
+                return !copts.multiplepasses &&
+                    !copts.opt_rotateloops &&
+                    !copts.opt_optimizenonregaccess &&
+                    !copts.opt_removeemptyloops &&
+                    !copts.loopinvariants &&
+                    !copts.strengthreduction &&
+                    !copts.lifetimes &&
+                    !copts.unrolling &&
+                    !copts.opt_reverseloops &&
+                    !copts.vectorizeloops &&
+                    !copts.deadstore &&
+                    !copts.commonsubs &&
+                    !copts.opt_collapselogicalselectionintobittest &&
+                    !copts.propagation &&
+                    !copts.deadcode &&
+                    !copts.opt_scalarize &&
+                    !copts.opt_treetransformation &&
+                    !copts.opt_arithtransformation &&
+                    !copts.opt_rebuildconditionals &&
+                    !copts.opt_rebuildlogicals &&
+                    !copts.opt_foldconstants &&
+                    !copts.opt_optimizecontrolflow &&
+                    !copts.opt_markcounterloops &&
+#endif
         !copts.opt_marknonregtemps;
 }
 extern Boolean IRO_IsSinCall(IROLinear* linear, IROLinear** arg);
@@ -2235,8 +2341,13 @@ static IROLinear* LinearizeExpr(ENode* enode) {
         case EFORCELOAD:
         case ETYPCON:
         case EBITFIELD:
+#if MWCCPS2_B52
             if (copts.opt_rearrangemultiplesubscripts &&
                 enode->type == EINDIRECT &&
+#else
+                        if (copts.opt_rearrangemultiplesubscripts &&
+                            enode->type == EINDIRECT &&
+#endif
                 enode->data.monadic->type == EADD) {
                 RearrangeMultipleSubscripts(enode->data.monadic);
             }
@@ -2257,15 +2368,25 @@ static IROLinear* LinearizeExpr(ENode* enode) {
             }
             break;
         case ELESSEQU:
+#if MWCCPS2_B52
             if (copts.opt_intelcompareoplinearizationhack &&
                 IS_TYPE_FLOAT(enode->data.diadic.left->rtype)) {
+#else
+                        if (copts.opt_intelcompareoplinearizationhack &&
+                            IS_TYPE_FLOAT(enode->data.diadic.left->rtype)) {
+#endif
                 enode->data.diadic.left->cost = 2;
                 enode->data.diadic.right->cost = 1;
             }
             goto diadic;
         case EGREATEREQU:
+#if MWCCPS2_B52
             if (copts.opt_intelcompareoplinearizationhack &&
                 IS_TYPE_FLOAT(enode->data.diadic.left->rtype)) {
+#else
+                        if (copts.opt_intelcompareoplinearizationhack &&
+                            IS_TYPE_FLOAT(enode->data.diadic.left->rtype)) {
+#endif
                 enode->data.diadic.left->cost = 1;
                 enode->data.diadic.right->cost = 2;
             }
@@ -2311,8 +2432,13 @@ static IROLinear* LinearizeExpr(ENode* enode) {
 diadic:
             linear = IRO_NewLinear(IROLinearOp2Arg);
             linear->nodeflags = enode->flags;
+#if MWCCPS2_B52
             if ((!ENODE_IS(enode, ECOMMA) &&
                  enode->data.diadic.left->cost <= enode->data.diadic.right->cost) ||
+#else
+                        if ((!ENODE_IS(enode, ECOMMA) &&
+                             enode->data.diadic.left->cost <= enode->data.diadic.right->cost) ||
+#endif
                 (isAssign && !copts.opt_useexpressioncostswhenlinearizingassignments)) {
                 linear->u.diadic.right = LinearizeExpr(enode->data.diadic.right);
                 linear->u.diadic.left = LinearizeExpr(enode->data.diadic.left);
@@ -2413,10 +2539,17 @@ diadic:
     if (linear) {
         LinkLinear(linear);
     }
+#if MWCCPS2_B52
     if (linear &&
         data_00625ECA &&
         IRO_Hook15 &&
         ((Boolean (*)(IROLinear*, int))IRO_Hook15)(linear, 1)) {
+#else
+                if (linear &&
+                    data_00625ECA &&
+                    IRO_Hook15 &&
+                    ((Boolean (*)(IROLinear*, int))IRO_Hook15)(linear, 1)) {
+#endif
         data_00625ECA = FALSE;
     }
     return linear;
@@ -2724,6 +2857,10 @@ void IRO_PreLinearize(Statement* stmt) {
 }
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (20)
+#endif
 static void MarkAllSubExprs(IROLinear* linear) {
     IROLinear* scan;
 
@@ -2735,6 +2872,10 @@ static void MarkAllSubExprs(IROLinear* linear) {
         MarkSubExpr(scan);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 #if MWCCPSP
 // 3.0.1: with copts.microsoft_EH, a catch block's object is copied from a
@@ -2760,8 +2901,13 @@ static void CollectCatchObjects(Statement* first) {
     for (stmt = first; stmt; stmt = stmt->next) {
         if (stmt->type == ST_BEGINCATCH) {
             for (act = stmt->dobjstack; act; act = act->prev) {
+#if MWCCPS2_B52
                 if (act->type == EAT_CATCHBLOCK &&
                     act->data.catch_block.catch_type &&
+#else
+                            if (act->type == EAT_CATCHBLOCK &&
+                                act->data.catch_block.catch_type &&
+#endif
                     act->data.catch_block.catch_object) {
                     copy = IRO_malloc(sizeof(CatchObjectCopy));
                     copy->object = act->data.catch_block.catch_object;
@@ -2804,8 +2950,13 @@ Boolean IRO_IsCatchCopyAssignment(IROLinear* linear) {
             if (src && (dstObj = IRO_IsVariable(dst)) && IRO_IsVariable(src)) {
                 copy = NULL;
                 found = FALSE;
+#if MWCCPS2_B52
                 if (src->u.monadic->type == IROLinearOperand &&
                     src->u.monadic->u.node &&
+#else
+                            if (src->u.monadic->type == IROLinearOperand &&
+                                src->u.monadic->u.node &&
+#endif
                     src->u.monadic->u.node->type == EOBJREF) {
                     for (copy = CatchObjects; copy; copy = copy->next) {
                         if (copy->temp == src->u.monadic->u.node->data.objref) {
@@ -3151,9 +3302,15 @@ static ENode* BuildExpr(IROLinear* linear) {
         case IROLinearOperand:
             if (copts.microsoft_EH) {
                 copy = NULL;
+#if MWCCPS2_B52
                 if (linear->type == IROLinearOperand &&
                     linear->u.node &&
                     linear->u.node->type == EOBJREF) {
+#else
+                            if (linear->type == IROLinearOperand &&
+                                linear->u.node &&
+                                linear->u.node->type == EOBJREF) {
+#endif
                     for (copy = CatchObjects; copy; copy = copy->next) {
                         if (copy->temp == linear->u.node->data.objref) {
                             break;
@@ -3169,6 +3326,7 @@ static ENode* BuildExpr(IROLinear* linear) {
             *enode = *linear->u.node;
             break;
         case IROLinearOp1Arg:
+#if !MWCCPS2_B52
             if (linear->nodetype == EINDIRECT && linear->u.monadic->nodetype == EOBJREF) {
                 Type* ptype = linear->u.monadic->u.node->rtype;
                 if (ptype && ptype->type == TYPEPOINTER && TPTR_TARGET(ptype) && linear->rtype) {
@@ -3188,6 +3346,7 @@ static ENode* BuildExpr(IROLinear* linear) {
                     }
                 }
             }
+#endif
             enode = IRO_NewENode(linear->nodetype);
             enode->flags = linear->nodeflags;
             enode->data.monadic = BuildExpr(linear->u.monadic);
@@ -3202,9 +3361,15 @@ static ENode* BuildExpr(IROLinear* linear) {
             enode->flags = linear->nodeflags;
             enode->data.diadic.left = BuildExpr(linear->u.diadic.left);
             enode->data.diadic.right = BuildExpr(linear->u.diadic.right);
+#if MWCCPS2_B52
             if (copts.opt_defineargorder &&
                 IRO_Hook2 &&
                 linear->u.diadic.right->index < linear->u.diadic.left->index) {
+#else
+                        if (copts.opt_defineargorder &&
+                            IRO_Hook2 &&
+                            linear->u.diadic.right->index < linear->u.diadic.left->index) {
+#endif
                 enode->flags |= 0x20;
             }
 
@@ -3478,8 +3643,13 @@ Statement* IRO_Delinearize(IRONode* node, IROLinear* linear) {
                     case IROLinearFunccall:
                         if (!copts.opt_markcounterloops ||
                             ((scanlin->type != IROLinearOp1Arg || !scanlin->u.op1x.counterUpdate) &&
+#if MWCCPS2_B52
                              (scanlin->type != IROLinearOp2Arg ||
                               !scanlin->u.op2x.counterUpdate))) {
+#else
+                                         (scanlin->type != IROLinearOp2Arg ||
+                                          !scanlin->u.op2x.counterUpdate))) {
+#endif
                             stmt = NewDelinStatement(scanlin, ST_EXPRESSION);
                             stmt->expr = BuildExpr(scanlin);
                         }
@@ -3836,7 +4006,11 @@ static void TravExprToUpdateFlags(IROLinear* linear) {
             IRO_Dump(
                 "Oh, oh, bad expression type in TravExprToUpdateFlags at: %d\n", linear->index
             );
-            CError_FATAL(3114);
+#if MWCCPS2_B52
+            CError_FATAL(3071);
+#else
+                        CError_FATAL(3114);
+#endif
     }
 }
 #undef CError_B145_SHIFT

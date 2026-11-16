@@ -7,6 +7,11 @@
 extern "C" {
 #endif
 
+#if MWCCPS2_B52
+extern void CClass_Init(void);
+extern void CClass_GenThunks(void);
+extern UInt8 CClass_GetOverrideKind(TypeFunc* a, TypeFunc* b, Boolean errorflag);
+#else
 extern void CClass_Init(void);
 extern void CClass_GenThunks(void);
 #if MWCCPS2
@@ -18,6 +23,7 @@ extern UInt8 CClass_GetOverrideKind(TypeFunc* a, TypeFunc* b, Boolean errorflag)
 #if MWCCPSP
 #define CCLASS_OVERRIDE(a, b, f) \
     CClass_GetOverrideKind(TYPE_FUNC((a)->type), TYPE_FUNC((b)->type), (f))
+#endif
 #endif
 #endif
 extern Boolean CClass_IsEmpty(TypeClass* tclass);

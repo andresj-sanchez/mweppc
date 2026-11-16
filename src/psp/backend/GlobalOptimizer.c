@@ -14,7 +14,11 @@ void func_004AFA00(Object* func, Boolean all); // below
 extern void func_004B11D0(int unk); // removecommonsubexpressions
 #if MWCCPS2 && MWCCPS2_BUILD < 210
 // b145's removecommonsubexpressions takes no argument
+#if MWCCPS2_B52
 #define CSE_PASS(arg) ((void (*)(void))func_004B11D0)()
+#else
+#define CSE_PASS(arg) ((void (*)(void))func_004B11D0)()
+#endif
 #else
 #define CSE_PASS(arg) func_004B11D0(arg)
 #endif
@@ -36,12 +40,22 @@ extern void pipeline1(Object* func); // b210: R5900 pipeline pass (pipeline1.c, 
 #endif
 extern SInt32 data_00624BA0;
 
+#if MWCCPS2_B52
+#define LISTING(name, title) \
+    do { \
+        TRACE_PCODE(title); \
+        if (copts.debuglisting) { \
+            BE_DumpPCode((name), (title)); \
+        } \
+    } while (0)
+#else
 #define LISTING(name, title) \
     do { \
         if (copts.debuglisting) { \
             BE_DumpPCode((name), (title)); \
         } \
     } while (0)
+#endif
 
 // 0x4AF7A0 (level 4)
 static void GlobalOptimize4(Object* func) {
@@ -207,24 +221,37 @@ void func_004AFA00(Object* func, Boolean all) {
         if (block->pcodecount <= 0) {
             continue;
         }
+#if MWCCPS2_B52
         for (pc = block->first; pc && !(pc->flags & 0x108); pc = pc->next) {}
+#else
+        for (pc = block->first; pc && !(pc->flags & 0x108); pc = pc->next) {}
+#endif
         if (pc) {
             continue;
         }
         pc = block->last;
+#if MWCCPS2_B52
+        if (pc && pc->op == OPC(0x39)) {
+#else
         if (pc && pc->op == 0x39) {
+#endif
             if (pc->args[0].kind != 6 || ((MPCodeLabel*)pc->args[0].ptr)->block != next) {
                 continue;
             }
             deletepcode(pc);
         }
         pc = block->last;
+#if MWCCPS2_B52
+        if (pc && (pc->flags & 1) && pc->op != OPC(0x39)) {
+#else
         if (pc && (pc->flags & 1) && pc->op != 0x39) {
+#endif
             continue;
         }
 
 merge:
         link = block->successors;
+#if MWCCPS2_B52
         if (link->block != next ||
             !link ||
             link->next ||
@@ -233,6 +260,16 @@ merge:
             next->predecessors->from != block ||
             !next->predecessors ||
             next->predecessors->nextpred ||
+#else
+        if (link->block != next ||
+            !link ||
+            link->next ||
+            !next ||
+            !next->predecessors ||
+            next->predecessors->from != block ||
+            !next->predecessors ||
+            next->predecessors->nextpred ||
+#endif
             nextIsLoop) {
             continue;
         }
@@ -243,7 +280,11 @@ merge:
             for (pc = next->first; pc && !(pc->flags & 0x108); pc = pnext) {
                 pnext = pc->next;
                 deletepcode(pc);
+#if MWCCPS2_B52
+                if (pc->op == OPC(0x39)) {
+#else
                 if (pc->op == 0x39) {
+#endif
                     if (pc->args[0].kind == 6) {
                         if (((MPCodeLabel*)pc->args[0].ptr)->block != next->next) {
                             appendpcode(block, pc);

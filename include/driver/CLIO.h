@@ -20,6 +20,29 @@ enum {
 typedef struct MessageRef {
     OSSpec sourcefile;
     OSSpec errorfile;
+#if MWCCPS2_B52
+    char* sourceline;
+    SInt32 linenumber;
+    SInt32 tokenoffset;
+    SInt16 tokenlength;
+    SInt32 selectionoffset;
+    SInt16 selectionlength;
+} MessageRef;
+
+extern void SetupDebuggingTraps(void);
+extern Boolean IO_Initialize(void);
+extern Boolean IO_Terminate(void);
+extern Boolean ShowHandle(Handle text, UInt32 size, Boolean decorate);
+extern Boolean WriteHandleToFile(
+    OSSpec* spec, Handle text, UInt32 size, OSType creator, OSType type
+);
+extern Boolean WriteBinaryHandleToFile(
+    OSSpec* spec, OSType maccreator, OSType mactype, OSHandle* text
+);
+extern Boolean AppendHandleToFile(
+    OSSpec* spec, Handle text, UInt32 size, OSType maccreator, OSType mactype
+);
+#else
     char* sourceline;
     SInt32 linenumber;
     SInt32 tokenoffset;
@@ -51,6 +74,7 @@ extern Boolean WriteBinaryHandleToFile(
 extern Boolean AppendHandleToFile(
     OSSpec* spec, Handle text, UInt32 size, OSType maccreator, OSType mactype
 );
+#endif
 #endif
 extern void ShowWorking(int x);
 extern Boolean CheckForUserBreak(void);

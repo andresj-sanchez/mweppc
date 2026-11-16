@@ -53,7 +53,11 @@ restart:
                     align = type->size;
                     break;
                 default:
+#if MWCCPS2_B52
+                    CError_Internal("CMachine.c", 707); // b69's line
+#else
                     CError_Internal("CMachine.c", CError_B145_LINE(957));
+#endif
             }
             break;
         case TYPEFLOAT:
@@ -78,7 +82,11 @@ restart:
         case TYPETEMPLATE:
             return 1;
         default:
+#if MWCCPS2_B52
+            CError_Internal("CMachine.c", 741); // b69's line
+#else
             CError_Internal("CMachine.c", CError_B145_LINE(997));
+#endif
             return 0;
     }
     if (data_00624FD4 && align > data_00624FD4) {
@@ -159,6 +167,10 @@ restart:
 #endif
 
 // The alignment an __attribute__((aligned)) qualifier asks for, or 0.
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-234)
+#endif
 int func_00466720(UInt32 qual) {
     int align = 0;
 
@@ -212,6 +224,10 @@ int func_00466720(UInt32 qual) {
     }
     return align;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 // The alignment of a variable.
 SInt16 func_00464E20(Object* obj) {
@@ -244,7 +260,11 @@ SInt16 func_00464E20(Object* obj) {
 }
 
 void CMach_Configure(void) {
+#if MWCCPS2_B52
+    stwchar.size = COPTS_WCHAR.ushort_wchar_t ? stunsignedshort.size : stsignedint.size;
+#else
     stwchar.size = copts.ushort_wchar_t ? stunsignedshort.size : stsignedint.size;
+#endif
     if (copts.mips_long64) {
         stsignedlong.size = 8;
         stunsignedlong.size = 8;
@@ -252,10 +272,26 @@ void CMach_Configure(void) {
     data_00624FD4 = 0;
 }
 
+#if !MWCCPS2_B52
 static SInt32 cmach_structstart;
 static SInt16 cmach_curbfsize;
 static SInt32 cmach_structoffset;
+#endif
 
+#if MWCCPS2_B52
+// 0x54D648, the short at 0x54D64C and 0x54D64E): one 2-byte-packed record
+#pragma pack(push, 2)
+static struct {
+    SInt32 structstart;
+    SInt16 curbfsize;
+    SInt32 structoffset;
+} cmach_layout;
+#pragma pack(pop)
+#define cmach_structstart cmach_layout.structstart
+#define cmach_curbfsize cmach_layout.curbfsize
+#define cmach_structoffset cmach_layout.structoffset
+
+#endif
 extern UInt8 func_00436B30(Type* type); // how a value of the type is returned
 
 Boolean CMach_IsUnsignedType(Type* type) {
@@ -331,6 +367,10 @@ void CMach_StructLayoutInitOffset(SInt32 offset) {
 // of its declared type's size; a zero-width field aligns to it. Returns the
 // byte offset of the field's storage unit; tbitfield->offset gets the bit
 // offset within it.
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-247)
+#endif
 SInt32 CMach_StructLayoutBitfield(TypeBitfield* tbitfield, UInt32 qual) {
     int align;
     int basesize;
@@ -421,6 +461,10 @@ SInt32 CMach_StructLayoutBitfield(TypeBitfield* tbitfield, UInt32 qual) {
     tbitfield->offset = off;
     return cmach_structstart + unit;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
 
@@ -436,10 +480,17 @@ Boolean Type_RequiresMemoryReturn(Type* type) {
         return TRUE;
     }
 #endif
+#if MWCCPS2_B52
     if (type &&
         (IS_TYPE_ARRAY(type) ||
          IS_TYPE_STRUCT(type) ||
          IS_TYPE_CLASS(type) ||
+#else
+    if (type &&
+        (IS_TYPE_ARRAY(type) ||
+         IS_TYPE_STRUCT(type) ||
+         IS_TYPE_CLASS(type) ||
+#endif
          (IS_TYPE_MEMBERPOINTER(type) && type->size == 12))) {
         return TRUE;
     }
@@ -526,6 +577,12 @@ SInt16 CMach_GetClassAlign(TypeClass* tclass) {
 
 // 2.4.7's, plus the 3.0.1 64-bit conversions and 16-byte check; division
 // by zero is an error here.
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-247)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (13)
+#endif
 CInt64 CMach_CalcIntDiadic(Type* type, CInt64 left, short op, CInt64 right) {
     if (is_unsigned(type)) {
         switch (type->size) {
@@ -743,8 +800,20 @@ CInt64 CMach_CalcIntDiadic(Type* type, CInt64 left, short op, CInt64 right) {
 
     return left;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 // 3.0.1 converts 8-byte values as well (0x465AF0)
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-247)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (13)
+#endif
 CInt64 CMach_CalcIntMonadic(Type* type, short op, CInt64 val) {
     if (is_unsigned(type)) {
         switch (type->size) {
@@ -842,6 +911,12 @@ CInt64 CMach_CalcIntMonadic(Type* type, short op, CInt64 val) {
 
     return val;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 // 3.0.1 (0x465A60 down to 0x465510; addresses from the reverse link order)
 CInt64 CMach_CalcIntConvertFromFloat(Type* type, Float fval) {
@@ -894,6 +969,10 @@ CInt64 CMach_CalcIntConvertFromFloat(Type* type, Float fval) {
 
 extern void func_00455A20(void* mem, void* src, int len);
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-234)
+#endif
 void CMach_InitIntMem(Type* type, CInt64 val, void* mem) {
     UInt32 lg;
 
@@ -926,8 +1005,19 @@ void CMach_InitIntMem(Type* type, CInt64 val, void* mem) {
             CError_FATAL(709);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 // 3.0.1 inlines this into CalcFloatDiadic/Monadic, which link before it
+#if MWCCPS2_B52
+// 3.0.1 inlines this into CalcFloatDiadic/Monadic, which link before it
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-247)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (13)
+#endif
 Float CMach_CalcFloatConvert(Type* type, Float fval) {
     switch (type->size) {
         case 4:
@@ -941,6 +1031,12 @@ Float CMach_CalcFloatConvert(Type* type, Float fval) {
     }
     return fval;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 Float CMach_CalcFloatDiadic(Type* type, Float left, short op, Float right) {
     switch (op) {
@@ -988,6 +1084,12 @@ Float CMach_CalcFloatMonadic(Type* type, short op, Float fval) {
     return CMach_CalcFloatConvert(type, fval);
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-247)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (13)
+#endif
 Boolean CMach_CalcFloatDiadicBool(Type* type, Float left, short op, Float right) {
     switch (op) {
         case TK_LOGICAL_EQ:
@@ -1007,6 +1109,12 @@ Boolean CMach_CalcFloatDiadicBool(Type* type, Float left, short op, Float right)
             return FALSE;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 char* CMach_FloatScan(char* input, Float* result, Boolean* fail) {
     double resultval;
@@ -1034,20 +1142,32 @@ Float CMach_CalcFloatConvertFromInt(Type* type, CInt64 val) {
     return result;
 }
 
+#if !MWCCPS2_B52
 Boolean CMach_FloatIsZero(Float fval) {
     return fval.data.value == 0.0;
 }
+#endif
 
 Boolean CMach_FloatIsOne(Float fval) {
     return fval.data.value == 1.0;
 }
 
+#if MWCCPS2_B52
+Boolean CMach_FloatIsZero(Float fval) {
+    return fval.data.value == 0.0;
+}
+
+#endif
 extern const double data_005CCB50; // -1.0 (ours would land in writable .data)
 
 Boolean CMach_FloatIsNegOne(Float fval) {
     return data_005CCB50 == fval.data.value;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-234)
+#endif
 void CMach_InitFloatMem(Type* type, Float val, void* mem) {
     float f;
 
@@ -1067,6 +1187,10 @@ void CMach_InitFloatMem(Type* type, Float val, void* mem) {
     }
     CError_FATAL(888);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CMach_PrintFloat(char* buf, Float val) {
     sprintf(buf, "%g", val.data.value);
@@ -1082,21 +1206,119 @@ extern char volatileasm; // 0x625E8E (inline asm)
 // b210 saves all of copts (0x14C bytes); restoring keeps the current
 // oldprefixname and cursegmentname (pointers)
 void CMach_GetBackEndOptions(struct CInlineBackendOptions* options) {
+#if MWCCPS2_B52
+    options->interrupt = copts.interrupt;
+    options->debuglisting = copts.debuglisting;
+    options->dumpir = copts.dumpir;
+    options->unknown3D = copts.unknown3D[0];
+    options->optimizationlevel = copts.optimizationlevel;
+    options->force_active = copts.force_active;
+    options->unsigned_char = copts.unsigned_char;
+    options->optimizesize = copts.optimizesize;
+    options->far_call = copts.far_call;
+    options->inline_intrinsics = copts.inline_intrinsics;
+    options->mips_flags02 = copts.mips_flags02;
+    options->schedule = copts.schedule;
+    options->tailcall = copts.tailcall;
+    options->unknown36 = copts.unknown36[0];
+    options->commonsubs = copts.commonsubs;
+    options->loopinvariants = copts.loopinvariants;
+    options->propagation = copts.propagation;
+    options->deadstore = copts.deadstore;
+    options->strengthreduction = copts.strengthreduction;
+    options->lifetimes = copts.lifetimes;
+    options->unrolling = copts.unrolling;
+    options->peephole = copts.peephole;
+    options->multiplepasses = copts.multiplepasses;
+    options->unrollfactor = copts.unrollfactor;
+    options->unrollinstrfactor = copts.unrollinstrfactor;
+    options->trunc = copts.trunc;
+    options->fast_fptosi = copts.fast_fptosi;
+    options->prefetch = copts.prefetch;
+    options->sqrt = copts.sqrt;
+    options->mips_option23 = copts.mips_option23;
+    options->unknown66 = copts.unknown66[0];
+    options->asmsemicolcomment = copts.asmsemicolcomment;
+    options->asmpoundcomment = copts.asmpoundcomment;
+    options->nofpregforblkmv = copts.nofpregforblkmv;
+    options->mips_option33 = copts.mips_option33;
+    options->divbyzerocheck = copts.divbyzerocheck;
+    options->mips_option3A = copts.mips_option3A;
+    options->padloop = copts.padloop;
+    options->cats = copts.cats;
+    options->dividefix = copts.dividefix;
+    options->nomacro = copts.nomacro;
+    options->usefloatacc = copts.usefloatacc;
+    options->warn_inlineasm = copts.warn_inlineasm;
+    options->irocseglobaladdresses = copts.irocseglobaladdresses;
+    options->fastmath = copts.fastmath;
+#else
     *(CompilerLinkerOptions*)options->copts = copts;
     options->volatileasm = volatileasm;
+#endif
 }
 
+#if !MWCCPS2_B52
 void CMach_SetBackEndOptions(struct CInlineBackendOptions* options) {
     StringPtr oldprefixname;
     struct HashNameNode* cursegmentname;
+#endif
 
-    oldprefixname = copts.oldprefixname;
-    cursegmentname = copts.cursegmentname;
-    copts = *(CompilerLinkerOptions*)options->copts;
-    volatileasm = options->volatileasm;
-    copts.oldprefixname = oldprefixname;
-    copts.cursegmentname = cursegmentname;
-}
+#if MWCCPS2_B52
+    void CMach_SetBackEndOptions(struct CInlineBackendOptions * options) {
+        copts.interrupt = options->interrupt;
+        copts.debuglisting = options->debuglisting;
+        copts.dumpir = options->dumpir;
+        copts.unknown3D[0] = options->unknown3D;
+        copts.optimizationlevel = options->optimizationlevel;
+        copts.force_active = options->force_active;
+        copts.unsigned_char = options->unsigned_char;
+        copts.optimizesize = options->optimizesize;
+        copts.far_call = options->far_call;
+        copts.inline_intrinsics = options->inline_intrinsics;
+        copts.mips_flags02 = options->mips_flags02;
+        copts.schedule = options->schedule;
+        copts.tailcall = options->tailcall;
+        copts.unknown36[0] = options->unknown36;
+        copts.commonsubs = options->commonsubs;
+        copts.loopinvariants = options->loopinvariants;
+        copts.propagation = options->propagation;
+        copts.deadstore = options->deadstore;
+        copts.strengthreduction = options->strengthreduction;
+        copts.lifetimes = options->lifetimes;
+        copts.unrolling = options->unrolling;
+        copts.peephole = options->peephole;
+        copts.multiplepasses = options->multiplepasses;
+        copts.unrollfactor = options->unrollfactor;
+        copts.unrollinstrfactor = options->unrollinstrfactor;
+        copts.trunc = options->trunc;
+        copts.fast_fptosi = options->fast_fptosi;
+        copts.prefetch = options->prefetch;
+        copts.sqrt = options->sqrt;
+        copts.mips_option23 = options->mips_option23;
+        copts.unknown66[0] = options->unknown66;
+        copts.asmsemicolcomment = options->asmsemicolcomment;
+        copts.asmpoundcomment = options->asmpoundcomment;
+        copts.nofpregforblkmv = options->nofpregforblkmv;
+        copts.mips_option33 = options->mips_option33;
+        copts.divbyzerocheck = options->divbyzerocheck;
+        copts.mips_option3A = options->mips_option3A;
+        copts.padloop = options->padloop;
+        copts.cats = options->cats;
+        copts.dividefix = options->dividefix;
+        copts.nomacro = options->nomacro;
+        copts.usefloatacc = options->usefloatacc;
+        copts.warn_inlineasm = options->warn_inlineasm;
+        copts.irocseglobaladdresses = options->irocseglobaladdresses;
+#else
+oldprefixname = copts.oldprefixname;
+cursegmentname = copts.cursegmentname;
+copts = *(CompilerLinkerOptions*)options->copts;
+volatileasm = options->volatileasm;
+copts.oldprefixname = oldprefixname;
+copts.cursegmentname = cursegmentname;
+#endif
+    }
 #else
 void CMach_GetBackEndOptions(struct CInlineBackendOptions* options) {
     int i;
@@ -1125,124 +1347,143 @@ void CMach_SetBackEndOptions(struct CInlineBackendOptions* options) {
 #endif
 
 #if MWCCPS2
-// b210 0x470290: no custom integer conversions (the value as is)
-CInt64 CMach_CustomIntConvert(Type* type, Type* oldtype, CInt64 value) {
-    return value;
-}
-
-// b210 0x4702C0: the custom type token names the 16-byte integer type
-extern TypeIntegral ps2_int128_5E5EF4; // 0x5E5EF4: {TYPEINT, 16, 0x12}
-Type* CMach_GetCustomType(short token, short size, short signedness) {
-    if (token == TK_CUSTOM_TYPE_114) {
-        return TYPE(&ps2_int128_5E5EF4);
+    // b210 0x470290: no custom integer conversions (the value as is)
+    CInt64 CMach_CustomIntConvert(Type * type, Type * oldtype, CInt64 value) {
+        return value;
     }
-    CError_Error(ERR_ILLEGAL_TYPE);
-    return TYPE(&stsignedint);
-}
+
+    // b210 0x4702C0: the custom type token names the 16-byte integer type
+    extern TypeIntegral ps2_int128_5E5EF4; // 0x5E5EF4: {TYPEINT, 16, 0x12}
+    Type* CMach_GetCustomType(short token, short size, short signedness) {
+        if (token == TK_CUSTOM_TYPE_114) {
+#if MWCCPS2_B52
+            // b69 0x458FC0: stint128 (0x536128), the type atomtype gives
+            return TYPE(&stint128);
+#else
+        return TYPE(&ps2_int128_5E5EF4);
+#endif
+        }
+        CError_Error(ERR_ILLEGAL_TYPE);
+        return TYPE(&stsignedint);
+    }
 #endif
 
-extern SInt32 data_00624788; // word size (InstrSelection.c)
-extern Boolean CClass_ReferenceArgument(TypeClass* tclass);
+    extern SInt32 data_00624788; // word size (InstrSelection.c)
+    extern Boolean CClass_ReferenceArgument(TypeClass * tclass);
 
-// 0x464C30: a class's only member variable, if it is a float and no base
-// class has member variables
-static Type* CMach_ClassSingleFloat(TypeClass* tclass) {
-    ObjMemberVar* ivar;
-    ClassList* base;
+    // 0x464C30: a class's only member variable, if it is a float and no base
+    // class has member variables
+    static Type* CMach_ClassSingleFloat(TypeClass * tclass) {
+        ObjMemberVar* ivar;
+        ClassList* base;
 
-    if (!(ivar = tclass->ivars)) {
-        return NULL;
-    }
-    if (ivar->next) {
-        return NULL;
-    }
-    for (base = tclass->bases; base; base = base->next) {
-        if (base->base->ivars && base->base->ivars->access < 3) {
+        if (!(ivar = tclass->ivars)) {
             return NULL;
         }
-    }
-    if (ivar->type->type == TYPEFLOAT) {
-        return ivar->type;
-    }
-    return NULL;
-}
-
-// 0x464BE0: the type of a struct's (or class's) only member, if a float
-Type* func_00464BE0(Type* type) {
-    StructMember* member;
-    Type* t;
-
-    if (type->type == TYPESTRUCT) {
-        member = TYPE_STRUCT(type)->members;
-        if (!member) {
-            t = NULL;
-        } else if (!member->next) {
-            t = member->type;
-            if (t->type != TYPEFLOAT) {
-                t = NULL;
-            }
-        } else {
-            t = NULL;
+        if (ivar->next) {
+            return NULL;
         }
-        return t;
-    }
-    if (type->type != TYPECLASS) {
+        for (base = tclass->bases; base; base = base->next) {
+            if (base->base->ivars && base->base->ivars->access < 3) {
+                return NULL;
+            }
+        }
+        if (ivar->type->type == TYPEFLOAT) {
+            return ivar->type;
+        }
         return NULL;
     }
-    return CMach_ClassSingleFloat(TYPE_CLASS(type));
-}
 
-// 0x464B40: as above, but only for float sizes the floating-point library
-// passes in registers (copts.fp_library bit 0: single, bit 1: double)
-Type* func_00464B40(Type* type) {
-    StructMember* member;
-    Type* t;
+    // 0x464BE0: the type of a struct's (or class's) only member, if a float
+    Type* func_00464BE0(Type * type) {
+        StructMember* member;
+        Type* t;
+
+        if (type->type == TYPESTRUCT) {
+            member = TYPE_STRUCT(type)->members;
+            if (!member) {
+                t = NULL;
+            } else if (!member->next) {
+                t = member->type;
+                if (t->type != TYPEFLOAT) {
+                    t = NULL;
+                }
+            } else {
+                t = NULL;
+            }
+            return t;
+        }
+        if (type->type != TYPECLASS) {
+            return NULL;
+        }
+        return CMach_ClassSingleFloat(TYPE_CLASS(type));
+    }
+
+    // 0x464B40: as above, but only for float sizes the floating-point library
+    // passes in registers (copts.fp_library bit 0: single, bit 1: double)
+    Type* func_00464B40(Type * type) {
+        StructMember* member;
+        Type* t;
 
 #if MWCCPS2
-    // b210 (0x46FFC0): only with 64-bit longs (copts+0x15)
-    if (!copts.mips_long64) {
-        return NULL;
-    }
+        // b210 (0x46FFC0): only with 64-bit longs (copts+0x15)
+        if (!copts.mips_long64) {
+            return NULL;
+        }
 #endif
-    if (type->type == TYPESTRUCT) {
-        member = TYPE_STRUCT(type)->members;
-        if (!member) {
-            t = NULL;
-        } else if (!member->next) {
-            t = member->type;
-            if (t->type != TYPEFLOAT) {
+        if (type->type == TYPESTRUCT) {
+            member = TYPE_STRUCT(type)->members;
+            if (!member) {
+                t = NULL;
+            } else if (!member->next) {
+                t = member->type;
+                if (t->type != TYPEFLOAT) {
+                    t = NULL;
+                }
+            } else {
                 t = NULL;
             }
+        } else if (type->type == TYPECLASS) {
+            t = CMach_ClassSingleFloat(TYPE_CLASS(type));
         } else {
             t = NULL;
         }
-    } else if (type->type == TYPECLASS) {
-        t = CMach_ClassSingleFloat(TYPE_CLASS(type));
-    } else {
-        t = NULL;
-    }
 
+#if MWCCPS2_B52
+        if (t &&
+            t->type == TYPEFLOAT &&
+#else
     if (t &&
         t->type == TYPEFLOAT &&
-        (((TYPE_INTEGRAL(t)->integral == IT_FLOAT || t->size == 4) && (copts.fp_library & 1)) ||
-         ((TYPE_INTEGRAL(t)->integral == IT_DOUBLE || t->size == 8) && (copts.fp_library & 2)))) {
-        return t;
+#endif
+            (((TYPE_INTEGRAL(t)->integral == IT_FLOAT || t->size == 4) && (copts.fp_library & 1)) ||
+             ((TYPE_INTEGRAL(t)->integral == IT_DOUBLE || t->size == 8) &&
+              (copts.fp_library & 2)))) {
+            return t;
+        }
+        return NULL;
     }
-    return NULL;
-}
 
-// 0x464C90: aggregates larger than a word are passed by address
-Boolean CMach_PassResultInHiddenArg(Type* type) {
+    // 0x464C90: aggregates larger than a word are passed by address
+    Boolean CMach_PassResultInHiddenArg(Type * type) {
 #if MWCCPS2
+#if MWCCPS2_B52
+        if (copts.mips_long64 &&
+            type &&
+            (type->type == TYPEARRAY ||
+             type->type == TYPESTRUCT ||
+             type->type == TYPECLASS ||
+#else
     if (copts.mips_long64 &&
         type &&
         (type->type == TYPEARRAY ||
          type->type == TYPESTRUCT ||
          type->type == TYPECLASS ||
-         (type->type == TYPEMEMBERPOINTER && type->size == 12)) &&
-        type->size > data_00624788) {
-        return TRUE;
-    }
+#endif
+             (type->type == TYPEMEMBERPOINTER && type->size == 12)) &&
+            type->size > data_00624788) {
+            return TRUE;
+        }
 #else
     if (type &&
         (type->type == TYPEARRAY ||
@@ -1253,37 +1494,37 @@ Boolean CMach_PassResultInHiddenArg(Type* type) {
         return TRUE;
     }
 #endif
-    if (type->type == TYPECLASS && CClass_ReferenceArgument(TYPE_CLASS(type))) {
-        return TRUE;
+        if (type->type == TYPECLASS && CClass_ReferenceArgument(TYPE_CLASS(type))) {
+            return TRUE;
+        }
+        return FALSE;
     }
-    return FALSE;
-}
 
 #if !MWCCPS2 // b210: above (0x470290, 0x4702C0)
-// 0x464DB0: no custom integer types to convert
-CInt64 CMach_CustomIntConvert(Type* type, Type* oldtype, CInt64 value) {
-    return value;
-}
-
-// 0x464DC0: the only custom type is __int128
-Type* CMach_GetCustomType(short token, short size, short signedness) {
-    if (token == 0x114) {
-        return TYPE(&stint128);
+    // 0x464DB0: no custom integer types to convert
+    CInt64 CMach_CustomIntConvert(Type * type, Type * oldtype, CInt64 value) {
+        return value;
     }
-    CError_Error(ERR_ILLEGAL_TYPE);
-    return TYPE(&stsignedint);
-}
+
+    // 0x464DC0: the only custom type is __int128
+    Type* CMach_GetCustomType(short token, short size, short signedness) {
+        if (token == 0x114) {
+            return TYPE(&stint128);
+        }
+        CError_Error(ERR_ILLEGAL_TYPE);
+        return TYPE(&stsignedint);
+    }
 #endif
 
 #include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
 
-// 0x465510: #pragma parameter is not supported: skip the line
-void CMach_PragmaParams(void) {
-    if (copts.warn_illpragma) {
-        CPrep_Warning(ERR_ILLEGAL_PRAGMA);
+    // 0x465510: #pragma parameter is not supported: skip the line
+    void CMach_PragmaParams(void) {
+        if (copts.warn_illpragma) {
+            CPrep_Warning(ERR_ILLEGAL_PRAGMA);
+        }
+        while (notendofline()) {
+            lex();
+        }
     }
-    while (notendofline()) {
-        lex();
-    }
-}

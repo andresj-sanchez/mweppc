@@ -161,7 +161,11 @@ void func_00480B40(SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offse
     if (vi && (home = vi->reg)) {
 #if MWCCPS2
         // lq (0x467 macro, 0x1D1): a quadword local in a register
+#if MWCCPS2_B52
+        if (op == OPC(0x467) || op == OPC(0x1D1)) {
+#else
         if (op == 0x467 || op == 0x1D1) {
+#endif
             emitpcode(data_00625E74, reg, home);
         } else {
             emitpcode(data_00625E48, reg, home);
@@ -175,9 +179,15 @@ void func_00480B40(SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offse
     pc = func_00480420(op, 3);
     pc->args[0] = reg_operand(reg);
     pc->args[0].flags = 2;
+#if MWCCPS2_B52
     if (op ==
         (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
                                                                  : MACRO_OP(0x48))) {
+#else
+    if (op ==
+        (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
+                                                                 : MACRO_OP(0x48))) {
+#endif
         pc->args[0].flags |= 0x8000;
         if (copts.mips_option1A) {
             pc->args[0].flags |= 0x20;
@@ -250,9 +260,15 @@ void func_00480A00(SInt16 op, SInt16 reg, SInt16 base, Object* obj, SInt32 offse
     pc->args[0].rclass = 1;
     pc->args[0].reg = reg;
     pc->args[0].flags = 2;
+#if MWCCPS2_B52
     if (op ==
         (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
                                                                  : MACRO_OP(0x48))) {
+#else
+    if (op ==
+        (UInt16)((copts.mips_isa >= 2 && (copts.fp_library & 2)) ? MACRO_OP(0x4B)
+                                                                 : MACRO_OP(0x48))) {
+#endif
         pc->args[0].flags |= 0x8000;
         if (copts.mips_option1A) {
             pc->args[0].flags |= 0x20;

@@ -621,4 +621,27 @@ void COS_FileGetPathName(char* buffer, const FSSpec* spec, SInt32* mdDat) {
     COS_MakePath(spec->vRefNum, spec->parID, (StringPtr)buffer);
     p2cstr((StringPtr)buffer);
 }
+#if MWCCPS2_B52
+
+#include <string.h>
+// b52 0x42D560: a Pascal string to a C string
+void COS_p2cstrcpy(char* dst, ConstStringPtr src) {
+    memcpy(dst, src + 1, src[0]);
+    dst[src[0]] = 0;
+}
+
+// b52 (as 3.0.1's 0x439310): the file name after the last path separator
+const char* COS_GetFileName(const char* path) {
+    const char* p;
+
+    p = strrchr(path, '\\');
+    if (!p) {
+        p = strrchr(path, '/');
+        if (!p) {
+            p = strrchr(path, ':');
+        }
+    }
+    return p ? p + 1 : path;
+}
+#endif
 #endif

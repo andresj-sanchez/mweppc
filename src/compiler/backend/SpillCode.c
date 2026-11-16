@@ -397,6 +397,10 @@ static void spillinstruction(PCodeBlock* block, PCode* instr) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1660)
+#endif
 static void spillcopy(PCodeBlock* block, PCode* instr) {
     IGNode* srcNode;
     IGNode* destNode;
@@ -432,6 +436,10 @@ static void spillcopy(PCodeBlock* block, PCode* instr) {
 
     deletepcode(instr);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void spillcall(PCodeBlock* block, PCode* instr) {
     PCodeArg* opSrc;

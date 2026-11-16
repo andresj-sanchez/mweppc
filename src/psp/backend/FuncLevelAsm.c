@@ -32,9 +32,15 @@ extern void func_0046FA90(MPCodeLabel* label);
 extern void func_00482000(Statement* stmt); // assemble an asm statement
 extern void ScanStatements(volatile short endToken); // InlineAsm.c
 extern void newstatement(SInt32 sourceoffset, SInt32 value);
+#if MWCCPS2_B52
 extern void CodeGen_GenerateFunction(
     Object* func, Boolean emitreturn, Boolean optimize, Boolean special
 );
+#else
+extern void CodeGen_GenerateFunction(
+    Object* func, Boolean emitreturn, Boolean optimize, Boolean special
+);
+#endif
 
 // 0x4F8630: an asm function body: its statements are assembled one by one,
 // labels placed, and the function generated without optimization

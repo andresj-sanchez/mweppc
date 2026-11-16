@@ -38,6 +38,39 @@ enum {
     linkOutputNone,
     linkOutputFile,
     linkOutputDirectory
+#if MWCCPS2_B52
+};
+
+typedef struct CWBrowseOptions {
+    UInt8 recordClasses;
+    UInt8 recordEnums;
+    UInt8 recordMacros;
+    UInt8 recordTypedefs;
+    UInt8 recordConstants;
+    UInt8 recordTemplates;
+    UInt8 recordUndefinedFuncs;
+    SInt32 reserved1;
+    SInt32 reserved2;
+} CWBrowseOptions;
+#pragma pack(push, 2)
+typedef UInt32 CWDependencyTag;
+
+typedef struct CWObjectData {
+    CWMemHandle objectdata;
+    CWMemHandle browsedata;
+    SInt32 reserved1;
+    SInt32 codesize;
+    SInt32 udatasize;
+    SInt32 idatasize;
+    SInt32 compiledlines;
+    Boolean interfaceChanged;
+    SInt32 reserved2;
+    void* compilecontext;
+    struct CWDependencyInfo* dependencies;
+    short dependencyCount;
+    CWFileSpec* objectfile;
+} CWObjectData;
+#else
 };
 
 #if MWCCPSP
@@ -95,6 +128,7 @@ typedef struct CWObjectData {
     CWFileSpec* objectfile;
 } CWObjectData;
 #endif
+#endif
 typedef struct CWTargetInfo_V8 {
     short outputType;
     CWFileSpec outfile;
@@ -138,6 +172,11 @@ typedef struct CWTargetInfoV7 {
     CWDataType debuggerCreator;
     CWDataType runHelperCreator;
     SInt32 reserved2[2];
+#if MWCCPS2_B52
+    // b52's is 0x720 bytes, as 3.0.1's (CWCompilerLinkerContext.callbacks at
+    // +0xE22, CWDisplayLines); the fields' places in it are not known yet
+    UInt8 b52_unk[0x720 - 0x41E];
+#endif
 } CWTargetInfoV7;
 typedef struct CWEnvVarInfo {
     char* name;

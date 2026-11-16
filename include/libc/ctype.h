@@ -18,6 +18,23 @@ int toupper(int c);
 #endif
 MSL_CTYPE_INLINE int isdigit(int c) {
     return __ctype_map[(int)(unsigned char)(c)] & 0x10;
+#if MWCCPS2_B52
+}
+MSL_CTYPE_INLINE int isspace(int c) {
+    return __ctype_map[(int)(unsigned char)(c)] & 0x06;
+}
+
+#ifndef _MSL_USE_INLINE
+#define _MSL_USE_INLINE 1
+#endif
+#if _MSL_USE_INLINE
+MSL_CTYPE_INLINE int tolower(int c) {
+    return ((c == -1) ? -1 : ((int)__lower_map[(int)(unsigned char)(c)]));
+}
+#else
+int tolower(int c);
+#endif
+#else
 }
 MSL_CTYPE_INLINE int isspace(int c) {
     return __ctype_map[(int)(unsigned char)(c)] & 0x06;
@@ -51,6 +68,7 @@ MSL_CTYPE_INLINE int tolower(int c) {
 }
 #else
 int tolower(int c);
+#endif
 #endif
 #endif
 

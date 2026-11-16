@@ -91,9 +91,15 @@ SInt32 func_004C3310(MPCode* pc) {
         return 0;
     }
     for (k = pc->argcount, op = pc->args; k--; op++) {
+#if MWCCPS2_B52
         if (op->kind == 0 &&
             (op->flags & 2) &&
             bitvectorgetbit(op->reg, data_0062541C[op->rclass].current)) {
+#else
+        if (op->kind == 0 &&
+            (op->flags & 2) &&
+            bitvectorgetbit(op->reg, data_0062541C[op->rclass].current)) {
+#endif
             return 0;
         }
     }
@@ -160,10 +166,17 @@ void func_004C37C0(char rclass) {
             } else {
                 for (k = 0; k < data_00603F88->count; k++) {
                     if (rclass == data_00603F88->entries[k].rclass) {
+#if MWCCPS2_B52
                         bitvectorsetbit(
                             data_00603F88->entries[k].reg,
                             data_0062541C[rclass].blocks[block->number].liveout
                         );
+#else
+                        bitvectorsetbit(
+                            data_00603F88->entries[k].reg,
+                            data_0062541C[rclass].blocks[block->number].liveout
+                        );
+#endif
                     }
                 }
             }

@@ -10,6 +10,9 @@
 #include "compiler/IroLinearForm.h"
 #include "compiler/IroVars.h"
 #include "compiler/BitVector.h"
+#if MWCCPS2_B52
+#pragma pack(push, 2)
+#endif
 
 typedef struct IRODef301 {
     SInt32 index; // +0
@@ -27,8 +30,13 @@ typedef struct IRODef301 {
     BitVector* x24; // the aggregate pass: 0x57F400's result
     BitVector* x28;
     // the aggregate pass's records (0x48 bytes)
+#if MWCCPS2_B52
     struct IRODef301*
         linearnext; // +0x2C: the linear's next definition (IROLinear +0x24 holds the first)
+#else
+    struct IRODef301*
+        linearnext; // +0x2C: the linear's next definition (IROLinear +0x24 holds the first)
+#endif
     SInt32 x30;
     SInt32 x34; // +0x34: how many uses it reaches (the aggregate pass)
     struct IROUse301* x38; // +0x38: the use, when one
@@ -65,4 +73,7 @@ extern SInt32 data_006242F4; // how many
 
 extern void func_0057B300(void);
 
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 #endif

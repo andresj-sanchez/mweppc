@@ -5,7 +5,11 @@
 #include "compiler/types.h"
 #include "driver/oslib.h"
 #if MWCCPSP
+#if MWCCPS2_B52
+#define ASSERT_FUNCNAME
+#else
 #define ASSERT_FUNCNAME 0,
+#endif
 #else
 #endif
 #define IRO_POINTER_ANALYSIS_TU
@@ -38,6 +42,7 @@
 #undef IRO_ASSERT_T
 #undef IRO_ASSERT_MSG
 #if MWCCPSP
+#if MWCCPS2_B52
 #define IRO_ASSERT(line, expr) \
     ((expr) ? (void)0 \
             : __assertion_failed( \
@@ -48,6 +53,18 @@
             : __assertion_failed( \
                   text, "IroPointerAnalysis.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
               ))
+#else
+#define IRO_ASSERT(line, expr) \
+    ((expr) ? (void)0 \
+            : __assertion_failed( \
+                  #expr, "IroPointerAnalysis.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
+              ))
+#define IRO_ASSERT_MSG(line, expr, text) \
+    ((expr) ? (void)0 \
+            : __assertion_failed( \
+                  text, "IroPointerAnalysis.c", ASSERT_FUNCNAME(line) + CError_LINE_SHIFT \
+              ))
+#endif
 #else
 #define IRO_ASSERT(line, expr) \
     ((expr) ? (void)0 \
@@ -387,17 +404,21 @@ static Boolean ObjectIsAnExtendedParamCandidate(Object* obj) {
     IRO_ASSERT(1042, obj != NULL);
 
     return Inline_IsObjectData(obj) ||
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
         obj->datatype == DABSOLUTE ||
+#endif
 #endif
         obj->datatype == DFUNC ||
         obj->datatype == DVFUNC ||
         obj->datatype == DINLINEFUNC;
 }
 
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
 #define CError_LINE_SHIFT 1
+#endif
 #endif
 static Boolean ObjectIsAFunction(Object* obj) {
     IRO_ASSERT(1053, obj != NULL);
@@ -2495,9 +2516,11 @@ static ExtendedParam* CreateExtendedParam(
     return ep;
 }
 
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
 #define CError_LINE_SHIFT -1
+#endif
 #endif
 static void RecordActuals(IROLinear* nd, Object* proc, ParamMappingFunction* map) {
     IRO_ASSERT(3629, nd != NULL);
@@ -4229,6 +4252,28 @@ static Boolean LinearNodeIsInFlowgraphNode(IROLinear* nd, IRONode* fnode) {
     IROLinear* scan;
 
     if (fnode && (first = fnode->first) && (last = fnode->last)) {
+#if MWCCPS2_B52
+        for (scan = first; scan && scan != last->next; scan = scan->next) {
+            if (scan == nd) {
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
+static void EvalProcAction(IROLinear* Int, Boolean isFirst) {
+    Boolean* changed;
+    Boolean result;
+    Object* proc;
+    PartialTransferFunction* ptf;
+    Boolean needMeet;
+    Boolean nodeChanged;
+    IRONode* fnode;
+    PointsToFunction* pointsToFunc;
+    ParamMappingFunction* map;
+#else
         for (scan = first; scan && scan != last->next; scan = scan->next) {
             if (scan == nd) {
                 return TRUE;
@@ -4260,6 +4305,7 @@ static void EvalProcAction(IROLinear* Int, Boolean isFirst) {
     IRONode* fnode;
     PointsToFunction* pointsToFunc;
     ParamMappingFunction* map;
+#endif
 #endif
     Object* obj;
     AssignEachInPointsToFunctionActionParams params;
@@ -4353,6 +4399,11 @@ static void EvalProcAction(IROLinear* Int, Boolean isFirst) {
                    Int->u.node->type == EOBJREF &&
                    (obj = Int->u.node->data.objref) &&
                    obj->datatype == DLOCAL) {
+#if MWCCPS2_B52
+            ObjectSet_Add(fnode->addressed, obj);
+        } else if (Int->type == IROLinearAsm) {
+            longjmp(stAbortPointerAnalysis, 1);
+#else
             ObjectSet_Add(fnode->addressed, obj);
         } else if (Int->type == IROLinearAsm) {
 #if VERSION < VERSION_GC_2_5
@@ -4369,6 +4420,7 @@ static void EvalProcAction(IROLinear* Int, Boolean isFirst) {
             }
 #else
             longjmp(stAbortPointerAnalysis, 1);
+#endif
 #endif
         }
 
@@ -4404,9 +4456,11 @@ static void EvalProcAction(IROLinear* Int, Boolean isFirst) {
     }
 }
 
+#if !MWCCPS2_B52
 #if VERSION < VERSION_GC_2_5
 #undef CError_LINE_SHIFT
 #define CError_LINE_SHIFT 9
+#endif
 #endif
 static void EvalProc(Object* proc, ParamMappingFunction* map, PartialTransferFunction* ptf) {
     IRONode* fnode;
@@ -4675,12 +4729,27 @@ static void InvalidatePointsToFunctions(Object* proc) {
 
 static void InitialSetup(void) {}
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1099)
+#endif
 static void PointerAnalysis_HeapErrorProc(void) {
     longjmp(stAbortPointerAnalysis, 2);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 #if MWCCPSP
 // 3.0.1 (0x4CF9A0): no allocator here; the unknown object is set up each time
+#if MWCCPS2_B52
+// that nothing else touches; &stUnknown (0x584E94, 17 references) stays in
+// this unit's block, its fields never set
+Object stUnknownSetup;
+#define stUnknown stUnknownSetup
+// 3.0.1 (0x4CF9A0): no allocator here; the unknown object is set up each time
+#endif
 void PointerAnalysis_Setup(void) {
     stExtendedParamNum = 0;
     stParamObjs = NULL;
@@ -4689,6 +4758,9 @@ void PointerAnalysis_Setup(void) {
     stUnknown.type = TYPE(&stunsignedlong);
     stUnknown.datatype = DDATA;
 }
+#if MWCCPS2_B52
+#undef stUnknown
+#endif
 #else
 void PointerAnalysis_Setup(void) {
     IRO_InitializeAllocator();

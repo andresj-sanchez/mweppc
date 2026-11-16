@@ -4,6 +4,15 @@
 #include "compiler/common.h"
 #include "compiler/types.h"
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+struct PackedDeclInfo {
+    Type* thetype;
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,15 +22,22 @@ extern "C" {
 #endif
 struct PackedDeclInfo {
     Type* thetype;
+#endif
     UInt32 qual;
     NameSpace* nspace;
     HashNameNode* name;
+#if MWCCPS2_B52
+    TemplArg* expltargs;
+    SInt16 storageclass;
+    UInt8 section;
+#else
     TemplArg* expltargs;
     SInt16 storageclass;
 #if MWCCPSP
     UInt8 section; // a byte in 3.0.1, as in DeclInfo
 #else
     SInt16 section;
+#endif
 #endif
     UInt8 exportflags;
     Boolean has_expltargs;
@@ -42,8 +58,10 @@ struct TemplateMember {
     CPrepFileInfo* srcfile;
     SInt32 startoffset;
     SInt32 endoffset;
+#if !MWCCPS2_B52
 #if MWCCPS2
     void* unk30; // b210 allocates 0x34 bytes (CTemplClass_DefineMember)
+#endif
 #endif
 };
 
@@ -100,6 +118,20 @@ struct DefAction {
     int xC;
     TypeEnum* enumtype;
 };
+#if MWCCPS2_B52
+
+struct TypeDeduce {
+    TemplClass* tmclass;
+    TemplClassInst* inst;
+    TemplParam* params;
+    TemplArg* args;
+    DefAction* defActions;
+    Boolean processingClassTypes;
+    Boolean processingArgument;
+    Boolean suppressErrors;
+    Boolean hasNewVBases;
+    UInt8 nindex;
+#else
 
 struct TypeDeduce {
     TemplClass* tmclass;
@@ -125,6 +157,7 @@ struct TypeDeduce {
     Boolean hasNewVBases;
     UInt8 nindex;
 #endif
+#endif
 };
 
 struct TemplPartialSpec {
@@ -138,6 +171,74 @@ struct TemplStack {
     union {
         Object* func;
         TypeClass* theclass;
+#if MWCCPS2_B52
+    } u;
+    Boolean is_func;
+    Boolean is_poi;
+};
+
+struct TemplClass {
+    TypeClass theclass;
+    TemplClass* next;
+    TemplClass* templ_parent;
+    TemplClassInst* inst_parent;
+    TemplParam* templ__params;
+    TemplateMember* members;
+    TemplClassInst* instances;
+    TemplClass* pspec_owner;
+    TemplPartialSpec* pspecs;
+    TemplateAction* actions;
+    UInt16 lex_order_count;
+    SInt8 align;
+    UInt8 flags;
+};
+
+enum {
+    TEMPLCLASS_HAS_VTABLE = 1,
+    TEMPLCLASS_IS_SPECIALIZATION = 2
+};
+
+struct TemplClassInst {
+    TypeClass theclass;
+    TemplClassInst* next;
+    TemplClassInst* parent;
+    TemplClass* templ;
+    TemplArg* inst_args;
+    TemplArg* oargs;
+    Boolean is_instantiated;
+    Boolean is_specialized;
+    Boolean is_extern;
+    Boolean static_instantiated;
+};
+
+#define TEMPL_CLASS(ty) ((TemplClass*)(ty))
+#define TEMPL_CLASS_INST(ty) ((TemplClassInst*)(ty))
+#define IS_TEMPL_CLASS(ty) (IS_TYPE_CLASS(ty) && (TYPE_CLASS(ty)->flags & CLASS_IS_TEMPL))
+#define IS_TEMPL_CLASS_INST(ty) (IS_TYPE_CLASS(ty) && (TYPE_CLASS(ty)->flags & CLASS_IS_TEMPL_INST))
+
+struct TemplateFunction {
+    TemplateFunction* next;
+    TemplateFunction* original;
+    HashNameNode* name;
+    TemplParam* params;
+    TokenStream stream;
+    TStreamElement deftoken;
+    Object* tfunc;
+    TemplFuncInstance* instances;
+    CPrepFileInfo* srcfile;
+    SInt32 startoffset;
+    SInt32 endoffset;
+};
+
+struct TemplFuncInstance {
+    TemplFuncInstance* next;
+    Object* object;
+    TemplArg* args;
+    Boolean is_instantiated;
+    Boolean is_specialized;
+    Boolean is_extern;
+};
+#else
     } u;
     Boolean is_func;
     Boolean is_poi;
@@ -265,24 +366,33 @@ struct TemplFuncInstance {
     Boolean is_extern;
 };
 #endif
+#endif
 
 #define IS_TEMPL_FUNC(ty) (IS_TYPE_FUNC(ty) && (TYPE_FUNC(ty)->flags & FUNC_IS_TEMPL))
 
 typedef enum TemplateActionType {
     TAT_NESTEDCLASS,
+#if MWCCPS2_B52
+    TAT_ENUMTYPE,
+    TAT_FRIEND,
+    TAT_ENUMERATOR,
+#else
     TAT_ENUMTYPE,
     TAT_FRIEND,
 #if !MWCCPSP
     TAT_ENUMERATOR,
 #endif
+#endif
     TAT_BASE,
     TAT_OBJECTINIT,
     TAT_USINGDECL,
     TAT_OBJECTDEF,
+#if !MWCCPS2_B52
 #if MWCCPSP
     // 3.0.1 has no enumerator action (its template enums are handled in
     // another way, not ported yet); ours is kept past the 3.0.1 values
     TAT_ENUMERATOR,
+#endif
 #endif
     TAT_ILLEGAL
 } TemplateActionType;
@@ -312,6 +422,11 @@ struct TemplateAction {
             TypeTemplDep* type;
             AccessType access;
         } usingdecl;
+#if MWCCPS2_B52
+        ObjBase* refobj;
+    } u;
+    TemplateActionType type;
+#else
         ObjBase* refobj;
     } u;
 #if MWCCPSP
@@ -319,14 +434,21 @@ struct TemplateAction {
 #else
     TemplateActionType type;
 #endif
+#endif
 };
 
 struct TemplateScopeState {
     NameSpace* scope;
+#if MWCCPS2_B52
+    NameSpace* linkedNamespace;
+};
+#pragma pack(pop)
+#else
     NameSpace* linkedNamespace;
 };
 #if !MWCCPSP
 #pragma pack(pop)
+#endif
 #endif
 
 #ifdef __cplusplus

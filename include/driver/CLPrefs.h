@@ -7,6 +7,13 @@
 extern "C" {
 #endif
 
+#if MWCCPS2_B52
+typedef struct PrefPanel PrefPanel;
+
+extern PrefPanel* PrefPanel_New(const char* name, void* initdata, SInt32 initdatasize);
+extern Handle PrefPanel_GetHandle(PrefPanel* panel);
+extern int PrefPanel_PutHandle(PrefPanel* panel, Handle data);
+#else
 typedef struct PrefPanel PrefPanel;
 
 extern PrefPanel* PrefPanel_New(const char* name, void* initdata, SInt32 initdatasize);
@@ -16,6 +23,7 @@ extern int PrefPanel_PutHandle(PrefPanel* panel, struct OSHandle* data);
 #else
 extern Handle PrefPanel_GetHandle(PrefPanel* panel);
 extern int PrefPanel_PutHandle(PrefPanel* panel, Handle data);
+#endif
 #endif
 extern Boolean Prefs_AddPanel(PrefPanel* panel);
 extern PrefPanel* Prefs_FindPanel(const char* name);

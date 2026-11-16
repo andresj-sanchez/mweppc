@@ -17,10 +17,16 @@ struct OLinkList {
     struct Object* obj;
     SInt32 offset;
     SInt32 addend;
+#if MWCCPS2_B52
+};
+
+#pragma pack(push, 2)
+#else
 };
 
 #if !MWCCPSP // 3.0.1: natural alignment (PooledString is 0x18 bytes)
 #pragma pack(push, 2)
+#endif
 #endif
 typedef struct PooledString {
     struct PooledString* next;
@@ -29,10 +35,16 @@ typedef struct PooledString {
     char* data;
     SInt32 size;
     Boolean ispascal;
+#if MWCCPS2_B52
+    Boolean iswide;
+} PooledString;
+#pragma pack(pop)
+#else
     Boolean iswide;
 } PooledString;
 #if !MWCCPSP
 #pragma pack(pop)
+#endif
 #endif
 
 extern TempNodeCB cinit_tempnodefunc;
@@ -59,6 +71,7 @@ extern void CInit_DeclareData(Object* obj, void* data, OLinkList* list, SInt32 s
 extern void CInit_DeclareReadOnlyData(Object* obj, void* data, OLinkList* list, SInt32 size);
 extern void CInit_DefineTentativeData(void);
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 // 3.0.1: initializers are parsed into a record, then consumed
 struct CInitRecord;
@@ -70,6 +83,7 @@ extern void CInit_LocalObject(Object* obj, struct CInitRecord* rec, Statement* s
 #endif
 #if MWCCPSP
 
+#endif
 #endif
 #ifdef __cplusplus
 }

@@ -1,3 +1,62 @@
+#if MWCCPS2_B52
+// b52 (3.0 build 52): tools/mwccpsp's 3.0.1 header with its MWCCPSP layouts,
+// packed to 2 bytes like the rest of the b69 tree (IRO_NewStatement: 0x1E bytes,
+// IROLinear's rtype at +0x10). Only MWCCPS2_B69_BUILD=52 searches include/b52.
+#ifndef COMPILER_IROUSEDEF_H
+#define COMPILER_IROUSEDEF_H
+
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#pragma pack(push, 2)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// natively the pointers must stay aligned: 3.0.1's records (IROUse301) are
+#pragma pack(push, 2)
+struct IROUse {
+    SInt32 index;
+    IRONode* node;
+    IROLinear* linear;
+    VarRecord* var;
+    IROUse* globalnext;
+    IROUse* varnext;
+    BitVector* reachingDefs;
+    UInt16 reachingDefCount;
+};
+struct IRODef {
+    SInt32 index;
+    IRONode* node;
+    IROLinear* linear;
+    VarRecord* var;
+    IRODef* globalnext;
+    IRODef* varnext;
+    UInt16 useCount;
+    Boolean global;
+    Boolean noregister;
+    Boolean definite;
+    Boolean removable;
+};
+#pragma pack(pop)
+
+extern ENodeType IRO_NonAssignmentOp[IRO_MAXEXPR];
+extern IROUse* IRO_FirstVarUse;
+extern IROUse* IRO_LastVarUse;
+
+extern CInt64 IRO_GetSelfAssignmentVal(IROLinear* linear);
+extern void IRO_InitializeNonAssignmentOpArray(void);
+extern void IRO_InitializeAssignmentFoldingFunctionArray(void);
+extern Boolean IRO_UseDef(Boolean optDeadAssignments, Boolean optPropagation);
+extern void IRO_SplitLifetimes(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#pragma pack(pop)
+#endif
+#else
 #ifndef COMPILER_IROUSEDEF_H
 #define COMPILER_IROUSEDEF_H
 
@@ -59,4 +118,5 @@ extern void IRO_SplitLifetimes(void);
 }
 #endif
 
+#endif
 #endif

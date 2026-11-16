@@ -20,7 +20,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#if MWCCPS2_B52
+FILE* DumpFile; // b52: not in this unit's .bss (IRO_SetupDump 0x51F600 writes 0x5A3818)
+#else
 static FILE* DumpFile;
+#endif
 #if MWCCPSP
 static char* nodenames[IRO_MAXEXPR];
 #else
@@ -519,6 +523,24 @@ void IRO_ResetDumpTicks(void) {
 }
 
 void IRO_DumpAfterPhase(char* str, Boolean dumpGraph) {
+#if MWCCPS2_B52
+    {
+        extern char* getenv(const char*);
+        static int on = -1;
+        if (on < 0) {
+            on = getenv("MWCCPS2_NUMTRACE") != 0;
+        }
+        if (on) {
+            fprintf(
+                stderr,
+                "T PH %s N=%d %s\n",
+                str,
+                (int)IRO_NumLinear,
+                FunctionName ? FunctionName->name->name : "-"
+            );
+        }
+    }
+#endif
 #if MWCCPS2
     if (dumpGraph || copts.opt_alwaysdumpopts) {
         IRO_Dump(
@@ -798,6 +820,7 @@ void IRO_DumpExprs(void) {
     }
     IRO_Dump("Expressions\n\n");
     for (expr = IRO_FirstExpr; expr; expr = expr->next) {
+#if MWCCPS2_B52
         IRO_Dump(
             "%4d: %d FN:%d CE:%d NS:%d ",
             expr->index,
@@ -806,6 +829,16 @@ void IRO_DumpExprs(void) {
             expr->couldError,
             expr->notSubable
         );
+#else
+        IRO_Dump(
+            "%4d: %d FN:%d CE:%d NS:%d ",
+            expr->index,
+            expr->linear->index,
+            expr->node->index,
+            expr->couldError,
+            expr->notSubable
+        );
+#endif
         IRO_DumpBits("Depends: ", expr->depends);
         IRO_Dump("\n");
     }
@@ -847,6 +880,20 @@ void IRO_SetupDump(void) {
     int len;
 #endif
 
+#if MWCCPS2_B52
+    // debugging aid: MWCCPS2_IROLOG=1 writes the IRO log, =2 also every
+    // phase's dump (opt_alwaysdumpopts), as gdb used to set them
+    {
+        extern char* getenv(const char*);
+        char* e = getenv("MWCCPS2_IROLOG");
+        if (e && *e) {
+            IRO_Log = TRUE;
+            if (*e == '2') {
+                copts.opt_alwaysdumpopts = TRUE;
+            }
+        }
+    }
+#endif
     if (IRO_Log) {
         if (IRO_GetLogFileNameHook) {
             IRO_GetLogFileNameHook(name, sizeof(name));

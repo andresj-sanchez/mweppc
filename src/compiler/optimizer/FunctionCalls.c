@@ -114,7 +114,11 @@ static ArgInfo* analyze_arguments(
 #if MWCCPSP
               !COPTS_GONE(incompatible_sfpe_double_params))) &&
 #else
+#if MWCCPS2_B52
+              !COPTS_X.incompatible_sfpe_double_params)) &&
+#else
               !copts.incompatible_sfpe_double_params)) &&
+#endif
 #endif
             (gpr_counter % 2) == 0) {
             gpr_counter++;
@@ -235,7 +239,11 @@ static ArgInfo* analyze_arguments(
 #if MWCCPSP
         } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_GONE(processor) == CPU_PPCGEKKO) {
 #else
+#if MWCCPS2_B52
+        } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_X.processor == CPU_PPCGEKKO) {
+#else
         } else if (IS_TYPE_VEC2X32FLOAT(type) && copts.processor == CPU_PPCGEKKO) {
+#endif
 #endif
             if (fpr_counter <= 8) {
                 info->flags |= AIF_PassInFPR;
@@ -357,7 +365,11 @@ static void pass_in_memory(ArgInfo* info) {
 #if MWCCPSP
     } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_GONE(processor) == CPU_PPCGEKKO) {
 #else
+#if MWCCPS2_B52
+    } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_X.processor == CPU_PPCGEKKO) {
+#else
     } else if (IS_TYPE_VEC2X32FLOAT(type) && copts.processor == CPU_PPCGEKKO) {
+#endif
 #endif
         if (!info->evaluated) {
             GEN_NODE(info->expr, &info->opnd);
@@ -405,7 +417,11 @@ static void pass_in_register(ArgInfo* info) {
 #if MWCCPSP
     } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_GONE(processor) == CPU_PPCGEKKO) {
 #else
+#if MWCCPS2_B52
+    } else if (IS_TYPE_VEC2X32FLOAT(type) && COPTS_X.processor == CPU_PPCGEKKO) {
+#else
     } else if (IS_TYPE_VEC2X32FLOAT(type) && copts.processor == CPU_PPCGEKKO) {
+#endif
 #endif
         if (!info->evaluated) {
             GEN_NODE_TO_REG(info->expr, info->fpr, 0, &info->opnd);
@@ -702,7 +718,11 @@ void call_function(ENode* expr, Operand* output) {
 #if MWCCPSP
         if (has_floats && !COPTS_GONE(soft_float)) {
 #else
+#if MWCCPS2_B52
+        if (has_floats && !COPTS_X.soft_float) {
+#else
         if (has_floats && !copts.soft_float) {
+#endif
 #endif
             emitpcode(PC_CREQV, 1, 2, 1, 2, 1, 2);
         } else {
@@ -755,7 +775,11 @@ void call_function(ENode* expr, Operand* output) {
 #if MWCCPSP
     } else if (IS_TYPE_VEC2X32FLOAT(resultType) && COPTS_GONE(processor) == CPU_PPCGEKKO) {
 #else
+#if MWCCPS2_B52
+    } else if (IS_TYPE_VEC2X32FLOAT(resultType) && COPTS_X.processor == CPU_PPCGEKKO) {
+#else
     } else if (IS_TYPE_VEC2X32FLOAT(resultType) && copts.processor == CPU_PPCGEKKO) {
+#endif
 #endif
         output->optype = OpndType_FPR;
         output->reg = used_virtual_registers[RegClass_FPR]++;

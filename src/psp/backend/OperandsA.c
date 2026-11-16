@@ -164,19 +164,32 @@ int func_004A4580(VOperand* size) {
     SInt32 n;
 
     if (size->kind == 3) {
+#if MWCCPS2_B52
         func_00480740(
             MACRO_OP(0x96),
             29,
             29,
             ((size->imm.lo ? size->imm.lo : 0) + (data_0062421C - 1)) & ~(data_0062421C - 1)
         );
+#else
+        func_00480740(
+            MACRO_OP(0x96),
+            29,
+            29,
+            ((size->imm.lo ? size->imm.lo : 0) + (data_0062421C - 1)) & ~(data_0062421C - 1)
+        );
+#endif
     } else {
         if (size->kind != 0) {
             func_004A64C0(size, TYPE(&stsignedint), 0);
         }
         v = func_00479D70(3, size, data_0062421C - 1);
         v = func_0047E650(&v, ~(data_0062421C - 1));
+#if MWCCPS2_B52
+        emitpcode(OPC(0xDD), 29, 29, v.reg);
+#else
         emitpcode(0xDD, 29, 29, v.reg);
+#endif
     }
     v = func_004C3BA0(29, 0);
     v = func_00479B60(3, &v, 0, 0x11);

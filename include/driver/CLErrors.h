@@ -122,7 +122,16 @@ extern void CLReport(VarArgShort errid, ...);
 extern void CLReportOSError(SInt16 errid, int err, ...);
 extern void CLReportCError(SInt16 errid, int err_no, ...);
 extern void CLInternalError(const char* file, int line, const char* format, ...);
+#if MWCCPS2_B52
+// b69's line numbers (CError_B69_SHIFT, set around single functions as in the front end)
+#ifndef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
+#define DO_INTERNAL_ERROR(line, ...) \
+    CLInternalError(__FILE__, (line) + CError_B69_SHIFT, __VA_ARGS__)
+#else
 #define DO_INTERNAL_ERROR(line, ...) CLInternalError(__FILE__, line, __VA_ARGS__)
+#endif
 extern void CLFatalError(const char* format, ...);
 
 #ifdef __cplusplus

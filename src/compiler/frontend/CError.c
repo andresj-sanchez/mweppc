@@ -145,6 +145,10 @@ void CError_ResetErrorSkip(void) {
     cerror_lasterrorline = -1;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (57)
+#endif
 static void CError_GetErrorString(char* buf, short code) {
 #if MWCCPSP
     // 3.0.1: message n is string n + 100 of the list
@@ -152,9 +156,17 @@ static void CError_GetErrorString(char* buf, short code) {
     COS_GetString(buf, 10000, code + 100);
 #else
     CError_ASSERT(142, code >= ERR_ILLEGAL_CHARACTER_CONSTANT && code < ERR_MAX);
+#if MWCCPS2_B52
+    COS_GetString(buf, 10000, code - 99 + CError_ERR_SHIFT);
+#else
     COS_GetString(buf, 10000, code - 99);
 #endif
+#endif
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void CError_BufferInit(CErrorBuffer* eb, char* buf, SInt32 bufSize) {
     eb->start = eb->end = buf;
@@ -247,6 +259,10 @@ static void CError_BufferAppendTemplArgExpr(CErrorBuffer* eb, ENode* node) {
     CError_BufferAppendString(eb, "{targ_expr}");
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (82)
+#endif
 static void CError_BufferAppendTemplArg(CErrorBuffer* eb, TemplArg* targ) {
     switch (targ->pid.type) {
         case TPT_TYPE:
@@ -266,6 +282,10 @@ static void CError_BufferAppendTemplArg(CErrorBuffer* eb, TemplArg* targ) {
 #endif
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 static void CError_BufferAppendTemplArgs(CErrorBuffer* eb, TemplArg* targs) {
     if (!targs) {
@@ -517,9 +537,21 @@ static void CError_BufferAppendType(CErrorBuffer* eb, Type* ty, UInt32 qual) {
                     CError_BufferAppendString(eb, "__fixed__8x8");
                     return;
 #else
+#if MWCCPS2_B52
+                // b69 0x455DB1: 19 integral cases (table 0x536010), 17 is
+                // __fixed__8x8 and 18 __int128 (ATOM_INT128), no vec2x32float
+                case IT_17:
+                    CError_BufferAppendString(eb, "__fixed__8x8");
+#else
                 case IT_VEC2X32FLOAT:
                     CError_BufferAppendString(eb, "__vec2x32float__");
+#endif
                     return;
+#if MWCCPS2_B52
+                case IT_18:
+                    CError_BufferAppendString(eb, "__int128");
+                    return;
+#endif
 #endif
                 default:
 #if MWCCPSP
@@ -547,6 +579,7 @@ static void CError_BufferAppendType(CErrorBuffer* eb, Type* ty, UInt32 qual) {
                     CError_BufferAppendString(eb, "union ");
                     break;
 #if !MWCCPSP // 3.0.1 has no vector structs
+#if !MWCCPS2_B52
                 case STRUCT_VECTOR_UCHAR:
                 case STRUCT_VECTOR_SCHAR:
                 case STRUCT_VECTOR_BCHAR:
@@ -559,6 +592,7 @@ static void CError_BufferAppendType(CErrorBuffer* eb, Type* ty, UInt32 qual) {
                 case STRUCT_VECTOR_FLOAT:
                 case STRUCT_VECTOR_PIXEL:
                     break;
+#endif
 #endif
                 default:
 #if MWCCPSP
@@ -886,6 +920,10 @@ char* CError_GetObjectName(Object* obj) {
     return strcpy(ptr, eb.start);
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (111)
+#endif
 char* CError_GetNameString(NameSpace* nspace, HashNameNode* operatorName) {
     CErrorBuffer eb;
     char buf[256];
@@ -912,6 +950,10 @@ char* CError_GetNameString(NameSpace* nspace, HashNameNode* operatorName) {
         return opStr;
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void CError_ErrorMessage(int errTable, char* str, Boolean isTerminal, Boolean isWarning) {
     CWMessageRef myref;
@@ -1010,9 +1052,17 @@ static void CError_BufferAppendTemplateStack(CErrorBuffer* eb) {
     int index;
     int indent;
     int count;
+#if MWCCPS2_B52
+    int b69_dead;
+    int b69_dead2;
+#endif
 
     scan = ctempl_curinstance;
+#if MWCCPS2_B52
+    for (b69_dead = count = 0; scan && count < 64; b69_dead2 = count++) {
+#else
     for (count = 0; scan && count < 64; count++) {
+#endif
         stack[count] = scan;
         scan = scan->next;
     }
@@ -1033,7 +1083,7 @@ static void CError_BufferAppendTemplateStack(CErrorBuffer* eb) {
             eb, stack[index]->is_poi ? "(point of instantiation: '" : "(instantiating: '"
         );
 #else
-        CError_BufferAppendString(eb, "(instantiating: '");
+    CError_BufferAppendString(eb, "(instantiating: '");
 #endif
         if (stack[index]->is_func) {
             CError_AppendObjectName(eb, stack[index]->u.func);
@@ -1048,6 +1098,10 @@ static void CError_BufferAppendTemplateStack(CErrorBuffer* eb) {
 #endif
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (124)
+#endif
 #if MWCCPSP
 extern char* func_0043FFC0(void); // CPrep: the #include chain, or NULL at top level
 #endif
@@ -1160,6 +1214,10 @@ void CError_ErrorMessageVA(
 #endif
     CError_ErrorMessage(code, eb.start, isTerminal, isWarning);
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #if MWCCPSP
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT 0
@@ -1172,7 +1230,11 @@ static void CError_VAErrorMessage(int code, va_list list, Boolean isTerminal, Bo
 #if MWCCPSP
     CError_ErrorMessageVA(code + CError_MSG_BASE, buf, list, isTerminal, isWarning);
 #else
+#if MWCCPS2_B52
+    CError_ErrorMessageVA(code + CError_MSG_BASE, buf, list, isTerminal, isWarning);
+#else
     CError_ErrorMessageVA(code + 10000, buf, list, isTerminal, isWarning);
+#endif
 #endif
 }
 
@@ -1197,7 +1259,11 @@ void CError_ErrorTerm(short code) {
 #if MWCCPSP
     CError_ErrorMessage(code + CError_MSG_BASE, string, FALSE, FALSE);
 #else
+#if MWCCPS2_B52
+    CError_ErrorMessage(code + CError_MSG_BASE, string, FALSE, FALSE);
+#else
     CError_ErrorMessage(code + 10000, string, FALSE, FALSE);
+#endif
 #endif
     longjmp(errorreturn, 1);
 }
@@ -1218,6 +1284,10 @@ void CError_ErrorSkip(int code, ...) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (147)
+#endif
 #if MWCCPSP
 void CError_ErrorFuncCall(
     short code, NameSpaceObjectList* args, ENode* objexpr, ENodeList* argNodes
@@ -1319,9 +1389,17 @@ exit_main_loop:
 #if MWCCPSP
     CError_ErrorMessage(CError_MSG_BASE + code, eb.start, FALSE, FALSE);
 #else
+#if MWCCPS2_B52
+    CError_ErrorMessage(CError_MSG_BASE + code, eb.start, FALSE, FALSE);
+#else
     CError_ErrorMessage(10000 + code, eb.start, FALSE, FALSE);
 #endif
+#endif
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 #if MWCCPSP
 // 0x44FF40

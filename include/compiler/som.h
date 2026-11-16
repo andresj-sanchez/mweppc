@@ -3,6 +3,15 @@
 
 #include "compiler/common.h"
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push, 2)
+
+typedef enum SOMMethodState {
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,6 +21,7 @@ extern "C" {
 #endif
 
 typedef enum SOMMethodState {
+#endif
     SOMMS_Deleted,
     SOMMS_Method,
     SOMMS_Migrated
@@ -30,10 +40,16 @@ struct SOMInfo {
     UInt32 majorversion;
     UInt32 minorversion;
     UInt8 oidl_callstyle;
+#if MWCCPS2_B52
+};
+
+#pragma pack(pop)
+#else
 };
 
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(pop)
+#endif
 #endif
 
 #ifdef __cplusplus

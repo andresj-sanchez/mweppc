@@ -4,6 +4,15 @@
 #include "compiler/common.h"
 #include "driver/oslib.h"
 
+#if MWCCPS2_B52
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern short FixTextHandle(Handle txt);
+extern int LoadAndCacheFile(OSSpec* spec, Handle* texthandle, Boolean* precomp);
+extern void CopyFileText(Handle src, char** text, SInt32* textsize);
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,6 +25,7 @@ extern void CopyFileText(DriverHandle src, char** text, SInt32* textsize);
 extern short FixTextHandle(Handle txt);
 extern int LoadAndCacheFile(OSSpec* spec, Handle* texthandle, Boolean* precomp);
 extern void CopyFileText(Handle src, char** text, SInt32* textsize);
+#endif
 #endif
 
 #ifdef __cplusplus

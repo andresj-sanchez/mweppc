@@ -13,6 +13,17 @@ typedef struct _ThreadLocalData {
     unsigned long random_next;
     unsigned char* strtok_n;
     unsigned char* strtok_s;
+#if MWCCPS2_B52
+    void* thread_handle;
+    struct tm gmtime_tm;
+    char asctime_result[26];
+    char tmpnam_temp_name[512];
+} _ThreadLocalData;
+
+_ThreadLocalData* _GetThreadLocalData(void);
+
+#define errno (_GetThreadLocalData()->errno)
+#else
     void* thread_handle;
     struct tm gmtime_tm;
     char asctime_result[26];
@@ -30,6 +41,7 @@ _ThreadLocalData* _GetThreadLocalData(void);
 
 #endif
 #define errno (_GetThreadLocalData()->errno)
+#endif
 #endif
 
 #ifdef __cplusplus

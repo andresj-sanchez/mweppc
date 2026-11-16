@@ -35,6 +35,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if MWCCPS2_B52
+extern void IRO_InitializeAllocators(void);
+extern void IRO_TerminateAllocators(void);
+#endif
 
 #if !MWCCPSP // 3.0.1: natural alignment (CPrep_PushOption allocates 12 bytes)
 #pragma pack(2)
@@ -326,8 +330,15 @@ CompilerOption compileroptions[] = {
 };
 #else
 CompilerOption compileroptions[] = {
+#if MWCCPS2_B52
+    "little_endian", 0x4000 | OPT_OFFSET(littleendian),
+#else
     "little_endian", OPT_FLAG_NOPRAGMA | OPT_OFFSET(littleendian),
+#endif
     "longlong", OPT_OFFSET(longlong),
+#if MWCCPS2_B52
+    "fp_library", OPT_OFFSET(fp_library),
+#else
     "disable_registers", OPT_OFFSET(disable_registers),
     "fp_contract", OPT_OFFSET(fp_contract),
     "pool_data", OPT_OFFSET(pool_data),
@@ -335,12 +346,42 @@ CompilerOption compileroptions[] = {
     "create_file_object", OPT_OFFSET(create_file_object),
     "incompatible_sfpe_double_params", OPT_OFFSET(incompatible_sfpe_double_params),
     "ibm_stackframe", OPT_OFFSET(ibm_stackframe),
+#endif
     "debug_listing", OPT_OFFSET(debuglisting),
+#if MWCCPS2_B52
+    "interrupt", OPT_OFFSET(interrupt),
+    "inline_intrinsics", OPT_OFFSET(inline_intrinsics),
+    "far_call", OPT_OFFSET(far_call),
+    "peephole", OPT_OFFSET(peephole),
+    "schedule", OPT_OFFSET(schedule),
+    "tailcall", OPT_OFFSET(tailcall),
+    "conditional_move", OPT_OFFSET(conditional_move),
+    "gencvtcheck", OPT_OFFSET(gencvtcheck),
+    "trunc", OPT_OFFSET(trunc),
+    "prefetch", OPT_OFFSET(prefetch),
+    "sqrt", OPT_OFFSET(sqrt),
+    "floatsp32", OPT_OFFSET(floatsp32),
+    "nofpregforblkmv", OPT_OFFSET(nofpregforblkmv),
+    "divbyzerocheck", OPT_OFFSET(divbyzerocheck),
+    "nomacro", OPT_OFFSET(nomacro),
+    "warn_inlineasm", OPT_OFFSET(warn_inlineasm),
+#else
     "profile", OPT_OFFSET(profile),
     "optimizewithasm", OPT_OFFSET(optimizewithasm),
     "use_lmw_stmw", OPT_OFFSET(use_lmw_stmw),
     "no_register_save_helpers", OPT_OFFSET(no_register_save_helpers),
+#endif
     "cats", OPT_OFFSET(cats),
+#if MWCCPS2_B52
+    "usefloatacc", OPT_OFFSET(usefloatacc),
+    "padloop", OPT_OFFSET(padloop),
+    "dividefix", OPT_OFFSET(dividefix),
+    "fast_fptosi", OPT_OFFSET(fast_fptosi),
+    "irocseglobaladdresses", OPT_OFFSET(irocseglobaladdresses),
+    "fastmath", OPT_OFFSET(fastmath),
+    "enable_vu0_registers", OPT_OFFSET(enable_vu0_registers),
+    "vu0_register_number", 0x4000 | OPT_OFFSET(vu0_register_number),
+#else
     "force_cats", OPT_OFFSET(force_cats),
     "gecko_float_typecons", OPT_OFFSET(gecko_float_typecons),
     "disable_vector_frame", OPT_OFFSET(disable_vector_frame),
@@ -354,13 +395,16 @@ CompilerOption compileroptions[] = {
 #if VERSION >= VERSION_GC_2_5
     "old_style_bitfields", OPT_OFFSET(old_style_bitfields),
 #endif
+#endif
     "asmsemicolcomment", OPT_OFFSET(asmsemicolcomment),
     "asmpoundcomment", OPT_OFFSET(asmpoundcomment),
     "cplusplus", OPT_OFFSET(cplusplus),
     "ecplusplus", OPT_OFFSET(ecplusplus),
+#if !MWCCPS2_B52
     "objective_c", OPT_OFFSET(objective_c),
     "objc_strict", OPT_OFFSET(objc_strict),
     "ARM_conform", OPT_OFFSET(ARMconform),
+#endif
     "ARM_scoping", OPT_OFFSET(ARMscoping),
     "require_prototypes", OPT_OFFSET(checkprotos),
     "trigraphs", OPT_OFFSET(trigraphs),
@@ -379,12 +423,19 @@ CompilerOption compileroptions[] = {
     "unsigned_char", OPT_OFFSET(unsigned_char),
     "auto_inline", OPT_OFFSET(auto_inline),
     "inline_bottom_up", OPT_OFFSET(inline_bottom_up),
+#if MWCCPS2_B52
+    "inline_bottom_up_once", OPT_OFFSET(inline_bottom_up_once),
+#endif
     "defer_codegen", OPT_OFFSET(defer_codegen),
     "direct_to_som", OPT_OFFSET(direct_to_som),
     "SOMCheckEnvironment", OPT_OFFSET(som_env_check),
     "SOMCallOptimization", OPT_OFFSET(som_call_optimize),
     "bool", OPT_OFFSET(booltruefalse),
+#if MWCCPS2_B52
+    "_Bool", OPT_OFFSET(booltruefalse),
+#else
     "old_enum_mangler", OPT_OFFSET(old_enum_mangler),
+#endif
     "longlong_enums", OPT_OFFSET(longlong_enums),
     "no_tfuncinline", OPT_OFFSET(no_tfuncinline),
     "flat_include", OPT_OFFSET(flat_include),
@@ -409,12 +460,18 @@ CompilerOption compileroptions[] = {
     "suppress_init_code", OPT_OFFSET(suppress_init_code),
     "reverse_bitfields", OPT_OFFSET(reverse_bitfields),
     "c9x", OPT_OFFSET(c9x),
+#if MWCCPS2_B52
+    "c99", OPT_OFFSET(c9x),
+#endif
     "float_constants", OPT_OFFSET(float_constants),
     "no_static_dtors", OPT_OFFSET(no_static_dtors),
     "longlong_prepeval", OPT_OFFSET(longlong_prepeval),
     "const_strings", OPT_OFFSET(const_strings),
     "dumpir", OPT_OFFSET(dumpir),
     "experimental", OPT_OFFSET(experimental),
+#if MWCCPS2_B52
+    "late_fixes", OPT_OFFSET(late_fixes),
+#endif
     "gcc_extensions", OPT_OFFSET(gcc_extensions),
     "stdc_fp_contract", OPT_OFFSET(stdc_fp_contract),
     "stdc_fenv_access", OPT_OFFSET(stdc_fenv_access),
@@ -423,15 +480,40 @@ CompilerOption compileroptions[] = {
     "optEH", OPT_OFFSET(optEH),
     "optEH2", OPT_OFFSET(optEH2),
     "new_mangler", OPT_OFFSET(new_mangler),
+#if MWCCPS2_B52
+    "parse_func_templ", OPT_OFFSET(parse_func_templ),
+    "parse_mfunc_templ", OPT_OFFSET(parse_mfunc_templ),
+    "old_depfunc_lookup", OPT_OFFSET(old_depfunc_lookup),
+    "show_error_filestack", OPT_OFFSET(show_error_filestack),
+    "defer_defarg_parsing", OPT_OFFSET(defer_defarg_parsing),
+    "reg_class_allocs", OPT_OFFSET(reg_class_allocs),
+    "old_pragma_once", OPT_OFFSET(old_pragma_once),
+    "new_calldeduction", OPT_OFFSET(new_calldeduction),
+#endif
     "fullpath_file", OPT_OFFSET(fullpath_file),
+#if MWCCPS2_B52
+    "opt_classresults", OPT_OFFSET(opt_classresults),
+    "ushort_wchar_t", 0x8000 | OPT_OFFSET(ushort_wchar_t),
+    "microsoft_exceptions", 0x8000 | OPT_OFFSET(microsoft_EH),
+#else
     "microsoft_exceptions", OPT_OFFSET(microsoft_EH),
+#endif
     "microsoft_RTTI", OPT_OFFSET(microsoft_EH),
+#if !MWCCPS2_B52
     "stdc_libfuncname_redefined", (short)(OPT_FLAG_RECONFIGURE | OPT_OFFSET(no_ansi_lib_builtin)),
     "no-ansi-lib-builtin", OPT_OFFSET(no_ansi_lib_builtin),
+#endif
     "warning_errors", OPT_OFFSET(warningerrors),
+#if MWCCPS2_B52
+    "access_errors", OPT_OFFSET(access_errors),
+#endif
     "extended_errorcheck", OPT_OFFSET(pedantic),
     "check_header_flags", OPT_OFFSET(checkprecompflags),
+#if MWCCPS2_B52
+    "suppress_warnings", OPT_OFFSET(supress_warnings),
+#else
     "supress_warnings", OPT_OFFSET(supress_warnings),
+#endif
     "warn_illpragma", OPT_OFFSET(warn_illpragma),
     "warn_emptydecl", OPT_OFFSET(warn_emptydecl),
     "warn_possunwant", OPT_OFFSET(warn_possunwant),
@@ -441,18 +523,37 @@ CompilerOption compileroptions[] = {
     "warn_hidevirtual", OPT_OFFSET(warn_hidevirtual),
     "warn_largeargs", OPT_OFFSET(warn_largeargs),
     "warn_implicitconv", OPT_OFFSET(warn_implicitconv),
+#if MWCCPS2_B52
+    "warn_impl_i2f_conv", OPT_OFFSET(warn_impl_i2f_conv),
+    "warn_impl_f2i_conv", OPT_OFFSET(warn_impl_f2i_conv),
+    "warn_impl_s2u_conv", OPT_OFFSET(warn_impl_s2u_conv),
+#endif
     "warn_notinlined", OPT_OFFSET(warn_notinlined),
     "warn_structclass", OPT_OFFSET(warn_structclass),
     "warn_padding", OPT_OFFSET(warn_padding),
     "warn_no_side_effect", OPT_OFFSET(warn_no_side_effect),
     "warn_resultnotused", OPT_OFFSET(warn_resultnotused),
     "warn_ptr_int_conv", OPT_OFFSET(warn_ptr_int_conv),
+#if MWCCPS2_B52
+    "warn_no_typename", OPT_OFFSET(warn_no_typename),
+    "warn_filenamecaps", OPT_OFFSET(warn_filenamecaps),
+    "warn_filenamecaps_system", OPT_OFFSET(warn_filenamecaps_system),
+    "warn_no_explicit_virtual", OPT_OFFSET(warn_no_explicit_virtual),
+    "warn_pch_portability", OPT_OFFSET(warn_pch_portability),
+#endif
     "warn_uninitializedvar", OPT_OFFSET(warn_uninitializedvar),
+#if MWCCPS2_B52
+    "warn_illunionmembers", OPT_OFFSET(warn_illunionmembers),
+    "warn_undefmacro", OPT_OFFSET(warn_undefmacro),
+#endif
     "align_array_members", OPT_OFFSET(alignarraymembers),
     "dont_reuse_strings", OPT_OFFSET(dont_reuse_strings),
     "pool_strings", OPT_OFFSET(poolstrings),
     "explicit_zero_data", OPT_OFFSET(explicit_zero_data),
     "readonly_strings", OPT_OFFSET(readonly_strings),
+#if MWCCPS2_B52
+    "thread_safe_init", OPT_OFFSET(thread_safe_init),
+#endif
     "opt_common_subs", OPT_OFFSET(commonsubs),
     "opt_loop_invariants", OPT_OFFSET(loopinvariants),
     "opt_propagation", OPT_OFFSET(propagation),
@@ -464,6 +565,61 @@ CompilerOption compileroptions[] = {
     "opt_dead_assignments", OPT_OFFSET(deadstore),
     "opt_vectorize_loops", OPT_OFFSET(vectorizeloops),
     "opt_pointer_analysis", OPT_OFFSET(opt_pointer_analysis),
+#if MWCCPS2_B52
+    "opt_scalarize", OPT_OFFSET(opt_scalarize),
+    "opt_prelinearize", OPT_OFFSET(opt_prelinearize),
+    "opt_treetransformation", OPT_OFFSET(opt_treetransformation),
+    "opt_arithtransformation", OPT_OFFSET(opt_arithtransformation),
+    "opt_rebuildconditionals", OPT_OFFSET(opt_rebuildconditionals),
+    "opt_rebuildconditionals", OPT_OFFSET(opt_rebuildconditionals),
+    "opt_rebuildconditionals", OPT_OFFSET(opt_rebuildconditionals),
+    "opt_rebuildlogicals", OPT_OFFSET(opt_rebuildlogicals),
+    "opt_generateconditionalassignments", OPT_OFFSET(opt_generateconditionalassignments),
+    "opt_removeemptyloops", OPT_OFFSET(opt_removeemptyloops),
+    "opt_alwaysdumpopts", OPT_OFFSET(opt_alwaysdumpopts),
+    "opt_rotateloops", OPT_OFFSET(opt_rotateloops),
+    "opt_optimizenonregaccess", OPT_OFFSET(opt_optimizenonregaccess),
+    "opt_movepostops", OPT_OFFSET(opt_movepostops),
+    "opt_findoptimalunrollfactor", OPT_OFFSET(opt_findoptimalunrollfactor),
+    "opt_findoptimalvectorunrollfactor", OPT_OFFSET(opt_findoptimalvectorunrollfactor),
+    "opt_unrollpostloop", OPT_OFFSET(opt_unrollpostloop),
+    "opt_unrollvectorpostloop", OPT_OFFSET(opt_unrollvectorpostloop),
+    "opt_createvectortemps", OPT_OFFSET(opt_createvectortemps),
+    "opt_unpromotetypes", OPT_OFFSET(opt_unpromotetypes),
+    "opt_dumptypes", OPT_OFFSET(opt_dumptypes),
+    "opt_scalarizebitfields", OPT_OFFSET(opt_scalarizebitfields),
+    "opt_propagatemultiplydivideassignments", OPT_OFFSET(opt_propagatemultiplydivideassignments),
+    "opt_moveinvariantsinaddressexpr", OPT_OFFSET(opt_moveinvariantsinaddressexpr),
+    "opt_convertfpconsts", OPT_OFFSET(opt_convertfpconsts),
+    "opt_markcounterloops", OPT_OFFSET(opt_markcounterloops),
+    "opt_markvariablecounterloops", OPT_OFFSET(opt_markvariablecounterloops),
+    "opt_pulloutconstants", OPT_OFFSET(opt_pulloutconstants),
+    "opt_defineargorder", OPT_OFFSET(opt_defineargorder),
+    "opt_useexpressioncostswhenlinearizingassignments", OPT_OFFSET(opt_useexpressioncostswhenlinearizingassignments),
+    "opt_intelcompareoplinearizationhack", OPT_OFFSET(opt_intelcompareoplinearizationhack),
+    "opt_rearrangemultiplesubscripts", OPT_OFFSET(opt_rearrangemultiplesubscripts),
+    "opt_returnloopdepthinstatementvalue", OPT_OFFSET(opt_returnloopdepthinstatementvalue),
+    "opt_marknonregtemps", OPT_OFFSET(opt_marknonregtemps),
+    "opt_addgotounrolledlooptest", OPT_OFFSET(opt_addgotounrolledlooptest),
+    "opt_addtogetherconstantpartsoftreeexpressions", OPT_OFFSET(opt_addtogetherconstantpartsoftreeexpressions),
+    "opt_propagateequivalentscalartypes", OPT_OFFSET(opt_propagateequivalentscalartypes),
+    "opt_unpromoteenumtointconversions", OPT_OFFSET(opt_unpromoteenumtointconversions),
+    "opt_unpromotemultipliestochartype", OPT_OFFSET(opt_unpromotemultipliestochartype),
+    "opt_dospecialmultiplyunpromotion", OPT_OFFSET(opt_dospecialmultiplyunpromotion),
+    "opt_docrossconversionofinductionreference", OPT_OFFSET(opt_docrossconversionofinductionreference),
+    "opt_intrinsicfunctioncallscanhavesideeffects", OPT_OFFSET(opt_intrinsicfunctioncallscanhavesideeffects),
+    "opt_collapselogicalselectionintobittest", OPT_OFFSET(opt_collapselogicalselectionintobittest),
+    "opt_collapselogicalselectionintobittest_uselonglong", OPT_OFFSET(opt_collapselogicalselectionintobittest_uselonglong),
+    "opt_reverseloops", OPT_OFFSET(opt_reverseloops),
+    "opt_foldconstants", OPT_OFFSET(opt_foldconstants),
+    "opt_optimizecontrolflow", OPT_OFFSET(opt_optimizecontrolflow),
+    "opt_serializeassignments", OPT_OFFSET(opt_serializeassignments),
+    "opt_branchlessexpensivethandiv", OPT_OFFSET(opt_branchlessexpensivethandiv),
+    "opt_repositioncode", OPT_OFFSET(opt_repositioncode),
+    "opt_decomposeaggregates", OPT_OFFSET(opt_decomposeaggregates),
+    "opt_recomposeaggregates", OPT_OFFSET(opt_recomposeaggregates),
+    "opt_scalarizeliveranges", OPT_OFFSET(opt_scalarizeliveranges),
+#endif
     "exceptions", OPT_OFFSET(exceptions),
     "dont_inline", OPT_OFFSET(dontinline),
     "always_inline", OPT_OFFSET(alwaysinline),
@@ -471,15 +627,25 @@ CompilerOption compileroptions[] = {
     "peephole", OPT_OFFSET(peephole),
     "global_optimizer", OPT_OFFSET(globaloptimizer),
     "side_effects", OPT_OFFSET(sideeffects),
+#if MWCCPS2_B52
+    "internal", 0x2000 | OPT_OFFSET(cfm_internal),
+    "import", 0x2000 | OPT_OFFSET(cfm_import),
+    "export", 0x2000 | OPT_OFFSET(cfm_export),
+    "lib_export", 0x2000 | OPT_OFFSET(cfm_lib_export),
+#else
     "internal", OPT_FLAG_LIST | OPT_OFFSET(cfm_internal),
     "import", OPT_FLAG_LIST | OPT_OFFSET(cfm_import),
     "export", OPT_FLAG_LIST | OPT_OFFSET(cfm_export),
     "lib_export", OPT_FLAG_LIST | OPT_OFFSET(cfm_lib_export),
+#endif
     "nosyminline", OPT_OFFSET(nosyminline),
     "force_active", OPT_OFFSET(force_active),
     "block_assign", OPT_OFFSET(block_assign),
     "has8bytebitfields", OPT_OFFSET(has8bytebitfields),
     "sym", OPT_OFFSET(filesyminfo),
+#if MWCCPS2_B52
+    "symstringtypes", OPT_OFFSET(symstringtypes),
+#endif
     NULL, 0
 };
 #endif
@@ -531,10 +697,15 @@ short filesp;
 SInt32 linenumber;
 static CPrepFileInfo* filestack[32];
 static CPrepFileInfoList* cprep_files;
+#if !MWCCPS2_B52
 static CPrepFileInfo* cprep_extrafile;
+#endif
 static UInt32 linetick;
 static UInt8 waslockedmacro;
 static UInt8 include_once;
+#if MWCCPS2_B52
+static Boolean cprep_warned_pch_once; // 3.0.1's; b52 0x584964 (cleared by setupprep)
+#endif
 static SInt32 now_time;
 static SInt32 lineoffset;
 static UInt8 was_prep_error;
@@ -554,6 +725,9 @@ static Macro cpplM;
 static Macro MWRSM;
 static Macro dtsomM;
 static Macro ecppM;
+#if MWCCPS2_B52
+static Macro ia64M; // 3.0.1's __IA64_CPP_ABI__, inserted by b52 too (0x43BBDE)
+#endif
 #if MWCCPSP
 static Macro ia64M; // 3.0.1: __IA64_CPP_ABI__
 #endif
@@ -592,6 +766,11 @@ static void prepmacro(Macro* macro);
 static void prepifskip(void);
 static void gotonexttoken(void);
 
+#if MWCCPS2_B52
+extern void COS_p2cstrcpy(char* dst, ConstStringPtr src);
+extern const char* COS_GetFileName(const char* path);
+// b52 (0x43BA30), like 3.0.1, names the file without its path (no static buffer)
+#endif
 #if MWCCPSP
 extern void COS_p2cstrcpy(char* dst, ConstStringPtr src);
 extern void COS_c2pstrcpy(StringPtr dst, const char* src);
@@ -628,8 +807,17 @@ static void cannotopenerror(StringPtr filename, Boolean err) {
 }
 #else
 static void cannotopenerror(StringPtr filename, Boolean err) {
+#if MWCCPS2_B52
+    char buf[260];
+    const char* name;
+#else
     static char fname[64];
+#endif
 
+#if MWCCPS2_B52
+    COS_p2cstrcpy(buf, filename);
+    name = COS_GetFileName(buf);
+#else
     short len = filename[0];
     if (len > 63) {
         len = 63;
@@ -637,11 +825,16 @@ static void cannotopenerror(StringPtr filename, Boolean err) {
     memcpy(fname, filename + 1, len);
     fname[len] = 0;
 
+#endif
     CError_ResetErrorSkip();
 
     if (prep_file) {
         was_prep_error = TRUE;
+#if MWCCPS2_B52
+        CError_Error(ERR_FILE_CANNOT_OPENED, name);
+#else
         CError_Error(ERR_FILE_CANNOT_OPENED, fname);
+#endif
         if (err) {
             longjmp(errorreturn, 1);
         }
@@ -678,6 +871,9 @@ void CPrep_InsertSpecialMacros(void) {
     CPrep_InsertSpecialMacro(&ecppM, "__embedded_cplusplus");
     CPrep_InsertSpecialMacro(&optiM, "__option");
     CPrep_InsertSpecialMacro(&trgtM, "__ide_target");
+#if MWCCPS2_B52
+    CPrep_InsertSpecialMacro(&ia64M, "__IA64_CPP_ABI__");
+#endif
 #if MWCCPSP
     CPrep_InsertSpecialMacro(&ia64M, "__IA64_CPP_ABI__");
 #endif
@@ -800,6 +996,9 @@ int setupprep(void) {
     now_time = time(NULL);
     lineoffset = 0;
     include_once = FALSE;
+#if MWCCPS2_B52
+    cprep_warned_pch_once = FALSE;
+#endif
     cprep_eoltokens = FALSE;
     cprep_nostring = FALSE;
     cprep_incondexpr = FALSE;
@@ -870,7 +1069,9 @@ int setupprep(void) {
     cprep_idarray['_'] = 1;
 
     CPrep_Reconfig();
+#if !MWCCPS2_B52
     ELF_Setup();
+#endif
     return 0;
 }
 #endif
@@ -1352,7 +1553,9 @@ static Boolean setupfile(StringPtr filename, Boolean fullsearch, Boolean isImpor
         CPrep_PreprocessDumpFileInfo(TRUE);
     }
 
+#if !MWCCPS2_B52
     cprep_extrafile = NULL;
+#endif
     return TRUE;
 }
 #endif
@@ -1380,6 +1583,12 @@ void CPrep_TokenStreamSetState(SInt32* state) {
     ts_current = ts_first + *state;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-4)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (444)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -4 // b145 asserts
@@ -1393,6 +1602,12 @@ void CPrep_UnLex(void) {
     CError_ASSERT(909, ts_current >= ts_first);
 #endif
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
@@ -2130,11 +2345,13 @@ void popfile(void) {
 #else
     CWReleaseFileText(cparamblkptr->context, prep_file->textbuffer);
     prep_file->textbuffer = NULL;
+#if !MWCCPS2_B52
     if (cprep_extrafile && (text = cprep_extrafile->textbuffer)) {
         CWReleaseFileText(cparams.context, text);
         cprep_extrafile->textbuffer = NULL;
         cprep_extrafile = NULL;
     }
+#endif
 #endif
     if (--filesp >= 0) {
 #if MWCCPSP
@@ -2257,6 +2474,7 @@ void CPrep_SetSourceFile(FileOffsetInfo* foi) {
         }
     }
 
+#if !MWCCPS2_B52
     if (foi->file == cprep_extrafile) {
         if (cparamblkptr->precompile != 1) {
             ObjGen_SrcBreakName(cprep_extrafile->nameNode, cprep_extrafile->fileModDate, FALSE);
@@ -2264,6 +2482,7 @@ void CPrep_SetSourceFile(FileOffsetInfo* foi) {
         cprep_cursymfile = foi->file;
         return;
     }
+#endif
 
     list = galloc(sizeof(CPrepFileInfoList));
     list->next = cprep_files;
@@ -2319,9 +2538,15 @@ SInt32 CPrep_GetFileOffsetInfo(FileOffsetInfo* foi) {
     SInt32 off;
 
     if (ts_first < ts_current && ts_current[-1].tokenfile == foi->file) {
+#if MWCCPS2_B52
+        i = ts_current[-1].tokenline;
+        if (i > foi->tokenline) {
+            foi->tokenline = i;
+#else
         p = ts_current[-1].tokenline;
         if (p > foi->tokenline) {
             foi->tokenline = p;
+#endif
         }
         off = ts_current[-1].tokenoffset;
         if (off > foi->tokenoffset) {
@@ -2356,6 +2581,12 @@ SInt32 CPrep_GetFileOffsetInfo(FileOffsetInfo* foi) {
     return foi->tokenline;
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-4)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (525)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -6 // b145 asserts
@@ -2366,9 +2597,15 @@ void CPrep_GetFileOffsetInfo2(FileOffsetInfo* foi, SInt32* pLine, HashNameNode**
     SInt32 off;
 
     if (ts_first < ts_current && ts_current[-1].tokenfile == foi->file) {
+#if MWCCPS2_B52
+        i = ts_current[-1].tokenline;
+        if (i > foi->tokenline) {
+            foi->tokenline = i;
+#else
         p = ts_current[-1].tokenline;
         if (p > foi->tokenline) {
             foi->tokenline = p;
+#endif
         }
 #if MWCCPSP
         p = ts_current[-1].tokenoffset;
@@ -2420,15 +2657,25 @@ void CPrep_GetFileOffsetInfo2(FileOffsetInfo* foi, SInt32* pLine, HashNameNode**
         }
     }
 #else
+#if !MWCCPS2_B52
     if (foi->file && foi->file->linedelta) {
         *pLine = linenumber;
     } else {
+#endif
         *pLine = foi->tokenline;
+#if !MWCCPS2_B52
     }
+#endif
     CError_ASSERT(2019, *pLine >= 0);
     *pName = foi->file ? foi->file->nameNode : NULL;
 #endif
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
@@ -2457,7 +2704,9 @@ void CPrep_ResetFileInfo(CPrepFileInfo* file) {
         name = CTool_GetPathName(&file->textfile, NULL);
         if (file->nameNode != name) {
             mainname = CTool_GetPathName(&cparamblkptr->sourcefile, NULL);
+#if !MWCCPS2_B52
             file->linedelta = 0;
+#endif
             if (name == mainname) {
                 name = NULL;
             }
@@ -2673,7 +2922,9 @@ UInt8 C_Compiler(CompilerLinkerParamBlk* param) {
     if (copts.cplusplus) {
         copts.const_strings = TRUE;
     }
+#if !MWCCPS2_B52
     copts.inline_bottom_up = TRUE;
+#endif
 
     if (initheaps(&CError_NoMem)) {
         releaseheaps();
@@ -2687,6 +2938,9 @@ UInt8 C_Compiler(CompilerLinkerParamBlk* param) {
             SetupPrecompiler(cparamblkptr->precompile);
             SetupAssembler();
             ObjGen_Setup();
+#if MWCCPS2_B52
+            IRO_InitializeAllocators();
+#endif
             PointerAnalysis_Setup();
             CBrowse_Setup(param);
 
@@ -2749,6 +3003,9 @@ UInt8 C_Compiler(CompilerLinkerParamBlk* param) {
         ObjGen_Cleanup();
         ObjGen_CodeCleanup();
         PointerAnalysis_Cleanup();
+#if MWCCPS2_B52
+        IRO_TerminateAllocators();
+#endif
         cleanupprep();
         CBrowse_Cleanup(param);
     }
@@ -2771,6 +3028,9 @@ static void pushtokenseq(Macro* macro) {
 #endif
         was_prep_error = TRUE;
         CError_ErrorTerm(ERR_MACROS_TOO_COMPLEX);
+#if MWCCPS2_B52
+        return;
+#endif
     } else {
         tokenstack[tokenstacklevel].pos = pos;
         tokenstack[tokenstacklevel].macrostart = macrostart;
@@ -2799,9 +3059,20 @@ void poptokenseq(void) {
 
 static Boolean is_nextchar(short t) {
     char* p = pos;
+#if MWCCPS2_B52
+    short level;
+#else
     short level = tokenstacklevel;
+#endif
     short c;
+#if MWCCPS2_B52
+    short b69_dead;
+#endif
 
+#if MWCCPS2_B52
+    b69_dead = level = tokenstacklevel;
+
+#endif
     do {
         switch ((c = *p)) {
             case 0:
@@ -2843,7 +3114,11 @@ static Macro* ismacroname(void) {
                     return NULL;
                 }
 #else
+#if MWCCPS2_B52
+                if (scan == &vecM && !COPTS_X.altivec_model) {
+#else
                 if (scan == &vecM && !copts.altivec_model) {
+#endif
                     return NULL;
                 }
                 if (scan == &stdcM && copts.cplusplus) {
@@ -2946,7 +3221,11 @@ static Macro* ismacroname3(void) {
                     return NULL;
                 }
 #else
+#if MWCCPS2_B52
+                if (scan == &vecM && !COPTS_X.altivec_model) {
+#else
                 if (scan == &vecM && !copts.altivec_model) {
+#endif
                     return NULL;
                 }
                 if (scan == &stdcM && copts.cplusplus) {
@@ -2977,7 +3256,11 @@ static Macro* ismacroname4(HashNameNode* name) {
             break;
 #else
             if (scan->is_special) {
+#if MWCCPS2_B52
+                if (scan == &vecM && !COPTS_X.altivec_model) {
+#else
                 if (scan == &vecM && !copts.altivec_model) {
+#endif
                     return NULL;
                 }
                 if (scan == &stdcM && copts.cplusplus) {
@@ -3631,11 +3914,23 @@ static Boolean CPrep_CheckOption(void) {
     }
 
     if (!strcmp(tkidentifier->name, "scheduling")) {
+#if MWCCPS2_B52
+        result = COPTS_X.schedule_factor != 0;
+#else
         result = copts.schedule_factor != 0;
+#endif
     } else if (!strcmp(tkidentifier->name, "floatingpoint")) {
+#if MWCCPS2_B52
+        result = COPTS_X.use_fp;
+#else
         result = copts.use_fp;
+#endif
     } else if (!strcmp(tkidentifier->name, "sfp_emulation")) {
+#if MWCCPS2_B52
+        result = COPTS_X.soft_float;
+#else
         result = copts.soft_float;
+#endif
     } else if (!strcmp(tkidentifier->name, "precompile")) {
         result = cparamblkptr->precompile == 1;
     } else if (!strcmp(tkidentifier->name, "preprocess")) {
@@ -4144,6 +4439,10 @@ static void CPrep_GetQuotedFileName(char* buffer) {
     buffer[1] = 0;
 }
 
+#if MWCCPS2_B52
+static char cprep_mwerks_version[16]; // 3.0.1's; b52 0x5844B4
+
+#endif
 #if MWCCPSP
 static char cprep_mwerks_version[16]; // 0x5E8DD0
 #endif
@@ -4154,7 +4453,11 @@ static char* XpandSpecialMacro(Macro* macro) {
 #if MWCCPSP
     char buf[256];
 #else
+#if MWCCPS2_B52
+    char buf[256];
+#else
     char buf[512];
+#endif
 #endif
     char smallbuf[32];
     char* strptr;
@@ -4166,7 +4469,13 @@ static char* XpandSpecialMacro(Macro* macro) {
         sprintf(buf, "%ld", CPrep_CheckOption());
         goto do_string;
 #else
+#if MWCCPS2_B52
+        // 3.0.1: the option's value, not just whether it is set
+        sprintf(buf, "%ld", CPrep_CheckOption());
+        goto do_string;
+#else
         return CPrep_CheckOption() ? "1" : "0";
+#endif
 #endif
     } else if (macro == &trgtM) {
         return CPrep_CheckTarget() ? "1" : "0";
@@ -4204,7 +4513,12 @@ do_string:
 #endif
         return cprep_mwerks_version;
 #else
+#if MWCCPS2_B52
+        sprintf(cprep_mwerks_version, "0x%lx", 0x3004L); // b52 0x43FCF5
+        return cprep_mwerks_version;
+#else
         return "0x2407";
+#endif
 #endif
     } else if (macro == &cpplM) {
         return "199711L";
@@ -4212,6 +4526,10 @@ do_string:
         return copts.direct_to_som ? "1" : "0";
     } else if (macro == &ecppM) {
         return copts.ecplusplus ? "1" : "0";
+#if MWCCPS2_B52
+    } else if (macro == &ia64M) {
+        return "0";
+#endif
 #if MWCCPSP
     } else if (macro == &ia64M) {
         return "0";
@@ -4459,12 +4777,61 @@ argumentFinished:
 #else
                 AppendGListByte(&mlist, '"');
                 if ((argumentText = arguments[*text++ - 1]) != NULL) {
+#if MWCCPS2_B52
+                    char quote = 0;
+#endif
+                    while ((character = *argumentText++) != 0) {
+                        switch (character) {
+#if MWCCPS2_B52
+                            case TK_MACRO_NOEXPAND:
+                            case TK_MACRO_BOUNDARY:
+                                break;
+#endif
+                            case '"':
+#if MWCCPS2_B52
+                                quote = (quote == '"') ? 0 : '"';
+#endif
+                                AppendGListByte(&mlist, '\\');
+#if MWCCPS2_B52
+                                AppendGListByte(&mlist, '"');
+                                break;
+#endif
+                            case '\'':
+#if MWCCPS2_B52
+                                quote = (quote == '\'') ? 0 : '\'';
+#endif
+                                AppendGListByte(&mlist, character);
+#if MWCCPS2_B52
+                                break;
+                            case '\\':
+                                if (*argumentText == '"' && quote == '"') {
+                                    AppendGListByte(&mlist, '\\');
+                                    AppendGListByte(&mlist, '"');
+                                    argumentText++;
+                                    break;
+                                }
+                                if (quote) {
+                                    AppendGListByte(&mlist, '\\');
+                                }
+                                AppendGListByte(&mlist, '\\');
+                                break;
+                            default:
+                                AppendGListByte(&mlist, character);
+                                break;
+                        }
+                    }
+                }
+                AppendGListByte(&mlist, '"');
+                continue;
+                AppendGListByte(&mlist, '"');
+                if ((argumentText = arguments[*text++ - 1]) != NULL) {
                     while ((character = *argumentText++) != 0) {
                         switch (character) {
                             case '"':
                                 AppendGListByte(&mlist, '\\');
                             case '\'':
                                 AppendGListByte(&mlist, character);
+#endif
                                 while (*argumentText != 0 && *argumentText != character) {
                                     if (*argumentText == '"' || *argumentText == '\\') {
                                         AppendGListByte(&mlist, '\\');
@@ -4673,6 +5040,12 @@ static void CPrep_PragmaImExport(int flags) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-4)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1089)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -10 // b145 asserts
@@ -4733,6 +5106,12 @@ static void pragma_on_off_reset(int bits) {
         CPrep_Warning(ERR_ILLEGAL_PRAGMA);
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
@@ -5151,6 +5530,11 @@ restart:
     }
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the header inlines out of line here
+#endif
+#endif
 static void CPrep_PragmaInlineDepth(void) {
     int lv;
 
@@ -5194,6 +5578,11 @@ static void CPrep_PragmaInlineDepth(void) {
         CPrep_Warning(ERR_ILLEGAL_PRAGMA);
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 
 static void CPrep_PragmaInlineMaxSize(void) {
     if (notendofline() && plex() == '(' && notendofline()) {
@@ -5222,6 +5611,11 @@ static void CPrep_PragmaInlineMaxSize(void) {
     }
 }
 
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline on // b69 calls the header inlines out of line here
+#endif
+#endif
 static void CPrep_PragmaInlineMaxTotalSize(void) {
     if (notendofline() && plex() == '(' && notendofline()) {
         switch (plex()) {
@@ -5248,6 +5642,11 @@ static void CPrep_PragmaInlineMaxTotalSize(void) {
         CPrep_Warning(ERR_ILLEGAL_PRAGMA);
     }
 }
+#if MWCCPS2_B52
+#if defined(__MWERKS__)
+#pragma dont_inline reset
+#endif
+#endif
 
 static void pragma_segment(void) {
     short i;
@@ -5329,7 +5728,9 @@ static void pragma_push(void) {
     COptsPush* push;
 
 #if !MWCCPSP // 3.0.1 saves only the options
+#if !MWCCPS2_B52
     CodeGen_PragmaPush();
+#endif
 #endif
     push = galloc(sizeof(COptsPush));
     push->next = coptpushs;
@@ -5342,7 +5743,9 @@ static void pragma_pop(void) {
         copts = coptpushs->opts;
         coptpushs = coptpushs->next;
 #if !MWCCPSP
+#if !MWCCPS2_B52
         CodeGen_PragmaPop();
+#endif
 #endif
         CMach_Configure();
     } else {
@@ -5808,9 +6211,15 @@ static void pragma_comment(void) {
 }
 
 static void pragma_message(void) {
+#if !MWCCPS2_B52
     char str[128];
     char* ptr;
+#endif
     int start_tokenstacklevel;
+#if MWCCPS2_B52
+    char* ptr;
+    char str[128];
+#endif
     int t;
 
     if (notendofline() && plex() == '(') {
@@ -6018,9 +6427,15 @@ static void preppragma(void) {
         if (preprocessing_only) {
             CPrep_PreprocessDumpDirective("#pragma ", tkidentifier->name);
         }
+#if MWCCPS2_B52
+        // b69 0x43FC70 has no "pack": the back end's CodeGen_ParsePragma takes it
+        // (0x437FC0, an alignment cap outside copts, so push/pop keep it)
+        if (!strcmp(tkidentifier->name, "optimization_level")) {
+#else
         if (!strcmp(tkidentifier->name, "pack")) {
             pragma_pack();
         } else if (!strcmp(tkidentifier->name, "optimization_level")) {
+#endif
             pragma_optimization_level();
         } else if (!strcmp(tkidentifier->name, "once")) {
             CPrep_PragmaOnce();
@@ -6346,7 +6761,9 @@ static void prepline(void) {
     }
 
     filestack[filesp]->nameNode = GetHashNameNode(buf);
+#if !MWCCPS2_B52
     filestack[filesp]->linedelta = linedelta;
+#endif
     filestack[filesp]->linenumber = linenumber;
     if (copts.filesyminfo && !cparamblkptr->precompile) {
         ObjGen_SrcBreakName(filestack[filesp]->nameNode, moddate, TRUE);
@@ -6358,6 +6775,10 @@ static void prepline(void) {
 #endif
 
 static short exprtk;
+#if MWCCPS2_B52
+static UInt8
+    cprep_noeval; // 3.0.1's data_005E8DE0 (b52 0x5844B0): set while an operand is not evaluated
+#endif
 
 static Type* CPrep_GetPrepType(PrepValue* pv) {
     if (copts.longlong_prepeval || copts.c9x) {
@@ -6507,6 +6928,9 @@ static PrepValue CPrep_ParseBinary(PrepValue* rhs, short precLimit) {
     short op;
     short prec;
     short newprec;
+#if MWCCPS2_B52
+    UInt8 saved;
+#endif
 #if MWCCPSP
     UInt8 saved;
 #endif
@@ -6527,6 +6951,16 @@ static PrepValue CPrep_ParseBinary(PrepValue* rhs, short precLimit) {
             return a;
         }
 
+#if MWCCPS2_B52
+        // 3.0.1: the right operand of a decided && or || is not evaluated
+        saved = cprep_noeval;
+        if ((int)op == TK_LOGICAL_AND && CInt64_IsZero(&a.val)) {
+            cprep_noeval = 1;
+        }
+        if ((int)op == TK_LOGICAL_OR && !CInt64_IsZero(&a.val)) {
+            cprep_noeval = 1;
+        }
+#endif
 #if MWCCPSP
         // 3.0.1: the right operand of a decided && or || is not evaluated
         saved = data_005E8DE0;
@@ -6540,6 +6974,9 @@ static PrepValue CPrep_ParseBinary(PrepValue* rhs, short precLimit) {
         data_005E8DE0 = saved;
 #else
         b = CPrep_ParseUnary();
+#if MWCCPS2_B52
+        cprep_noeval = saved;
+#endif
 #endif
         while (1) {
             if (exprtk == ')' || !notendofline()) {
@@ -6604,6 +7041,9 @@ static void doevalconstexpr(void) {
     macrocheck = TRUE;
     nlflag = FALSE;
     cprep_incondexpr = TRUE;
+#if MWCCPS2_B52
+    cprep_noeval = 0;
+#endif
 #if MWCCPSP
     data_005E8DE0 = 0;
 #endif
@@ -6623,18 +7063,25 @@ static void doevalconstexpr(void) {
 static void pushifstate(SInt16 state) {
     if (iflevel >= 64) {
         CPrep_Error(ERR_IF_NESTING_OVERFLOW);
+#if MWCCPS2_B52
+        return;
+    }
+#else
     } else {
-        ifstack[iflevel].state = state;
-        ifstack[iflevel].file = prep_file;
+#endif
+    ifstack[iflevel].state = state;
+    ifstack[iflevel].file = prep_file;
 #if MWCCPSP
-        // 3.0.1: inside a macro expansion, the position in the file
-        ifstack[iflevel].pos = tokenstacklevel ? filestack[filesp]->pos : pos - prep_file_start;
+    // 3.0.1: inside a macro expansion, the position in the file
+    ifstack[iflevel].pos = tokenstacklevel ? filestack[filesp]->pos : pos - prep_file_start;
 #else
         ifstack[iflevel].pos = pos - prep_file_start;
 #endif
-        iflevel++;
-    }
+    iflevel++;
 }
+#if !MWCCPS2_B52
+}
+#endif
 
 static void popifstate(void) {
     if (iflevel <= 0) {
@@ -6767,6 +7214,12 @@ static void prepifndef(void) {
     }
 }
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-24)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1404)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -10 // b145 asserts
@@ -6785,15 +7238,15 @@ static void prepelif(void) {
 
     switch (state) {
 #else
-    if (iflevel <= 0 ||
-        ifstack[iflevel - 1].state == IfState_ElseActive ||
-        ifstack[iflevel - 1].state == IfState_ElseDone) {
-        CPrep_Error(ERR_PRECEDING_IF_MISSING);
-        skipendofline();
-        return;
-    }
+        if (iflevel <= 0 ||
+            ifstack[iflevel - 1].state == IfState_ElseActive ||
+            ifstack[iflevel - 1].state == IfState_ElseDone) {
+            CPrep_Error(ERR_PRECEDING_IF_MISSING);
+            skipendofline();
+            return;
+        }
 
-    switch (ifstack[iflevel - 1].state) {
+        switch (ifstack[iflevel - 1].state) {
 #endif
         case IfState_Searching:
             doevalconstexpr();
@@ -6813,15 +7266,27 @@ static void prepelif(void) {
 #if MWCCPSP
             CError_FATAL(7219);
 #else
-            CError_FATAL(5787);
+                CError_FATAL(5787);
 #endif
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
 #endif
 
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-24)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (1404)
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -10 // b145 asserts
@@ -6832,8 +7297,8 @@ static void prepelse(void) {
         (int)ifstack[iflevel - 1].state == IfState_ElseActive ||
         (int)ifstack[iflevel - 1].state == IfState_ElseDone) {
 #else
-        ifstack[iflevel - 1].state == IfState_ElseActive ||
-        ifstack[iflevel - 1].state == IfState_ElseDone) {
+            ifstack[iflevel - 1].state == IfState_ElseActive ||
+            ifstack[iflevel - 1].state == IfState_ElseDone) {
 #endif
         CPrep_Error(ERR_PRECEDING_IF_MISSING);
         skipendofline();
@@ -6861,10 +7326,16 @@ static void prepelse(void) {
 #if MWCCPSP
             CError_FATAL(7257);
 #else
-            CError_FATAL(5825);
+                CError_FATAL(5825);
 #endif
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 #if MWCCPSP
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
@@ -7031,7 +7502,7 @@ void preprocessor(void) {
             CPrep_Warning(ERR_PREPROCESSOR_WARNING_DIRECTIVE);
             copts.warningerrors = save;
 #else
-            CPrep_Warning(ERR_PREPROCESSOR_WARNING_DIRECTIVE);
+                CPrep_Warning(ERR_PREPROCESSOR_WARNING_DIRECTIVE);
 #endif
             skipendofline();
             macrocheck = TRUE;
@@ -7076,7 +7547,11 @@ void preprocessor(void) {
 #if MWCCPSP
     if (!copts.ANSIstrict) {
 #else
-    if (copts.objective_c || !copts.ANSIstrict) {
+#if MWCCPS2_B52
+        if (COPTS_X.objective_c || !copts.ANSIstrict) {
+#else
+        if (copts.objective_c || !copts.ANSIstrict) {
+#endif
 #endif
         if (!strcmp("import", tkidentifier->name)) {
             prepinclude(TRUE);

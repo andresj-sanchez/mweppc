@@ -26,9 +26,13 @@ SInt32* data_005F3D70[7]; // uses in the loop, per class and register
 
 // 0x4B34F0: counts the loop's definitions and uses of every register.
 #if MWCCPS2
+#if MWCCPS2_B52
+BE_NOINLINE // b210 calls it (0x4BE1F0)
+#else
 __declspec(noinline) // b210 calls it (0x4BE1F0)
 #endif
-static void countregs(Loop301* loop) {
+#endif
+    static void countregs(Loop301* loop) {
     char rclass;
     int i;
     BlockList301* bl;
@@ -75,9 +79,15 @@ static int canmove(MPCode* pc, Loop301* loop) {
             if (data_005F3D8C[op->rclass][op->reg] > 1) {
                 return 0;
             }
+#if MWCCPS2_B52
             if ((data_0062541C[op->rclass].blocks[loop->preheader->number].liveout[op->reg >> 5] >>
                  (op->reg & 31)) &
                 1) {
+#else
+            if ((data_0062541C[op->rclass].blocks[loop->preheader->number].liveout[op->reg >> 5] >>
+                 (op->reg & 31)) &
+                1) {
+#endif
                 return 0;
             }
         }
@@ -96,9 +106,13 @@ static int canmove(MPCode* pc, Loop301* loop) {
 
 // 0x4B32C0: moves pc to the end of the preheader (before its branch).
 #if MWCCPS2
+#if MWCCPS2_B52
+BE_NOINLINE // b210 calls it (0x4BDFC0)
+#else
 __declspec(noinline) // b210 calls it (0x4BDFC0)
 #endif
-static void movetopreheader(MPCode* pc, Loop301* loop) {
+#endif
+    static void movetopreheader(MPCode* pc, Loop301* loop) {
     MPCodeBlock* pre;
     MOperand* op;
     int n;
@@ -168,9 +182,15 @@ static void moveinvariants(Loop301* loop) {
                 next = pc->next;
                 invariant = 1;
                 FOR_ARGS(n, op, pc) {
+#if MWCCPS2_B52
                     if (op->kind == 0 &&
                         (op->flags & 1) &&
                         data_005F3D8C[op->rclass][op->reg] > 0) {
+#else
+                    if (op->kind == 0 &&
+                        (op->flags & 1) &&
+                        data_005F3D8C[op->rclass][op->reg] > 0) {
+#endif
                         invariant = 0;
                         break;
                     }

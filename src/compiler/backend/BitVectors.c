@@ -46,12 +46,19 @@ int bitvectorchanged(UInt32* dst, UInt32* src, SInt32 len) {
 }
 
 void bitvectorinitialize(UInt32* vec, SInt32 len, UInt32 initval) {
+#if MWCCPS2_B52
+    int b69_dead;
+#endif
     int i = (len + 31) >> 5;
 
     while (i != 0) {
         *vec = initval;
         vec++;
+#if MWCCPS2_B52
+        b69_dead = --i;
+#else
         i--;
+#endif
     }
 }
 

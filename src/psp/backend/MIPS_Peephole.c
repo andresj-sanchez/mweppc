@@ -74,6 +74,50 @@ static inline void SET_OP(MPCode* pc, UInt16 op) {
     } while (0)
 
 // turns pc into a nop (0xBA)
+#if MWCCPS2_B52
+// of the move defining it (b69 has no copy propagation pass of its own), and
+// count that as a change; PEEP69_PROP2 tries the first and second sources.
+static int peep69_propagate(MPCode* pc, int n) {
+    MOperand* op;
+    MPCode* def;
+    UInt16 keep;
+
+    op = &pc->args[n];
+    def = DEF(*op);
+    if (!def) {
+        return 0;
+    }
+    if (!(def->flags & 0x10)) {
+        return 0;
+    }
+    if (def->args[0].reg == def->args[1].reg) {
+        return 0;
+    }
+    if (func_004AFE40(pc, def, &def->args[1])) {
+        return 0;
+    }
+    keep = op->flags & 0x1000;
+    COPY_OP(*op, def->args[1]);
+    if (keep) {
+        op->flags |= 0x1000;
+    }
+    return 1;
+}
+#define PEEP69_PROP(pc, n) \
+    do { \
+        if (peep69_propagate((pc), (n))) { \
+            return 1; \
+        } \
+    } while (0)
+#define PEEP69_PROP2(pc) \
+    do { \
+        if (peep69_propagate((pc), 1) || peep69_propagate((pc), 2)) { \
+            return 1; \
+        } \
+    } while (0)
+
+// turns pc into a nop (0xBA)
+#endif
 static inline void NOP_OUT(MPCode* pc) {
     UInt32 flags;
 
@@ -323,10 +367,14 @@ void func_005469C0(void) {
         func_004AFD20(0x266, ps2_peep_55A8C0);
         func_004AFD20(0x268, ps2_peep_55A670);
         func_004AFD20(0x1d2, ps2_peep_55A5B0);
+#if !MWCCPS2_B52
         func_004AFD20(0x489, ps2_peep_55A5B0);
+#endif
         func_004AFD20(0x268, func_00548BC0);
         func_004AFD20(0x48a, func_00548BC0);
+#if !MWCCPS2_B52
         func_004AFD20(0x266, ps2_peep_55A810);
+#endif
         func_004AFD20(0x264, ps2_peep_55A770);
         if (copts.usefloatacc) {
             func_004AFD20(0xed, ps2_peep_55AD50);
@@ -339,8 +387,10 @@ void func_005469C0(void) {
             func_004AFD20(0x103, ps2_peep_55A530);
             func_004AFD20(0x103, ps2_peep_55ACD0);
             func_004AFD20(0x103, ps2_peep_55ACB0);
+#if !MWCCPS2_B52
             func_004AFD20(0x1dd, ps2_peep_558520);
             func_004AFD20(0x1dd, ps2_peep_558180);
+#endif
         }
         func_004AFD20(0x1d1, func_005486E0);
         func_004AFD20(0x467, func_005486E0);
@@ -348,10 +398,12 @@ void func_005469C0(void) {
         func_004AFD20(0x489, func_005496A0);
         func_004AFD20(0x1d1, func_005496A0);
         func_004AFD20(0x1d2, func_005496A0);
+#if !MWCCPS2_B52
         func_004AFD20(0x468, func_005496A0);
         func_004AFD20(0x48a, func_005496A0);
         func_004AFD20(0x263, func_005496A0);
         func_004AFD20(0x268, func_005496A0);
+#endif
         func_004AFD20(0x263, ps2_peep_55AB80);
         func_004AFD20(0x268, ps2_peep_55AA20);
         if (copts.mips_isa < 3) {
@@ -384,7 +436,9 @@ void func_005469C0(void) {
         func_004AFD20(0xcd, func_00548D50);
         func_004AFD20(0x476, func_00548D10);
         func_004AFD20(0x47a, func_00548D10);
+#if !MWCCPS2_B52
         func_004AFD20(0xc5, func_00548D10);
+#endif
     } else {
         func_004AFD20(0x47f, func_00548A60);
         func_004AFD20(0xc3, func_00548A60);
@@ -398,9 +452,11 @@ void func_005469C0(void) {
         func_004AFD20(0x48b, func_00549DA0);
         func_004AFD20(0x1d1, func_005486E0);
         func_004AFD20(0x467, func_005486E0);
+#if !MWCCPS2_B52
         func_004AFD20(0x26e, ps2_peep_55A4F0);
         func_004AFD20(0x26f, ps2_peep_55A4F0);
         func_004AFD20(0x270, ps2_peep_55A4F0);
+#endif
     }
 }
 #else
@@ -577,6 +633,9 @@ static int func_00547380(MPCode* pc, UInt16 op, UInt16 newop1, UInt16 newop2) {
     MPCode* def1;
     MPCode* def2;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     def1 = DEF(pc->args[1]);
     def2 = DEF(pc->args[2]);
     if (def1->op == op) {
@@ -600,6 +659,9 @@ static int func_00547410(MPCode* pc, UInt16 op, UInt16 newop) {
     MPCode* def1;
     MPCode* def2;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     def1 = DEF(pc->args[1]);
     def2 = DEF(pc->args[2]);
     if (def1->op == op) {
@@ -620,9 +682,15 @@ static int func_00547470(MPCode* pc, UInt16 op, int k, MPCode* def) {
     }
     SET_LIVE(def->args[1]);
     SET_LIVE(def->args[2]);
+#if MWCCPS2_B52
     insertpcodebefore(
         pc, makepcode(op, pc->args[0].reg, pc->args[k].reg, def->args[1].reg, def->args[2].reg)
     );
+#else
+    insertpcodebefore(
+        pc, makepcode(op, pc->args[0].reg, pc->args[k].reg, def->args[1].reg, def->args[2].reg)
+    );
+#endif
     NOP_OUT(pc);
     return 1;
 }
@@ -641,14 +709,33 @@ static inline int MergeInto(MPCode* pc, MPCode* def, UInt16 op) {
 int func_00547600(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op == OPC(0x10E)) {
+#else
     if (def->op == 0x10E) {
+#endif
         return MergeInto(pc, def, 0x11E);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x11C)) {
+#else
     } else if (def->op == 0x11C) {
+#endif
         return MergeInto(pc, def, 0x120);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x11E)) {
+#else
     } else if (def->op == 0x11E) {
+#endif
         return MergeInto(pc, def, 0x10E);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x120)) {
+#else
     } else if (def->op == 0x120) {
+#endif
         return MergeInto(pc, def, 0x11C);
     }
     return 0;
@@ -657,14 +744,33 @@ int func_00547600(MPCode* pc) {
 int func_00547820(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op == OPC(0x10F)) {
+#else
     if (def->op == 0x10F) {
+#endif
         return MergeInto(pc, def, 0x11F);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x11D)) {
+#else
     } else if (def->op == 0x11D) {
+#endif
         return MergeInto(pc, def, 0x121);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x11F)) {
+#else
     } else if (def->op == 0x11F) {
+#endif
         return MergeInto(pc, def, 0x10F);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x121)) {
+#else
     } else if (def->op == 0x121) {
+#endif
         return MergeInto(pc, def, 0x11D);
     }
     return 0;
@@ -676,8 +782,15 @@ int func_00547A40(MPCode* pc) {
     if (pc->flags & 0x100) {
         return 0;
     }
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xA5)) {
+#else
     if (def->op != 0xA5) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[1])) {
@@ -697,7 +810,12 @@ int func_00547AE0(MPCode* pc) {
     if (pc->flags & 0x100) {
         return 0;
     }
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+    if (def->op != OPC(0xAD)) {
+#else
     if (def->op != 0xAD) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[0])) {
@@ -711,8 +829,15 @@ int func_00547AE0(MPCode* pc) {
 int func_00547B60(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0x7F)) {
+#else
     if (def->op != 0x7F) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[1])) {
@@ -728,8 +853,15 @@ int func_00547B60(MPCode* pc) {
 int func_00547BF0(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xB1)) {
+#else
     if (def->op != 0xB1) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[0])) {
@@ -744,8 +876,15 @@ int func_00547C60(MPCode* pc) {
     MPCode* def;
     UInt16 op;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op == OPC(0xA1)) {
+#else
     if (def->op == 0xA1) {
+#endif
         op = 0x9D;
     } else if (def->op == MACRO_OP(0x56)) {
         op = MACRO_OP(0x55);
@@ -771,8 +910,15 @@ int func_00547D60(MPCode* pc) {
     MPCode* def;
     UInt16 op;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op == OPC(0x96)) {
+#else
     if (def->op == 0x96) {
+#endif
         op = 0x93;
     } else if (def->op == MACRO_OP(0x4B) || def->op == MACRO_OP(0x48)) {
         op = MACRO_OP(0x4A);
@@ -798,6 +944,9 @@ int func_00547D60(MPCode* pc) {
 static inline int StoreOfLoad(MPCode* pc, UInt16 defop, UInt16 op) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
     if (def->op != defop) {
         return 0;
@@ -869,11 +1018,21 @@ static int func_00548090(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 newop1, UInt
 }
 
 int func_00549400(MPCode* pc) {
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     switch (DEF(pc->args[1])->op) {
+#if MWCCPS2_B52
+        case OPC(0xD4):
+        case OPC(0xD5):
+        case OPC(0xD6):
+        case OPC(0xD7):
+#else
         case 0xD4:
         case 0xD5:
         case 0xD6:
         case 0xD7:
+#endif
         case MACRO_OP(0x83):
         case MACRO_OP(0x84):
         case MACRO_OP(0x85):
@@ -901,22 +1060,38 @@ int func_00549400(MPCode* pc) {
 int func_00549440(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (pc->args[2].value != 32) {
         return 0;
     }
     switch (def->op) {
+#if MWCCPS2_B52
+        case OPC(0x88):
+#else
         case 0x88:
+#endif
             if (def->args[2].value != 0) {
                 return 0;
             }
             break;
+#if MWCCPS2_B52
+        case OPC(0xD2):
+        case OPC(0xD3):
+        case OPC(0x189):
+        case OPC(0x18A):
+        case OPC(0x18D):
+        case OPC(0x18E):
+#else
         case 0xD2:
         case 0xD3:
         case 0x189:
         case 0x18A:
         case 0x18D:
         case 0x18E:
+#endif
             break;
         default:
             return 0;
@@ -936,8 +1111,15 @@ int func_005494B0(MPCode* pc) {
 int func_005494E0(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xBE)) {
+#else
     if (def->op != 0xBE) {
+#endif
         return 0;
     }
     if (pc->args[2].reg != 0) {
@@ -977,7 +1159,11 @@ int func_00548230(MPCode* pc) {
     SInt32 shift;
 
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xD8) && def->op != OPC(0xDA)) {
+#else
     if (def->op != 0xD8 && def->op != 0xDA) {
+#endif
         return 0;
     }
     if (Redefined(pc, def, &def->args[1])) {
@@ -994,7 +1180,11 @@ int func_00548230(MPCode* pc) {
     if (shift + size <= 0 || shift + size > 32) {
         return 0;
     }
+#if MWCCPS2_B52
+    p = makepcode(OPC(0x3EE), pc->args[0].reg, def->args[1].reg, shift, size);
+#else
     p = makepcode(0x3EE, pc->args[0].reg, def->args[1].reg, shift, size);
+#endif
     COPY_OP(p->args[1], def->args[1]);
     SET_LIVE(p->args[1]);
     insertpcodeafter(pc, p);
@@ -1010,7 +1200,11 @@ int func_005483A0(MPCode* pc) {
     SInt32 shift;
 
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xD8) && def->op != OPC(0xDA)) {
+#else
     if (def->op != 0xD8 && def->op != 0xDA) {
+#endif
         return 0;
     }
     if (Redefined(pc, def, &def->args[1])) {
@@ -1027,7 +1221,11 @@ int func_005483A0(MPCode* pc) {
     if (shift + size <= 0 || shift + size > 32) {
         return 0;
     }
+#if MWCCPS2_B52
+    p = makepcode(OPC(0x3EE), pc->args[0].reg, def->args[1].reg, shift, size);
+#else
     p = makepcode(0x3EE, pc->args[0].reg, def->args[1].reg, shift, size);
+#endif
     COPY_OP(p->args[1], def->args[1]);
     SET_LIVE(p->args[1]);
     insertpcodeafter(pc, p);
@@ -1054,11 +1252,19 @@ int func_00548510(MPCode* pc) {
             return 0;
         }
         if (p->flags & 2) {
+#if MWCCPS2_B52
             if (p->args[2].reg == pc->args[2].reg &&
                 p->args[1].kind == 4 &&
                 p->args[1].value2 == pc->args[1].value2 &&
                 p->args[1].value == pc->args[1].value &&
                 (kind = func_0048FFA0(pc, p))) {
+#else
+            if (p->args[2].reg == pc->args[2].reg &&
+                p->args[1].kind == 4 &&
+                p->args[1].value2 == pc->args[1].value2 &&
+                p->args[1].value == pc->args[1].value &&
+                (kind = func_0048FFA0(pc, p))) {
+#endif
                 q = func_0048FDC0(kind, &pc->args[0], &p->args[0]);
                 insertpcodebefore(p, q);
                 deletepcode(p);
@@ -1072,9 +1278,15 @@ int func_00548510(MPCode* pc) {
         }
         for (op = p->args, n = p->argcount; n--; op++) {
             if (op->kind == 0 && (op->flags & 2)) {
+#if MWCCPS2_B52
                 if (op->kind == 0 &&
                     op->rclass == 0 &&
                     (op->reg == pc->args[1].reg || op->reg == pc->args[2].reg)) {
+#else
+                if (op->kind == 0 &&
+                    op->rclass == 0 &&
+                    (op->reg == pc->args[1].reg || op->reg == pc->args[2].reg)) {
+#endif
                     return 0;
                 }
                 if (op->rclass == pc->args[0].rclass && op->reg == pc->args[0].reg) {
@@ -1135,13 +1347,21 @@ static int func_005487E0(MPCode* store, MPCode* load) {
     if (store->op == MACRO_OP(0x7F) && load->op == MACRO_OP(0x5D)) {
         return 2;
     }
+#if MWCCPS2_B52
+    if (store->op == OPC(0x1D2) && load->op == OPC(0x1D1)) {
+#else
     if (store->op == 0x1D2 && load->op == 0x1D1) {
+#endif
         return 2;
     }
     if (store->op == MACRO_OP(0x6F) && load->op == MACRO_OP(0x4A)) {
         return 1;
     }
+#if MWCCPS2_B52
+    if (store->op == OPC(0xC4) && load->op == OPC(0x93)) {
+#else
     if (store->op == 0xC4 && load->op == 0x93) {
+#endif
         return 1;
     }
 #if !MWCCPS2 // b210 has no word pairs here
@@ -1152,10 +1372,18 @@ static int func_005487E0(MPCode* store, MPCode* load) {
         return 1;
     }
 #endif
+#if MWCCPS2_B52
+    if (store->op == OPC(0xC5) && load->op == OPC(0x96)) {
+#else
     if (store->op == 0xC5 && load->op == 0x96) {
+#endif
         return 4;
     }
+#if MWCCPS2_B52
+    if (store->op == OPC(0xCD) && load->op == OPC(0xA1)) {
+#else
     if (store->op == 0xCD && load->op == 0xA1) {
+#endif
         return 3;
     }
     if (store->op == MACRO_OP(0x70) && load->op == MACRO_OP(0x4B)) {
@@ -1289,9 +1517,15 @@ int func_00548BC0(MPCode* pc) {
     if (pc->args[2].kind == 0 && pc->args[2].reg != p->args[2].reg) {
         return 0;
     }
+#if MWCCPS2_B52
     if (pc->args[2].kind == 0 &&
         pc->args[2].reg == p->args[2].reg &&
         pc->args[2].value2 != p->args[2].value2) {
+#else
+    if (pc->args[2].kind == 0 &&
+        pc->args[2].reg == p->args[2].reg &&
+        pc->args[2].value2 != p->args[2].value2) {
+#endif
         return 0;
     }
     for (q = pc->prev; q != p; q = q->prev) {
@@ -1338,6 +1572,9 @@ int func_00548D70(MPCode* pc) {
 static int func_00548D90(MPCode* pc, UInt16 op) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 2);
+#endif
     def = DEF(pc->args[2]);
     if (def->op != 4) {
         return 0;
@@ -1440,7 +1677,11 @@ int func_00548F60(MPCode* pc) {
         case MACRO_OP(0x67):
             extra = 0xB7;
             break;
+#if MWCCPS2_B52
+        case OPC(0xA9):
+#else
         case 0xA9:
+#endif
             extra = 0;
             if (d1->args[0].reg == pc->args[1].reg) {
                 if (!REG_LIVE(pc->args[1])) {
@@ -1469,7 +1710,11 @@ int func_00548F60(MPCode* pc) {
         } else {
             op = 0x401;
         }
+#if MWCCPS2_B52
+    } else if (pc->op == OPC(0xDC) || pc->op == OPC(0xDD)) {
+#else
     } else if (pc->op == 0xDC || pc->op == 0xDD) {
+#endif
         if (d2->op == MACRO_OP(0x5F)) {
             op = 0x405;
         } else {
@@ -1481,9 +1726,15 @@ int func_00548F60(MPCode* pc) {
     if (LOClobbered(d1, d2)) {
         return 0;
     }
+#if MWCCPS2_B52
     if (pc->args[0].reg != d2->args[0].reg &&
         pc->next &&
         func_0054A9E0(pc->next, pc->block->last, &d2->args[0])) {
+#else
+    if (pc->args[0].reg != d2->args[0].reg &&
+        pc->next &&
+        func_0054A9E0(pc->next, pc->block->last, &d2->args[0])) {
+#endif
         return 0;
     }
     if (pc->prev != d2 && func_0054A9E0(d2->next, pc->prev, &d2->args[0])) {
@@ -1555,6 +1806,9 @@ int func_005496A0(MPCode* pc) {
     MPCode* def;
     SInt32 offset;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 2);
+#endif
     def = DEF(pc->args[2]);
     if (def->op != 3) {
         return 0;
@@ -1587,6 +1841,9 @@ int func_005496A0(MPCode* pc) {
 int func_005497E0(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
     if (def->op != 7 && def->op != MACRO_OP(0x02)) {
         return 0;
@@ -1604,6 +1861,9 @@ int func_005497E0(MPCode* pc) {
 int func_00549870(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
     if (def->op != MACRO_OP(0x82) && def->op != MACRO_OP(0x81)) {
         return 0;
@@ -1625,6 +1885,9 @@ int func_00549870(MPCode* pc) {
 int func_00549910(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
     if (def->op != 7 && def->op != MACRO_OP(0x02)) {
         return 0;
@@ -1642,6 +1905,9 @@ int func_00549910(MPCode* pc) {
 int func_005499A0(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#endif
     def = DEF(pc->args[0]);
     if (def->op != MACRO_OP(0x82) && def->op != MACRO_OP(0x81)) {
         return 0;
@@ -1664,6 +1930,9 @@ int func_005499A0(MPCode* pc) {
 int func_00549A40(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op != data_00625AD0) {
         return 0;
@@ -1682,6 +1951,9 @@ int func_00549A40(MPCode* pc) {
 int func_00549B40(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op != data_00625B58) {
         return 0;
@@ -1704,8 +1976,15 @@ int func_00549B40(MPCode* pc) {
 int func_00549C40(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xE5) && def->op != MACRO_OP(0x97)) {
+#else
     if (def->op != 0xE5 && def->op != MACRO_OP(0x97)) {
+#endif
         return 0;
     }
     if (CInt64_NotEqual(*(CInt64*)&def->args[2].value, *(CInt64*)&pc->args[2].value)) {
@@ -1724,6 +2003,9 @@ int func_00549D50(MPCode* pc) {
     MPCode* def;
     int bits;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op != 7) {
         return 0;
@@ -1769,6 +2051,9 @@ int func_00549DA0(MPCode* pc) {
     UInt16 b;
     int live;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (!(def->flags & 2)) {
         return 0;
@@ -1804,22 +2089,38 @@ int func_00549DA0(MPCode* pc) {
         if (used || live) {
             return 0;
         }
+#if MWCCPS2_B52
+        if (def->op == OPC(0x91) || def->op == OPC(0x92)) {
+#else
         if (def->op == 0x91 || def->op == 0x92) {
+#endif
             if (live) {
                 return 0;
             }
             RELOAD(b);
         } else if (def->op == MACRO_OP(0x50) || def->op == MACRO_OP(0x49)) {
             RELOAD(b2);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x94) || def->op == OPC(0x95)) {
+#else
         } else if (def->op == 0x94 || def->op == 0x95) {
+#endif
             NARROW(b, 1);
         } else if (def->op == MACRO_OP(0x51) || def->op == MACRO_OP(0x52)) {
             NARROW(b2, 1);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x9D) || def->op == OPC(0xA0)) {
+#else
         } else if (def->op == 0x9D || def->op == 0xA0) {
+#endif
             NARROW(b, 3);
         } else if (def->op == MACRO_OP(0x55) || def->op == MACRO_OP(0x5C)) {
             NARROW(b2, 3);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x93)) {
+#else
         } else if (def->op == 0x93) {
+#endif
             NARROW(b, 7);
         } else if (def->op == MACRO_OP(0x4A)) {
             NARROW(b2, 7);
@@ -1832,37 +2133,66 @@ int func_00549DA0(MPCode* pc) {
         if (used || live) {
             return 0;
         }
+#if MWCCPS2_B52
+        if (def->op == OPC(0x94) || def->op == OPC(0x95)) {
+#else
         if (def->op == 0x94 || def->op == 0x95) {
+#endif
             RELOAD(h);
         } else if (def->op == MACRO_OP(0x51) || def->op == MACRO_OP(0x52)) {
             RELOAD(h2);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x9D) || def->op == OPC(0xA0)) {
+#else
         } else if (def->op == 0x9D || def->op == 0xA0) {
+#endif
             NARROW(h, 2);
         } else if (def->op == MACRO_OP(0x55) || def->op == MACRO_OP(0x5C)) {
             NARROW(h2, 2);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x93)) {
+#else
         } else if (def->op == 0x93) {
+#endif
             NARROW(h, 6);
         } else if (def->op == MACRO_OP(0x4A)) {
             NARROW(h2, 6);
         }
     } else if (bits == 32) {
+#if MWCCPS2_B52
         if (def->op == w ||
             def->op == w2 ||
             def->op == h ||
             def->op == h2 ||
             def->op == b ||
             def->op == b2) {
+#else
+        if (def->op == w ||
+            def->op == w2 ||
+            def->op == h ||
+            def->op == h2 ||
+            def->op == b ||
+            def->op == b2) {
+#endif
             MAKE_MOVE(pc);
             return 1;
         }
         if (used || live) {
             return 0;
         }
+#if MWCCPS2_B52
+        if (def->op == OPC(0xA0) || def->op == OPC(0x9D)) {
+#else
         if (def->op == 0xA0 || def->op == 0x9D) {
+#endif
             RELOAD(w);
         } else if (def->op == MACRO_OP(0x5C) || def->op == MACRO_OP(0x55)) {
             RELOAD(w2);
+#if MWCCPS2_B52
+        } else if (def->op == OPC(0x93)) {
+#else
         } else if (def->op == 0x93) {
+#endif
             NARROW(w, 4);
         } else if (def->op == MACRO_OP(0x4A)) {
             NARROW(w2, 4);
@@ -1880,6 +2210,9 @@ int func_0054A560(MPCode* pc) {
     CInt64 value;
     CInt64 shift;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op == MACRO_OP(0x46)) {
         value = *(CInt64*)&def->args[1].value;
@@ -1900,10 +2233,17 @@ int func_0054A5F0(MPCode* pc) {
     MPCode* def;
     CInt64 value;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op == MACRO_OP(0x46)) {
         value = *(CInt64*)&def->args[1].value;
+#if MWCCPS2_B52
+    } else if ((def->op == 3 || def->op == OPC(0x78)) && def->args[1].reg == 0) {
+#else
     } else if ((def->op == 3 || def->op == 0x78) && def->args[1].reg == 0) {
+#endif
         value = *(CInt64*)&def->args[2].value;
     } else {
         return 0;
@@ -1924,10 +2264,17 @@ int func_0054A690(MPCode* pc) {
     CInt64 value;
     CInt64 bits;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op == MACRO_OP(0x46)) {
         value = *(CInt64*)&def->args[1].value;
+#if MWCCPS2_B52
+    } else if ((def->op == 3 || def->op == OPC(0x78)) && def->args[1].reg == 0) {
+#else
     } else if ((def->op == 3 || def->op == 0x78) && def->args[1].reg == 0) {
+#endif
         value = *(CInt64*)&def->args[2].value;
     } else {
         return 0;
@@ -1935,8 +2282,13 @@ int func_0054A690(MPCode* pc) {
     pc->op = MACRO_OP(0x46);
     pc->args[1].kind = 3;
     CInt64_SetLong(&bits, pc->args[2].value);
+#if MWCCPS2_B52
     *(CInt64*)&pc->args[1].value =
         CInt64_And(value, CInt64_Sub(CInt64_Shl(cint64_one, bits), cint64_one));
+#else
+    *(CInt64*)&pc->args[1].value =
+        CInt64_And(value, CInt64_Sub(CInt64_Shl(cint64_one, bits), cint64_one));
+#endif
     pc->argcount = 2;
     return 1;
 }
@@ -1945,10 +2297,17 @@ int func_0054A760(MPCode* pc) {
     MPCode* def;
     CInt64 value;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
     if (def->op == MACRO_OP(0x46)) {
         value = *(CInt64*)&def->args[1].value;
+#if MWCCPS2_B52
+    } else if ((def->op == 3 || def->op == OPC(0x78)) && def->args[1].reg == 0) {
+#else
     } else if ((def->op == 3 || def->op == 0x78) && def->args[1].reg == 0) {
+#endif
         value = *(CInt64*)&def->args[2].value;
     } else {
         return 0;
@@ -1965,8 +2324,15 @@ int func_0054A760(MPCode* pc) {
 int func_0054A800(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xD2)) {
+#else
     if (def->op != 0xD2) {
+#endif
         return 0;
     }
     if (Redefined(pc, def, &def->args[1])) {
@@ -1987,8 +2353,15 @@ int func_0054A910(MPCode* pc) {
     MPCode* def;
     SInt32 shift;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (def->op != OPC(0xD2)) {
+#else
     if (def->op != 0xD2) {
+#endif
         return 0;
     }
     if (Redefined(pc, def, &def->args[1])) {
@@ -2009,9 +2382,15 @@ int func_0054A910(MPCode* pc) {
 extern SInt16 data_00625CE0; // the multiply opcode
 extern SInt16 data_00625E4A;
 
+#if MWCCPS2_B52
 static int ps2_peep_55A350(
     MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3, UInt16 op4, UInt16 newop, int reg
 );
+#else
+static int ps2_peep_55A350(
+    MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3, UInt16 op4, UInt16 newop, int reg
+);
+#endif
 static int ps2_peep_55AE20(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3);
 static int ps2_peep_55B240(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3);
 static int ps2_peep_55B6A0(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3);
@@ -2055,12 +2434,21 @@ static inline Boolean ps2_GPRDefinedBetween(MPCode* from, MPCode* to, int reg) {
 
 // a multiply (op1/op2) and the move of its result (op3/op4) into an add:
 // one multiply-add (newop) and a move
+#if MWCCPS2_B52
 static int ps2_peep_55A350(
     MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3, UInt16 op4, UInt16 newop, int reg
 ) {
+#else
+static int ps2_peep_55A350(
+    MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3, UInt16 op4, UInt16 newop, int reg
+) {
+#endif
     MPCode* d2;
     MPCode* d1;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     d1 = DEF(pc->args[1]);
     d2 = DEF(pc->args[2]);
     if (!func_005493A0(&d2, &d1, pc->flags & 0x2000)) {
@@ -2113,20 +2501,36 @@ int ps2_peep_55A590(MPCode* pc) {
 int ps2_peep_55A5B0(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#else
     if (pc->flags & 0x100) {
         return 0;
     }
+#endif
     def = DEF(pc->args[0]);
+#if MWCCPS2_B52
+    if (!def || def->op != OPC(0x264)) {
+#else
     if (!def || def->op != 0x264) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[1])) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (pc->op == OPC(0x1D2)) {
+#else
     if (pc->op == 0x1D2) {
+#endif
         SET_OP2(pc, 0x268);
     }
+#if MWCCPS2_B52
+    if (pc->op == OPC(0x489)) {
+#else
     if (pc->op == 0x489) {
+#endif
         SET_OP2(pc, 0x48A);
     }
     COPY_OP(pc->args[0], def->args[1]);
@@ -2136,11 +2540,19 @@ int ps2_peep_55A5B0(MPCode* pc) {
 int ps2_peep_55A670(MPCode* pc) {
     MPCode* def;
 
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 0);
+#else
     if (pc->flags & 0x100) {
         return 0;
     }
+#endif
     def = DEF(pc->args[0]);
+#if MWCCPS2_B52
+    if (!def || def->op != OPC(0x266)) {
+#else
     if (!def || def->op != 0x266) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[0])) {
@@ -2152,10 +2564,18 @@ int ps2_peep_55A670(MPCode* pc) {
     if (func_004AFDD0(pc, def, &def->args[1])) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (pc->op == OPC(0x268)) {
+#else
     if (pc->op == 0x268) {
+#endif
         SET_OP2(pc, 0x1D2);
     }
+#if MWCCPS2_B52
+    if (pc->op == OPC(0x48A)) {
+#else
     if (pc->op == 0x48A) {
+#endif
         SET_OP2(pc, 0x489);
     }
     COPY_OP(pc->args[0], def->args[0]);
@@ -2169,8 +2589,15 @@ int ps2_peep_55A770(MPCode* pc) {
     if (pc->flags & 0x100) {
         return 0;
     }
+#if MWCCPS2_B52
+    PEEP69_PROP(pc, 1);
+#endif
     def = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (!def || def->op != OPC(0x266)) {
+#else
     if (!def || def->op != 0x266) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[1])) {
@@ -2187,7 +2614,11 @@ int ps2_peep_55A810(MPCode* pc) {
     MPCode* p;
 
     def = DEF(pc->args[0]);
+#if MWCCPS2_B52
+    if (!def || def->op != OPC(0x264)) {
+#else
     if (!def || def->op != 0x264) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &def->args[1])) {
@@ -2196,7 +2627,11 @@ int ps2_peep_55A810(MPCode* pc) {
     if (REG_LIVE(pc->args[0])) {
         return 0;
     }
+#if MWCCPS2_B52
+    p = makepcode(OPC(0x2AF), 0xF, pc->args[1].reg, def->args[1].reg);
+#else
     p = makepcode(0x2AF, 0xF, pc->args[1].reg, def->args[1].reg);
+#endif
     p->args[1].flags &= 2;
     insertpcodebefore(pc, p);
     p->flags |= pc->flags & 0x100;
@@ -2214,7 +2649,11 @@ int ps2_peep_55A8C0(MPCode* pc) {
     if (def && !(def->flags & 0x40002)) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (def->op != OPC(0x1D1) && def->op != OPC(0x467)) {
+#else
     if (def->op != 0x1D1 && def->op != 0x467) {
+#endif
         return 0;
     }
     if (func_004AFE40(pc, def, &pc->args[1])) {
@@ -2229,9 +2668,17 @@ int ps2_peep_55A8C0(MPCode* pc) {
     if (REG_LIVE(pc->args[0])) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (def->op == OPC(0x1D1)) {
+#else
     if (def->op == 0x1D1) {
+#endif
         SET_OP2(def, 0x263);
+#if MWCCPS2_B52
+    } else if (def->op == OPC(0x467)) {
+#else
     } else if (def->op == 0x467) {
+#endif
         SET_OP2(def, 0x468);
     } else {
         return 0;
@@ -2252,11 +2699,17 @@ int ps2_peep_55AA20(MPCode* pc) {
     if (copts.inlinelevel < 0 || !copts.enable_vu0_registers) {
         return 0;
     }
+#if !MWCCPS2_B52
     if (pc->flags & 0x100) {
         return 0;
     }
+#endif
     for (p = pc->prev; p; p = p->prev) {
+#if MWCCPS2_B52
+        if ((p->flags & 0x40004) && p->op == OPC(0x268)) {
+#else
         if ((p->flags & 0x40004) && p->op == 0x268) {
+#endif
             if (p->args[1].value != pc->args[1].value) {
                 return 0;
             }
@@ -2265,11 +2718,29 @@ int ps2_peep_55AA20(MPCode* pc) {
             }
             for (q = pc->prev; q != p; q = q->prev) {
                 if ((q->flags & 0x60002) &&
+#if MWCCPS2_B52
+                    (q->op == OPC(0x263) ||
+                     q->op == OPC(0x468) ||
+                     q->op == OPC(0x1D1) ||
+                     q->op == OPC(0x467))) {
+                    if (q->args[2].kind == 0 && q->args[2].reg == 29) {
+#else
                     (q->op == 0x263 || q->op == 0x468 || q->op == 0x1D1 || q->op == 0x467) &&
                     may_alias(pc, q)) {
-                    return 0;
+#endif
+                        return 0;
+                    }
+#if MWCCPS2_B52
+                    if (q->args[2].kind == 0 &&
+                        q->args[2].reg == pc->args[2].reg &&
+                        q->args[1].value == pc->args[1].value) {
+                        return 0;
+#endif
+                    }
+#if MWCCPS2_B52
                 }
             }
+#endif
             if (p->flags & 0x80) {
                 return 0;
             }
@@ -2279,7 +2750,11 @@ int ps2_peep_55AA20(MPCode* pc) {
             if (func_004AFE40(pc, p, &pc->args[2])) {
                 return 0;
             }
+#if MWCCPS2_B52
+            insertpcodebefore(p, makepcode(OPC(0x2AF), 0xF, pc->args[0].reg, p->args[0].reg));
+#else
             insertpcodebefore(p, makepcode(0x2AF, 0xF, pc->args[0].reg, p->args[0].reg));
+#endif
             ps2_peep_55AA20(p);
             break;
         }
@@ -2301,11 +2776,17 @@ int ps2_peep_55AB80(MPCode* pc) {
     if (copts.inlinelevel < 0 || !copts.enable_vu0_registers) {
         return 0;
     }
+#if !MWCCPS2_B52
     if (pc->flags & 0x100) {
         return 0;
     }
+#endif
     for (p = pc->prev; p; p = p->prev) {
+#if MWCCPS2_B52
+        if ((p->flags & 0x40024) && p->op == OPC(0x268)) {
+#else
         if ((p->flags & 0x40024) && p->op == 0x268) {
+#endif
             if (p->args[1].value != pc->args[1].value) {
                 return 0;
             }
@@ -2313,7 +2794,11 @@ int ps2_peep_55AB80(MPCode* pc) {
                 return 0;
             }
             for (q = pc->prev; q != p; q = q->prev) {
+#if MWCCPS2_B52
+                if (q->flags & 0x60004) {
+#else
                 if ((q->flags & 0x60004) && may_alias(pc, q)) {
+#endif
                     return 0;
                 }
             }
@@ -2326,7 +2811,11 @@ int ps2_peep_55AB80(MPCode* pc) {
             if (func_004AFE40(pc, p, &pc->args[2])) {
                 return 0;
             }
+#if MWCCPS2_B52
+            insertpcodebefore(pc, makepcode(OPC(0x2AF), 0xF, pc->args[0].reg, p->args[0].reg));
+#else
             insertpcodebefore(pc, makepcode(0x2AF, 0xF, pc->args[0].reg, p->args[0].reg));
+#endif
             deletepcode(pc);
             break;
         }
@@ -2355,7 +2844,11 @@ static int ps2_peep_55AE20(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3) {
     if (!func_005493A0(&d1, &d2, pc->flags & 0x2000)) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (d1->op != op1 || d2->op != OPC(0xB5)) {
+#else
     if (d1->op != op1 || d2->op != 0xB5) {
+#endif
         return 0;
     }
     if (ps2_GPRDefinedBetween(d1, pc, 2)) {
@@ -2399,12 +2892,19 @@ static int ps2_peep_55B240(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3) {
     MPCode* d2;
     MOperand acc;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     d1 = DEF(pc->args[1]);
     d2 = DEF(pc->args[2]);
     if (!func_005493A0(&d1, &d2, pc->flags & 0x2000)) {
         return 0;
     }
+#if MWCCPS2_B52
+    if (d1->op != op1 || d2->op != OPC(0xB5)) {
+#else
     if (d1->op != op1 || d2->op != 0xB5) {
+#endif
         return 0;
     }
     if (ps2_GPRDefinedBetween(d1, pc, 2)) {
@@ -2453,6 +2953,9 @@ static int ps2_peep_55B6A0(MPCode* pc, UInt16 op1, UInt16 op2, UInt16 op3) {
     MPCode* d2;
     MOperand acc;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     d1 = DEF(pc->args[1]);
     d2 = DEF(pc->args[2]);
     if (d1->op != op1 || d2->op != op1) {
@@ -2514,11 +3017,19 @@ static inline Boolean ps2_IsAdd(UInt16 op) {
 }
 
 static inline Boolean ps2_IsMulLo(UInt16 op) {
+#if MWCCPS2_B52
+    return op == OPC(0x1DB) || op == OPC(0x1DC);
+#else
     return op == 0x1DB || op == 0x1DC;
+#endif
 }
 
 static inline Boolean ps2_IsMoveLo(UInt16 op) {
+#if MWCCPS2_B52
+    return op == OPC(0x202) || op == OPC(0x203);
+#else
     return op == 0x202 || op == 0x203;
+#endif
 }
 
 // an add (1/4) of a multiply (op1/op2) and the sum of a multiply-low
@@ -2532,6 +3043,9 @@ static int ps2_peep_55BB70(MPCode* pc, UInt16 newop, UInt16 op1, UInt16 op2, int
     MPCode* n;
     MPCode* t;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     d1 = DEF(pc->args[1]);
     d2 = DEF(pc->args[2]);
     if (!d1 || !d2) {
@@ -2559,8 +3073,13 @@ static int ps2_peep_55BB70(MPCode* pc, UInt16 newop, UInt16 op1, UInt16 op2, int
     if (!a || !b) {
         return 0;
     }
+#if MWCCPS2_B52
     if (!((ps2_IsMulLo(a->op) && ps2_IsMoveLo(b->op)) ||
           (ps2_IsMulLo(b->op) && ps2_IsMoveLo(a->op)))) {
+#else
+    if (!((ps2_IsMulLo(a->op) && ps2_IsMoveLo(b->op)) ||
+          (ps2_IsMulLo(b->op) && ps2_IsMoveLo(a->op)))) {
+#endif
         return 0;
     }
     if (ps2_IsMulLo(b->op)) {
@@ -2593,6 +3112,9 @@ static int ps2_peep_55BEC0(MPCode* pc, UInt16 newop, UInt16 op1, UInt16 op2, int
     MPCode* d1;
     MPCode* d2;
 
+#if MWCCPS2_B52
+    PEEP69_PROP2(pc);
+#endif
     d1 = DEF(pc->args[1]);
     d2 = DEF(pc->args[2]);
     if (d1->op != op1 && d1->op != op2) {
@@ -2610,9 +3132,15 @@ static int ps2_peep_55BEC0(MPCode* pc, UInt16 newop, UInt16 op1, UInt16 op2, int
     if (ps2_GPRDefinedBetween(d1, d2, reg)) {
         return 0;
     }
+#if MWCCPS2_B52
     if (pc->args[0].reg != d2->args[0].reg &&
         pc->next &&
         func_0054A9E0(pc->next, pc->block->last, &d2->args[0])) {
+#else
+    if (pc->args[0].reg != d2->args[0].reg &&
+        pc->next &&
+        func_0054A9E0(pc->next, pc->block->last, &d2->args[0])) {
+#endif
         return 0;
     }
     if (pc->prev != d2 && func_0054A9E0(d2->next, pc->prev, &d2->args[0])) {
@@ -2648,18 +3176,42 @@ int ps2_peep_558180(MPCode* pc) {
     }
     a = DEF(pc->args[0]);
     b = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (a->op == OPC(0x1DE)) {
+#else
     if (a->op == 0x1DE) {
+#endif
         x = a;
+#if MWCCPS2_B52
+    } else if (b->op == OPC(0x1DE)) {
+#else
     } else if (b->op == 0x1DE) {
+#endif
         x = b;
+#if MWCCPS2_B52
+    } else if (a->op == OPC(0x1E2)) {
+#else
     } else if (a->op == 0x1E2) {
+#endif
         x = a;
+#if MWCCPS2_B52
+    } else if (b->op == OPC(0x1E2)) {
+#else
     } else if (b->op == 0x1E2) {
+#endif
         x = b;
     }
+#if MWCCPS2_B52
+    if (a->op == OPC(0xAD)) {
+#else
     if (a->op == 0xAD) {
+#endif
         y = a;
+#if MWCCPS2_B52
+    } else if (b->op == OPC(0xAD)) {
+#else
     } else if (b->op == 0xAD) {
+#endif
         y = b;
     }
     if (!y || y->args[0].reg != 0 || y->args[0].rclass != 0) {
@@ -2689,7 +3241,11 @@ int ps2_peep_558180(MPCode* pc) {
     if (TouchedBetween(pc, x, &acc)) {
         return 0;
     }
+#if MWCCPS2_B52
+    SET_OP2(x, x->op == OPC(0x1DE) ? 0x1DF : 0x1E3);
+#else
     SET_OP2(x, x->op == 0x1DE ? 0x1DF : 0x1E3);
+#endif
     COPY_OP(x->args[0], x->args[1]);
     COPY_OP(x->args[1], x->args[2]);
     x->args[2].kind = 0;
@@ -2721,14 +3277,30 @@ int ps2_peep_558520(MPCode* pc) {
     }
     a = DEF(pc->args[0]);
     b = DEF(pc->args[1]);
+#if MWCCPS2_B52
+    if (a->op == OPC(0xB5)) {
+#else
     if (a->op == 0xB5) {
+#endif
         x = a;
+#if MWCCPS2_B52
+    } else if (b->op == OPC(0xB5)) {
+#else
     } else if (b->op == 0xB5) {
+#endif
         x = b;
     }
+#if MWCCPS2_B52
+    if (a->op == OPC(0xAD)) {
+#else
     if (a->op == 0xAD) {
+#endif
         y = a;
+#if MWCCPS2_B52
+    } else if (b->op == OPC(0xAD)) {
+#else
     } else if (b->op == 0xAD) {
+#endif
         y = b;
     }
     if (!y || y->args[0].reg != 0 || y->args[0].rclass != 0) {

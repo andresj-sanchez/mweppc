@@ -45,9 +45,15 @@ typedef struct RegPressure301 {
 extern Loop301* data_006258BC; // the loop forest
 extern RegPressure301 data_00624E04[7];
 
+#if MWCCPS2_B52
 extern Loop301* func_0054AB90(
     Boolean blocks
 ); // finds loops (with blocks: plus LOOP301_BLOCK leaves and a root)
+#else
+extern Loop301* func_0054AB90(
+    Boolean blocks
+); // finds loops (with blocks: plus LOOP301_BLOCK leaves and a root)
+#endif
 extern void func_0054AAB0(void); // register pressure of every loop
 extern void func_0054AD10(void (*func)(Loop301*)); // every node, inner first
 extern Boolean func_0054A9E0(MPCode* first, MPCode* last, MOperand* op);

@@ -20,6 +20,10 @@ void func_004C3B00(void* value) {
 }
 
 // The VOperand for a register operand.
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-20)
+#endif
 VOperand func_004C3B10(MOperand op) {
     VOperand v;
 
@@ -40,6 +44,10 @@ VOperand func_004C3B10(MOperand op) {
     v.reg = op.reg;
     return v;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 VOperand func_004C3BA0(SInt16 reg, UInt8 kind) {
     VOperand v;
@@ -68,6 +76,15 @@ MOperand func_004C3C60(VOperand* v) {
     MOperand op;
     MOperand imm;
 
+#if MWCCPS2_B52
+    // b52 (0x4ADF30, 0x4ADF00) leaves a memory or immediate operand's arg
+    // byte as stack residue, and a reader distinguishes it (forced to 0xFF
+    // the original differs on 179 corpus cases, forced to 0 on none): the
+    // native takes 0, the original's usual value
+    memset(&op, 0, sizeof(op));
+    memset(&imm, 0, sizeof(imm));
+
+#endif
     switch (v->kind) {
         case 2:
         case 4:
@@ -107,6 +124,14 @@ MOperand func_004C3C60(VOperand* v) {
 MOperand func_004C3D50(CInt64 value) {
     MOperand op;
 
+#if MWCCPS2_B52
+    // b52 (0x4ADF30, 0x4ADF00) leaves a memory or immediate operand's arg
+    // byte as stack residue, and a reader distinguishes it (forced to 0xFF
+    // the original differs on 179 corpus cases, forced to 0 on none): the
+    // native takes 0, the original's usual value
+    memset(&op, 0, sizeof(op));
+
+#endif
     op.kind = 3;
     *(CInt64*)&op.value = value;
     return op;
@@ -114,6 +139,14 @@ MOperand func_004C3D50(CInt64 value) {
 
 MOperand func_004C3D90(SInt32 value) {
     MOperand op;
+#if MWCCPS2_B52
+
+    // b52 (0x4ADF30, 0x4ADF00) leaves a memory or immediate operand's arg
+    // byte as stack residue, and a reader distinguishes it (forced to 0xFF
+    // the original differs on 179 corpus cases, forced to 0 on none): the
+    // native takes 0, the original's usual value
+    memset(&op, 0, sizeof(op));
+#endif
 
     op.kind = 3;
     CInt64_SetLong((CInt64*)&op.value, value);

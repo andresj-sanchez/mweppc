@@ -41,7 +41,11 @@ static void split_unaligned(MPCode* pc, UInt16 first, UInt16 second, SInt32 bump
 
 // lui reg, %hi(object+offset): the first half of a pair.
 static MPCode* make_hi(MPCode* pc) {
+#if MWCCPS2_B52
+    MPCode* lui = makepcode(OPC(0x90), NEWREG(), HA(pc->args[1].value));
+#else
     MPCode* lui = makepcode(0x90, NEWREG(), HA(pc->args[1].value));
+#endif
 
     lui->unk38 = 5;
     lui->flags &= ~0x4000;
@@ -129,6 +133,7 @@ void func_0048AF30(MPCode* pc) {
                 }
             }
             break;
+#if MWCCPS2_B52
         case MACRO_OP(0x2D):
         case MACRO_OP(0x2E):
         case MACRO_OP(0x49):
@@ -169,6 +174,48 @@ void func_0048AF30(MPCode* pc) {
         case MACRO_OP(0x7E):
         case MACRO_OP(0x7F):
         case MACRO_OP(0x80):
+#else
+        case MACRO_OP(0x2D):
+        case MACRO_OP(0x2E):
+        case MACRO_OP(0x49):
+        case MACRO_OP(0x4B):
+        case MACRO_OP(0x4C):
+        case MACRO_OP(0x4D):
+        case MACRO_OP(0x4E):
+        case MACRO_OP(0x4F):
+        case MACRO_OP(0x50):
+        case MACRO_OP(0x51):
+        case MACRO_OP(0x52):
+        case MACRO_OP(0x53):
+        case MACRO_OP(0x54):
+        case MACRO_OP(0x56):
+        case MACRO_OP(0x57):
+        case MACRO_OP(0x58):
+        case MACRO_OP(0x59):
+        case MACRO_OP(0x5A):
+        case MACRO_OP(0x5B):
+        case MACRO_OP(0x5C):
+        case MACRO_OP(0x5D):
+        case MACRO_OP(0x5E):
+        case MACRO_OP(0x6D):
+        case MACRO_OP(0x6E):
+        case MACRO_OP(0x70):
+        case MACRO_OP(0x71):
+        case MACRO_OP(0x72):
+        case MACRO_OP(0x73):
+        case MACRO_OP(0x74):
+        case MACRO_OP(0x75):
+        case MACRO_OP(0x76):
+        case MACRO_OP(0x78):
+        case MACRO_OP(0x79):
+        case MACRO_OP(0x7A):
+        case MACRO_OP(0x7B):
+        case MACRO_OP(0x7C):
+        case MACRO_OP(0x7D):
+        case MACRO_OP(0x7E):
+        case MACRO_OP(0x7F):
+        case MACRO_OP(0x80):
+#endif
 #if !MWCCPS2 // the VFPU macros (b210 has none)
         case MACRO_OP(0x9B):
         case MACRO_OP(0x9C):
@@ -184,6 +231,12 @@ void func_0048AF30(MPCode* pc) {
             return;
     }
 
+#if MWCCPS2_B52
+    // b69 (0x4AB950) expands only the 128-bit constant and the misaligned
+    // word/doubleword accesses here; symbolic addresses wait for the late
+    // macro expansion (BE_macro.c), whose lui goes through $at
+    return;
+#endif
     if (pc->flags & 0x200000) {
         return;
     }
@@ -214,12 +267,22 @@ void func_0048AF30(MPCode* pc) {
         // frame or absolute offset: fine if it fits in 16 bits
         offset = pc->args[1].value;
         if (offset > 0x7FFF || offset < -0x8000) {
+#if MWCCPS2_B52
+            lui = makepcode(OPC(0x90), NEWREG(), HA(offset));
+#else
             lui = makepcode(0x90, NEWREG(), HA(offset));
+#endif
             insertpcodebefore(pc, lui);
             if (pc->args[2].reg) {
+#if MWCCPS2_B52
                 insertpcodebefore(
                     pc, makepcode(4, lui->args[0].reg, pc->args[2].reg, lui->args[0].reg)
                 );
+#else
+                insertpcodebefore(
+                    pc, makepcode(4, lui->args[0].reg, pc->args[2].reg, lui->args[0].reg)
+                );
+#endif
             }
             pc->args[1].value &= 0xFFFF;
             pc->args[2] = lui->args[0];

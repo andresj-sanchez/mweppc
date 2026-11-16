@@ -24,7 +24,11 @@
 #if MWCCPSP
 // 3.0.1: GCC-style operands for the MIPS assembler
 Statement* first_ST_ASM;
+#if MWCCPS2_B52
+MLookupResult gcc_name_list[20];
+#else
 MLookupResult gcc_name_list[30];
+#endif
 int gcc_name_list_index;
 
 #if MWCCPS2 && MWCCPS2_BUILD < 210
@@ -32,6 +36,9 @@ int gcc_name_list_index;
 // gcc_parse_name maps it to the table's kind (0 i/I, 1 r, 2 f, 3 j, 4 m, 5 o;
 // no 'n' or 'g'). The table is 6-byte records (b145 0x6363CC) and has no
 // 30-operand check
+#if MWCCPS2_B52
+#pragma pack(push, 2) // b69: 10 bytes, match at +6
+#endif
 typedef struct GCCConstraint {
     UInt8 kind; // the constraint letter; 0xFF none
     SInt16 flags; // 1 read, 2 written; -1 at the end of the list
@@ -40,10 +47,21 @@ typedef struct GCCConstraint {
 } GCCConstraint;
 
 typedef struct GCCOperandInfo {
+#if MWCCPS2_B52
+    char kind; // plain char: b69 reloads the index after each store
+#else
     SInt8 kind;
+#endif
     SInt16 flags;
+#if MWCCPS2_B52
+    char mode;
+#else
     SInt8 mode;
+#endif
 } GCCOperandInfo;
+#if MWCCPS2_B52
+#pragma pack(pop)
+#endif
 
 #define GCC_KIND_REG 1
 #define GCC_KIND_FPR 2
@@ -90,7 +108,11 @@ typedef struct GCCOperandInfo {
 #define GCC_END_FLAGS 0
 #endif
 
+#if MWCCPS2_B52
+GCCOperandInfo gcc_operands[20];
+#else
 GCCOperandInfo gcc_operands[30];
+#endif
 SInt32 data_006242D0;
 
 extern Boolean data_00625EC1;
@@ -98,9 +120,15 @@ extern char data_00625FD6;
 extern void func_004C5890(SInt32 code, ...); // a warning
 extern void func_004C5940(SInt32 code, ...); // a warning
 extern char* func_00481FE0(MAsmInstruction* mi); // the instruction's mnemonic
+#if MWCCPS2_B52
 extern void func_00481EE0(
     Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, Boolean after
 ); // an int/float move around the asm
+#else
+extern void func_00481EE0(
+    Statement* stmt, Object* gpr, Object* fpr, Boolean tofloat, Boolean after
+); // an int/float move around the asm
+#endif
 static ENode* gcc_copy_expression(ENode* expr);
 #else
 Statement* first_ST_ASM;
@@ -168,7 +196,11 @@ static GCCConstraint gcc_parse_attribute(Boolean isOutput) {
                 break;
         }
     } else {
+#if MWCCPS2_B52
+        while (tk == '$' || tk == '%') { // b69: no '&'
+#else
         while (tk == '$' || tk == '%' || tk == '&') {
+#endif
             tk = lex();
         }
         c.flags |= 1;
@@ -190,7 +222,11 @@ static GCCConstraint gcc_parse_attribute(Boolean isOutput) {
     }
 
     if (tk == TK_INTCONST) {
+#if MWCCPS2_B52
+        c.match = CInt64_GetULong(&tkintconst);
+#else
         c.match = tkintconst.lo;
+#endif
         if (c.match < 0) {
             CError_Error(ERR_ILLEGAL_OPERAND);
         }
@@ -270,6 +306,11 @@ static GCCConstraint gcc_parse_attribute(Boolean isOutput) {
 extern Boolean ps2_IsQuadwordClass(Type* type);
 extern Boolean ps2_IsQuadwordClassPointer(Type* type);
 
+#if MWCCPS2_B52
+extern Boolean InlineAsm_GCCLookupSymbol(
+    HashNameNode* name, MLookupResult* result, Boolean* needtemp
+);
+#endif
 // b210 (0x54E200): VU0 (j) operands and quadword-class values become
 // stint128; data_006242D0 holds the quadword class found under the operand
 static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
@@ -281,8 +322,16 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
     MLookupResult* entry;
     SInt32 i;
     short next;
+#if MWCCPS2_B52
+    Boolean needtemp = FALSE;
+    Boolean found = FALSE;
+#else
     Boolean notmem = FALSE;
+#endif
     Boolean done = FALSE;
+#if MWCCPS2_B52
+    Boolean saved;
+#endif
 
     while (tk == TK_EOL) {
         tk = lex();
@@ -309,18 +358,62 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
         gcc_operands[gcc_name_list_index].kind = c.kind;
 #endif
         if (gcc_operands[gcc_name_list_index].kind != GCC_KIND_MEM) {
+#if MWCCPS2_B52
+            needtemp = TRUE;
+        } else if ((next == '*' || next == '&') &&
+                   gcc_operands[gcc_name_list_index].kind != GCC_KIND_MEM) {
+            needtemp = TRUE;
+        } else if (next != TK_IDENTIFIER &&
+                   gcc_operands[gcc_name_list_index].kind != GCC_KIND_MEM) {
+            CError_Error(ERR_ILLEGAL_TOKEN);
+        } else if (gcc_operands[gcc_name_list_index].kind != GCC_KIND_MEM) {
+            found = InlineAsm_GCCLookupSymbol(
+                tkidentifier, &gcc_name_list[gcc_name_list_index], &needtemp
+            );
+            if (found) {
+                tk = lex();
+#else
             notmem = TRUE;
+#endif
+            }
+#if MWCCPS2_B52
         }
+        if (!needtemp && !found && gcc_operands[gcc_name_list_index].kind != GCC_KIND_MEM) {
+            saved = in_assembler;
+            in_assembler = FALSE;
+            CError_Error(0x8C, tkidentifier->name);
+            in_assembler = saved;
+            tk = lex();
+        }
+#endif
 
+#if MWCCPS2_B52
+        if (needtemp) {
+#else
         if (notmem) {
+#endif
             // the asm writes a temporary; copy it to the output after
+#if MWCCPS2_B52
+            {
+                extern ENode* assignment_expression(void);
+                extern ENode* pointer_generation(ENode * expr);
+                expr =
+                    pointer_generation(assignment_expression()); // stops at the next operand's ','
+            }
+#else
             expr = expression();
+#endif
             done = TRUE;
+#if MWCCPS2_B52
+            if (!data_006242D0 && gcc_operands[gcc_name_list_index].kind == GCC_KIND_VU0) {
+                for (e = expr; ENODE_IS(e, EINDIRECT); e = e->data.monadic) {
+#else
             if (!data_006242D0 &&
                 gcc_operands[gcc_name_list_index].kind == GCC_KIND_VU0 &&
                 ENODE_IS(expr, EINDIRECT)) {
                 e = expr;
                 while (1) {
+#endif
                     if (e && ps2_IsQuadwordClass(e->rtype)) {
                         data_006242D0 = (SInt32)e->rtype;
                     } else if (e && ps2_IsQuadwordClassPointer(e->rtype)) {
@@ -329,12 +422,16 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                     if (data_006242D0) {
                         break;
                     }
+#if !MWCCPS2_B52
                     e = e->data.monadic;
                     if (!ENODE_IS(e, EINDIRECT)) {
                         break;
+#endif
                     }
                 }
+#if !MWCCPS2_B52
             }
+#endif
             if (!expr) {
                 goto finish;
             }
@@ -342,11 +439,20 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                 if (ps2_IsQuadwordClass(expr->rtype)) {
                     expr->rtype = TYPE(&stint128);
                 } else if (!(expr->rtype->type == TYPEINT && expr->rtype->size == 16)) {
+#if MWCCPS2_B52
+                    CError_FATAL(376);
+#else
                     func_004C5940(0xB);
+#endif
                 }
             }
+#if MWCCPS2_B52
             if (ps2_IsQuadwordClass(expr->rtype) &&
                 gcc_operands[gcc_name_list_index].kind == GCC_KIND_REG) {
+#else
+            if (ps2_IsQuadwordClass(expr->rtype) &&
+                gcc_operands[gcc_name_list_index].kind == GCC_KIND_REG) {
+#endif
                 expr->rtype = TYPE(&stint128);
             }
             tempobj = create_temp_object(expr->rtype);
@@ -356,8 +462,15 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
             }
             gcc_name_list[gcc_name_list_index].object = tempobj;
             if (c.flags & 1) {
+#if MWCCPS2_B52
+                e = makediadicnode(tempexpr, gcc_copy_expression(expr), EASS);
+#endif
                 stmt = CFunc_InsertBeforeStatement(ST_EXPRESSION, first_ST_ASM);
+#if MWCCPS2_B52
+                stmt->expr = e;
+#else
                 stmt->expr = makediadicnode(tempexpr, gcc_copy_expression(expr), EASS);
+#endif
             }
             expr = makediadicnode(expr, tempexpr, EASS);
             stmt = CFunc_InsertStatement(ST_EXPRESSION, curstmt);
@@ -381,7 +494,11 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                 stmt->expr = expr;
             } else {
                 if (next == '&') {
+#if MWCCPS2_B52
+                    func_004C5890(0x6E, "'m'");
+#else
                     func_004C5890(13, "'m'");
+#endif
                 }
                 gcc_name_list[gcc_name_list_index].object = NULL;
                 goto finish;
@@ -400,7 +517,11 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
     } else {
         tk = lex();
         in_assembler = FALSE;
+#if MWCCPS2_B52
+        cprep_nostring = FALSE;
+#else
         data_00625EC1 = FALSE;
+#endif
         copts.cplusplus = TRUE;
 
         if (c.match != -1 && gcc_name_list_index != -1) {
@@ -414,7 +535,9 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
             gcc_operands[i].mode = 3;
         } else {
             entry = &gcc_name_list[++gcc_name_list_index];
+#if !MWCCPS2_B52
             memset(entry, 0, sizeof(MLookupResult));
+#endif
             gcc_operands[gcc_name_list_index].mode = c.mode;
 #if MWCCPS2 && MWCCPS2_BUILD < 210
             GCC_SET_KIND(gcc_name_list_index, c.kind);
@@ -447,16 +570,25 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                     expr = expr->data.monadic;
                 } else {
                     if (next == '&') {
+#if MWCCPS2_B52
+                        func_004C5890(0x6E, "'m'");
+#else
                         func_004C5890(13, "'m'");
+#endif
                     }
                     gcc_name_list[i].object = NULL;
                     goto finish;
                 }
+#if MWCCPS2_B52
+            } else if (gcc_operands[i].kind == GCC_KIND_VU0 && !data_006242D0) {
+                for (e = expr; ENODE_IS(e, EINDIRECT); e = e->data.monadic) {
+#else
             } else if (gcc_operands[i].kind == GCC_KIND_VU0 &&
                        !data_006242D0 &&
                        ENODE_IS(expr, EINDIRECT)) {
                 e = expr;
                 while (1) {
+#endif
                     if (e && ps2_IsQuadwordClass(e->rtype)) {
                         data_006242D0 = (SInt32)e->rtype;
                     } else if (e && ps2_IsQuadwordClassPointer(e->rtype)) {
@@ -465,12 +597,16 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                     if (data_006242D0) {
                         break;
                     }
+#if !MWCCPS2_B52
                     e = e->data.monadic;
                     if (!ENODE_IS(e, EINDIRECT)) {
                         break;
+#endif
                     }
                 }
+#if !MWCCPS2_B52
             }
+#endif
 
             if (c.match != -1 && gcc_name_list[i].object) {
                 tempexpr = create_objectnode(gcc_name_list[i].object);
@@ -479,7 +615,11 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
                 if (ps2_IsQuadwordClass(expr->rtype)) {
                     expr->rtype = TYPE(&stint128);
                 } else if (!(expr->rtype->type == TYPEINT && expr->rtype->size == 16)) {
+#if MWCCPS2_B52
+                    CError_FATAL(539);
+#else
                     func_004C5940(9, "%", i);
+#endif
                 }
                 tempobj = create_temp_object(expr->rtype);
                 tempexpr = create_objectnode(tempobj);
@@ -511,7 +651,11 @@ static void gcc_parse_name(Boolean isOutput, GCCConstraint c) {
     }
 
 finish:
+#if MWCCPS2_B52
+    cprep_nostring = TRUE;
+#else
     data_00625EC1 = TRUE;
+#endif
     in_assembler = TRUE;
     if (tk != ')' && !done) {
         CError_Error(ERR_RPAREN_EXPECTED);
@@ -696,9 +840,15 @@ finish:
 // replace the GCC operands (%N) in an instruction
 #if MWCCPS2
 #define BE_NUM_OPCODES 0x40A // include/psp/BE.h's (b210 has no VFPU)
+#if MWCCPS2_B52
 extern void ps2_gcc_quadmove(
     Statement* stmt, Object* var, Object* temp, Boolean in, Boolean after
 ); // b210 0x490E20
+#else
+extern void ps2_gcc_quadmove(
+    Statement* stmt, Object* var, Object* temp, Boolean in, Boolean after
+); // b210 0x490E20
+#endif
 
 // b210 (0x54D920): a VU0 (j) operand keeps its field suffix, and a 16-byte
 // integer or a pointer in one goes through a stint128 temporary
@@ -736,8 +886,11 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                     break;
 
                 case MOpnd_GCCReg:
+#if !MWCCPS2_B52
                     def = &data_006115F8[mi->opcode];
+#endif
                     n = op->u.gcc.num;
+#if !MWCCPS2_B52
                     if (gcc_operands[n].kind == GCC_KIND_MEM &&
                         (def->flags & 6) &&
                         mi->opcode > BE_NUM_OPCODES) {
@@ -757,12 +910,15 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                         return;
                     }
 
+#endif
                     if (!gcc_name_list[n].object || !gcc_name_list[n].object->type) {
+#if !MWCCPS2_B52
                         if (gcc_name_list[n].has_value == TRUE) {
                             op->type = MOpnd_Imm;
                             op->u.imm = gcc_name_list[n].value;
                             break;
                         }
+#endif
                         CError_Error(ERR_ILLEGAL_OPERAND);
                     }
 
@@ -787,22 +943,42 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                     op->u.reg.object = NULL;
 
                     if (n > gcc_name_list_index) {
+#if MWCCPS2_B52
+                        func_004C5940(0x67, "%", n);
+#else
                         func_004C5940(4, "%", n);
+#endif
                         break;
                     }
 
                     if (op->rclass != -1 && gcc_name_list[n].object) {
                         if (gcc_operands[n].kind == GCC_KIND_REG && op->rclass != 0) {
+#if MWCCPS2_B52
+                            func_004C5940(0x6B, "%", n, func_00481FE0(mi));
+#else
                             func_004C5940(8, "%", n, func_00481FE0(mi));
+#endif
                         }
                         if (gcc_operands[n].kind == GCC_KIND_FPR && op->rclass != 1) {
+#if MWCCPS2_B52
+                            func_004C5940(0x6B, "%", n, func_00481FE0(mi));
+#else
                             func_004C5940(8, "%", n, func_00481FE0(mi));
+#endif
                         }
                         if (gcc_operands[n].kind == GCC_KIND_VU0 && op->rclass != 5) {
+#if MWCCPS2_B52
+                            func_004C5940(0x6B, "%", n, func_00481FE0(mi));
+#else
                             func_004C5940(8, "%", n, func_00481FE0(mi));
+#endif
                         }
                         if (gcc_operands[n].kind == GCC_KIND_MEM && op->rclass != 0) {
+#if MWCCPS2_B52
+                            func_004C5940(0x6B, "%", n, func_00481FE0(mi));
+#else
                             func_004C5940(8, "%", n, func_00481FE0(mi));
+#endif
                         }
                     }
 
@@ -839,40 +1015,74 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                                     func_00481EE0(stmt, gcc_name_list[n].object, temp, TRUE, FALSE);
                                     stmt = stmt->next;
                                 }
+#if MWCCPS2_B52
                             } else if (kind == GCC_KIND_REG &&
                                        obj->type->type == TYPEFLOAT &&
                                        obj->type->size == 4) {
+#else
+                            } else if (kind == GCC_KIND_REG &&
+                                       obj->type->type == TYPEFLOAT &&
+                                       obj->type->size == 4) {
+#endif
                                 temp = create_temp_object(TYPE(&stsignedint));
                                 if (op->effect & 2) {
                                     func_00481EE0(stmt, temp, gcc_name_list[n].object, TRUE, TRUE);
                                 }
                                 if (op->effect & 1) {
+#if MWCCPS2_B52
                                     func_00481EE0(
                                         stmt, temp, gcc_name_list[n].object, FALSE, FALSE
                                     );
+#else
+                                    func_00481EE0(
+                                        stmt, temp, gcc_name_list[n].object, FALSE, FALSE
+                                    );
+#endif
                                     stmt = stmt->next;
                                 }
+#if MWCCPS2_B52
                             } else if (kind == GCC_KIND_VU0 &&
                                        obj->u.var.info &&
                                        !obj->u.var.info->unk24[1]) {
+#else
+                            } else if (kind == GCC_KIND_VU0 &&
+                                       obj->u.var.info &&
+                                       !obj->u.var.info->unk24[1]) {
+#endif
                                 if (obj->type->type == TYPEINT) {
                                     temp = create_temp_object(TYPE(&stint128));
                                     if (temp->u.var.info) {
                                         temp->u.var.info->unk24[1] = 1;
                                     }
                                     if (op->effect & 1) {
+#if MWCCPS2_B52
                                         ps2_gcc_quadmove(
                                             stmt, gcc_name_list[n].object, temp, TRUE, FALSE
                                         );
+#else
+                                        ps2_gcc_quadmove(
+                                            stmt, gcc_name_list[n].object, temp, TRUE, FALSE
+                                        );
+#endif
                                         stmt = stmt->next;
                                     }
                                     if (op->effect & 2) {
+#if MWCCPS2_B52
                                         ps2_gcc_quadmove(
                                             stmt, gcc_name_list[n].object, temp, FALSE, TRUE
                                         );
+#else
+                                        ps2_gcc_quadmove(
+                                            stmt, gcc_name_list[n].object, temp, FALSE, TRUE
+                                        );
+#endif
                                     }
                                 } else if (obj->type->type == TYPEPOINTER) {
+#if MWCCPS2_B52
+                                    CError_FATAL(839);
+#else
                                     func_004C5940(9, "%", n);
+#endif
                                 } else {
                                     temp = obj;
                                 }
@@ -893,9 +1103,15 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                     } else if (gcc_operands[n].mode == 2) {
                         obj = gcc_name_list[n].object;
                         type = obj->type;
+#if MWCCPS2_B52
                         if (type->type == TYPEFLOAT &&
                             type->size == 4 &&
                             gcc_operands[n].kind == GCC_KIND_REG) {
+#else
+                        if (type->type == TYPEFLOAT &&
+                            type->size == 4 &&
+                            gcc_operands[n].kind == GCC_KIND_REG) {
+#endif
                             temp = create_temp_object(TYPE(&stsignedint));
                             if (temp->u.var.info) {
                                 temp->u.var.info->used = TRUE;
@@ -903,9 +1119,15 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                             op->u.reg.object = temp;
                             func_00481EE0(stmt, temp, gcc_name_list[n].object, FALSE, FALSE);
                             stmt = stmt->next;
+#if MWCCPS2_B52
                         } else if ((type->type == TYPEINT || type->type == TYPEPOINTER) &&
                                    type->size == 4 &&
                                    gcc_operands[n].kind == GCC_KIND_FPR) {
+#else
+                        } else if ((type->type == TYPEINT || type->type == TYPEPOINTER) &&
+                                   type->size == 4 &&
+                                   gcc_operands[n].kind == GCC_KIND_FPR) {
+#endif
                             temp = create_temp_object(TYPE(&stfloat));
                             if (temp->u.var.info) {
                                 temp->u.var.info->used = TRUE;
@@ -914,27 +1136,49 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                             func_00481EE0(stmt, gcc_name_list[n].object, temp, TRUE, FALSE);
                             stmt = stmt->next;
                         } else {
+#if MWCCPS2_B52
                             if (gcc_operands[n].kind == GCC_KIND_VU0 &&
                                 obj->u.var.info &&
                                 !obj->u.var.info->unk24[1]) {
+#else
+                            if (gcc_operands[n].kind == GCC_KIND_VU0 &&
+                                obj->u.var.info &&
+                                !obj->u.var.info->unk24[1]) {
+#endif
                                 if (type->type == TYPEINT) {
                                     temp = create_temp_object(TYPE(&stint128));
                                     if (temp->u.var.info) {
                                         temp->u.var.info->unk24[1] = 1;
                                     }
                                     if (op->effect & 1) {
+#if MWCCPS2_B52
                                         ps2_gcc_quadmove(
                                             stmt, gcc_name_list[n].object, temp, TRUE, FALSE
                                         );
+#else
+                                        ps2_gcc_quadmove(
+                                            stmt, gcc_name_list[n].object, temp, TRUE, FALSE
+                                        );
+#endif
                                         stmt = stmt->next;
                                     }
                                     if (op->effect & 2) {
+#if MWCCPS2_B52
                                         ps2_gcc_quadmove(
                                             stmt, gcc_name_list[n].object, temp, FALSE, TRUE
                                         );
+#else
+                                        ps2_gcc_quadmove(
+                                            stmt, gcc_name_list[n].object, temp, FALSE, TRUE
+                                        );
+#endif
                                     }
                                 } else if (type->type == TYPEPOINTER) {
+#if MWCCPS2_B52
+                                    CError_FATAL(904);
+#else
                                     func_004C5940(0xB);
+#endif
                                 } else {
                                     temp = obj;
                                 }
@@ -945,6 +1189,9 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
                         }
                     }
 
+#if MWCCPS2_B52
+                    op->effect = gcc_operands[n].flags;
+#endif
                     kind = gcc_operands[gcc_name_list_index].kind;
                     if (kind == GCC_KIND_REG) {
                         op->rclass = 0;
@@ -1173,73 +1420,167 @@ static void gcc_replace_arg_st_asm(Statement* stmt) {
 }
 #endif
 
+#if !MWCCPS2_B52
 static inline void gcc_parse_output(void) {
     GCCConstraint c;
+#endif
 
-    if (tk == ':') {
-        if ((tk = lex()) == ':' || tk == ')' || tk == '}') {
-            return;
+#if MWCCPS2_B52
+    // operand lists go through gcc_parse_expression (as GC's), and a '\' after
+    // the outputs, the inputs or the clobbers is skipped
+    static void gcc_clear_operands(void) {
+        int i;
+
+        for (i = 0; i < 20; i++) {
+            gcc_operands[i].mode = 0xFF;
+            gcc_operands[i].kind = 0xFF;
+            gcc_operands[i].flags = -1;
+#else
+if (tk == ':') {
+    if ((tk = lex()) == ':' || tk == ')' || tk == '}') {
+        return;
+#endif
         }
+#if MWCCPS2_B52
+    }
+
+    static void gcc_parse_expression(Boolean isOutput) {
+        GCCConstraint c;
+
+#endif
         while (1) {
-            c = gcc_parse_attribute(TRUE);
+#if MWCCPS2_B52
+            c = gcc_parse_attribute(isOutput);
+#else
+        c = gcc_parse_attribute(TRUE);
+#endif
             if (c.flags == GCC_END_FLAGS && c.kind == 0xFF) {
                 break;
             }
-            gcc_parse_name(TRUE, c);
+#if MWCCPS2_B52
+            gcc_parse_name(isOutput, c);
+#else
+        gcc_parse_name(TRUE, c);
+#endif
             if (tk != ',') {
                 break;
             }
             tk = lex();
         }
+#if !MWCCPS2_B52
         copts.cplusplus = FALSE;
+#endif
     }
+#if !MWCCPS2_B52
 }
+#endif
 
+#if MWCCPS2_B52
+static void gcc_parse_input(void) {
+    if (tk != ':') {
+#else
 static inline void gcc_parse_input(void) {
     GCCConstraint c;
 
     if (tk == ':') {
         if ((tk = lex()) == ':' || tk == ')' || tk == '}') {
-            return;
-        }
+#endif
+        return;
+    }
+#if MWCCPS2_B52
+    if ((tk = lex()) == ':') {
+        return;
+#else
         while (1) {
             c = gcc_parse_attribute(FALSE);
             if (c.flags == GCC_END_FLAGS && c.kind == 0xFF) {
                 break;
-            }
+#endif
+    }
+#if MWCCPS2_B52
+    if (tk == ')' || tk == '}') {
+        return;
+#else
             gcc_parse_name(FALSE, c);
             if (tk != ',') {
                 break;
-            }
-            tk = lex();
-        }
+#endif
+    }
+#if MWCCPS2_B52
+    gcc_parse_expression(FALSE);
+    if (tk == '\\') {
+#endif
+        tk = lex();
     }
 }
+#if MWCCPS2_B52
 
+static void gcc_parse_output(void) {
+    if (tk != ':') {
+        return;
+#endif
+    }
+#if MWCCPS2_B52
+    if ((tk = lex()) == ':') {
+        return;
+    }
+    if (tk == ')' || tk == '}') {
+        return;
+    }
+    gcc_parse_expression(TRUE);
+    if (tk == '\\') {
+        tk = lex();
+    }
+    copts.cplusplus = FALSE;
+}
+#endif
+
+#if MWCCPS2_B52
+static void gcc_parse_killed(void) {
+    if (tk != ':') {
+        return;
+    }
+#else
 static inline void gcc_parse_killed(void) {
     if (tk == ':') {
-        while (1) {
-            if ((tk = lex()) != '"') {
+#endif
+    while (1) {
+        if ((tk = lex()) != '"') {
+#if MWCCPS2_B52
+            break;
+#else
                 return;
-            }
+#endif
+        }
 
-            tk = lex();
-            while (1) {
-                if (tk == '"') {
-                    if (lookahead() == ',') {
-                        tk = lex();
-                        break;
-                    }
+        tk = lex();
+        while (1) {
+            if (tk == '"') {
+                if (lookahead() == ',') {
                     tk = lex();
-                    return;
+                    break;
                 }
                 tk = lex();
+#if MWCCPS2_B52
+                if (tk == '\\') {
+                    tk = lex();
+                }
+#endif
+                return;
             }
+            tk = lex();
         }
     }
 }
+#if !MWCCPS2_B52
+}
+#endif
 
-static inline void gcc_replace_arg(void) {
+#if MWCCPS2_B52
+static void gcc_replace_arg(void) {
+#else
+    static inline void gcc_replace_arg(void) {
+#endif
     Statement* stmt;
 
     for (stmt = first_ST_ASM; stmt; stmt = stmt->next) {
@@ -1250,42 +1591,60 @@ static inline void gcc_replace_arg(void) {
 }
 
 void InlineAsm_gcc_parse(void) {
+#if !MWCCPS2_B52
     int i;
 
-    gcc_name_list_index = -1;
-    for (i = 0; i < 30; i++) {
-#if MWCCPS2 && MWCCPS2_BUILD < 210
-        gcc_operands[i].mode = 0xFF;
-        gcc_operands[i].kind = 0xFF;
-        gcc_operands[i].flags = -1;
-#else
-        gcc_operands[i].mode = 0;
-        gcc_operands[i].kind = 0xFF;
-        gcc_operands[i].flags = 0;
 #endif
-    }
-    data_006242D0 = 0;
-    cprep_eoltokens = FALSE;
+    gcc_name_list_index = -1;
+#if MWCCPS2_B52
+    gcc_clear_operands();
+#else
+        for (i = 0; i < 30; i++) {
+#endif
+#if MWCCPS2 && MWCCPS2_BUILD < 210
+#if !MWCCPS2_B52
+    gcc_operands[i].mode = 0xFF;
+    gcc_operands[i].kind = 0xFF;
+    gcc_operands[i].flags = -1;
+#endif
+#else
+            gcc_operands[i].mode = 0;
+            gcc_operands[i].kind = 0xFF;
+            gcc_operands[i].flags = 0;
+#endif
+#if !MWCCPS2_B52
+}
+#endif
+data_006242D0 = 0;
+cprep_eoltokens = FALSE;
 
-    if (tk == TK_EOL) {
-        tk = lex();
-    }
+if (tk == TK_EOL) {
+    tk = lex();
+}
 
-    gcc_parse_output();
-    gcc_parse_input();
-    gcc_parse_killed();
-    gcc_replace_arg();
+gcc_parse_output();
+gcc_parse_input();
+gcc_parse_killed();
+gcc_replace_arg();
 }
 
 #undef CError_PS2_SHIFT
 #define CError_PS2_SHIFT -1 // mwccps2: its asserts are one line earlier
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT -40 // b145 asserts
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT -90 // b69's asserts in gcc_copy_expression (1045, 1069)
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (28)
+#endif
 static ENode* gcc_copy_expression(ENode* expr) {
     ENode* copy;
 
     copy = lalloc(sizeof(ENode));
+#if !MWCCPS2_B52
     memset(copy, 0, sizeof(ENode));
+#endif
     *copy = *expr;
 
     switch (copy->type) {
@@ -1342,8 +1701,10 @@ static ENode* gcc_copy_expression(ENode* expr) {
         case EBCLR:
         case EBTST:
         case EBSET:
+#if !MWCCPS2_B52
         case EPOINTERSTAR:
         case EDOTSTAR:
+#endif
             copy->data.diadic.left = gcc_copy_expression(copy->data.diadic.left);
             copy->data.diadic.right = gcc_copy_expression(copy->data.diadic.right);
             break;
@@ -1367,8 +1728,13 @@ static ENode* gcc_copy_expression(ENode* expr) {
             break;
         case ENEWEXCEPTION:
         case ENEWEXCEPTIONARRAY:
+#if MWCCPS2_B52
             copy->data.newexception.initexpr =
                 gcc_copy_expression(copy->data.newexception.initexpr);
+#else
+                    copy->data.newexception.initexpr =
+                        gcc_copy_expression(copy->data.newexception.initexpr);
+#endif
             copy->data.newexception.tryexpr = gcc_copy_expression(copy->data.newexception.tryexpr);
             break;
         case EINITTRYCATCH:
@@ -1393,6 +1759,10 @@ static ENode* gcc_copy_expression(ENode* expr) {
 
     return copy;
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 #undef CError_B145_SHIFT
 #define CError_B145_SHIFT 0
 #undef CError_PS2_SHIFT

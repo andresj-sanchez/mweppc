@@ -25,9 +25,21 @@
 #include "compiler/types.h"
 #if MWCCPSP
 #include "compiler/CMachine.h"
+#if MWCCPS2_B52
+#include "compiler/CScope.h"
+#include <string.h>
+#if !defined(EAT_UNK18)
+// 3.0.1's two extra exception action kinds; b69's Exceptions.h (which b52
+// uses) has none, so these case labels sit past EAT_NACTIONS (unverified)
+#define EAT_UNK18 EAT_NACTIONS
+#define EAT_UNK19 (EAT_NACTIONS + 1)
+#endif
+
+#else
 #include "compiler/CScope.h"
 #include <string.h>
 
+#endif
 #if MWCCPS2
 // b210 keeps the scalarization helpers out of line
 #define IROVARS_NOINLINE __declspec(noinline)
@@ -509,9 +521,15 @@ VarRecord* IRO_FindVar(Object* object, Boolean create, Boolean allowRegister) {
     if (var && (IRO_CheckVar(IRO_VarCheckList, var), !allowRegister)) {
 #endif
         var->noregister = TRUE;
+#if MWCCPS2_B52
         if (IRO_IsLocalObject(object) &&
             object->u.var.info &&
             object->u.var.info->noregister == 0) {
+#else
+        if (IRO_IsLocalObject(object) &&
+            object->u.var.info &&
+            object->u.var.info->noregister == 0) {
+#endif
             object->u.var.info->noregister = 2;
         }
     }
@@ -665,9 +683,15 @@ static inline void FindVarEH(Object* object, Boolean lookupOnly, Boolean allowRe
     }
     if (var && !allowRegister) {
         var->noregister = TRUE;
+#if MWCCPS2_B52
         if (IRO_IsLocalObject(object) &&
             object->u.var.info &&
             object->u.var.info->noregister == 0) {
+#else
+        if (IRO_IsLocalObject(object) &&
+            object->u.var.info &&
+            object->u.var.info->noregister == 0) {
+#endif
             object->u.var.info->noregister = 2;
         }
     }
@@ -783,9 +807,15 @@ static inline VarRecord* FindVar(Object* object, Boolean allowRegister) {
 
     if (var && !allowRegister) {
         var->noregister = TRUE;
+#if MWCCPS2_B52
         if (IRO_IsLocalObject(object) &&
             object->u.var.info &&
             object->u.var.info->noregister == 0) {
+#else
+        if (IRO_IsLocalObject(object) &&
+            object->u.var.info &&
+            object->u.var.info->noregister == 0) {
+#endif
             object->u.var.info->noregister = 2;
         }
     }
@@ -914,9 +944,15 @@ void IRO_UpdateVars(void) {
                 }
                 if (var && !notaddr) {
                     var->noregister = TRUE;
+#if MWCCPS2_B52
                     if (IRO_IsLocalObject(obj) &&
                         obj->u.var.info &&
                         obj->u.var.info->noregister == 0) {
+#else
+                    if (IRO_IsLocalObject(obj) &&
+                        obj->u.var.info &&
+                        obj->u.var.info->noregister == 0) {
+#endif
                         obj->u.var.info->noregister = 2;
                     }
                 }
@@ -935,9 +971,15 @@ void IRO_UpdateVars(void) {
                 }
                 if (var && !notaddr) {
                     var->noregister = TRUE;
+#if MWCCPS2_B52
                     if (IRO_IsLocalObject(obj) &&
                         obj->u.var.info &&
                         obj->u.var.info->noregister == 0) {
+#else
+                    if (IRO_IsLocalObject(obj) &&
+                        obj->u.var.info &&
+                        obj->u.var.info->noregister == 0) {
+#endif
                         obj->u.var.info->noregister = 2;
                     }
                 }
@@ -1384,6 +1426,9 @@ extern void* CABI_GetSizeTType(void);
 // 0x569B40: what nd may change: the buffer argument of __clear(void*,
 // size_t), only the errno variable for a library function that sets nothing
 // else, else the variables a store of its size (or any write) may reach
+#if MWCCPS2_B52
+#define MWCCPS2_B52_ON 1
+#endif
 void func_00569B40(BitVector* bv, IROLinear* nd) {
     IROLinear* callee;
     Object* obj;
@@ -1393,6 +1438,29 @@ void func_00569B40(BitVector* bv, IROLinear* nd) {
     SInt32 size;
     BitVector** table;
 
+#if MWCCPS2_B52
+    if (!MWCCPS2_B52_ON &&
+        nd->type == IROLinearFunccall &&
+        (callee = nd->u.funccall.callee)->type == IROLinearOperand &&
+        callee->u.node->type == EOBJREF &&
+        (obj = callee->u.node->data.objref) &&
+        obj->name &&
+        !strcmp(obj->name->name, "__clear") &&
+        obj->otype == OT_OBJECT &&
+        obj->access == 0 &&
+        obj->datatype == DFUNC &&
+        (!copts.cplusplus || obj->nspace == cscope_root) &&
+        obj->type &&
+        obj->type->type == TYPEFUNC &&
+        (tfunc = TYPE_FUNC(obj->type))->functype == TYPE(&void_ptr) &&
+        tfunc->args &&
+        tfunc->args->type == TYPE(&void_ptr) &&
+        tfunc->args->next &&
+        tfunc->args->next->type == (Type*)CABI_GetSizeTType() &&
+        !tfunc->args->next->next &&
+        (arg = nd->u.funccall.args[0])->type == IROLinearOperand &&
+        arg->u.node->type == EOBJREF &&
+#else
     if (nd->type == IROLinearFunccall &&
         (callee = nd->u.funccall.callee)->type == IROLinearOperand &&
         callee->u.node->type == EOBJREF &&
@@ -1413,15 +1481,24 @@ void func_00569B40(BitVector* bv, IROLinear* nd) {
         !tfunc->args->next->next &&
         (arg = nd->u.funccall.args[0])->type == IROLinearOperand &&
         arg->u.node->type == EOBJREF &&
+#endif
         (var = IRO_FindVar(arg->u.node->data.objref, FALSE, TRUE))) {
         Bv_SetBit(var->index, bv);
         return;
     }
+#if MWCCPS2_B52
     if (nd->type == IROLinearFunccall &&
         (callee = nd->u.funccall.callee)->type == IROLinearOperand &&
         callee->u.node->type == EOBJREF &&
         !func_0057B7A0(callee->u.node->data.objref) &&
         func_0057B770()) {
+#else
+    if (nd->type == IROLinearFunccall &&
+        (callee = nd->u.funccall.callee)->type == IROLinearOperand &&
+        callee->u.node->type == EOBJREF &&
+        !func_0057B7A0(callee->u.node->data.objref) &&
+        func_0057B770()) {
+#endif
         Bv_Clear(bv);
         if ((var = func_0057B6C0())) {
             Bv_SetBit(var->index, bv);
@@ -1436,7 +1513,11 @@ void func_00569B40(BitVector* bv, IROLinear* nd) {
         table = IRO_SizeKills;
     } else {
         size = 0;
+#if MWCCPS2_B52
+        table = IRO_SizeKills;
+#else
         table = &IRO_KillWritable;
+#endif
     }
     if (size > IRO_MaxKillSize) {
         Bv_Clear(bv);
@@ -1503,6 +1584,7 @@ static void GetKillsByIndirectAssignment(IROLinear* linear) {
 
     inner = linear->u.monadic;
     result = FALSE;
+#if MWCCPS2_B52
     if (inner &&
         inner->type == IROLinearOp1Arg &&
         inner->nodetype == EINDIRECT &&
@@ -1510,6 +1592,15 @@ static void GetKillsByIndirectAssignment(IROLinear* linear) {
         copts.opt_pointer_analysis &&
         ptr->pointsToFunction &&
         FunctionName) {
+#else
+    if (inner &&
+        inner->type == IROLinearOp1Arg &&
+        inner->nodetype == EINDIRECT &&
+        (ptr = inner->u.monadic) &&
+        copts.opt_pointer_analysis &&
+        ptr->pointsToFunction &&
+        FunctionName) {
+#endif
         resultList = NULL;
         PointerAnalysis_LookupLinearNodePointerExpr(FunctionName, ptr, &resultList);
         if (resultList) {
@@ -1821,8 +1912,13 @@ void IRO_CheckInit(void) {
         for (nd = IRO_FirstLinear; nd; nd = nd->next) {
             if (nd->type == IROLinearBeginCatch && nd->stmt) {
                 for (act = nd->stmt->dobjstack; act; act = act->prev) {
+#if MWCCPS2_B52
                     if (act->type == EAT_CATCHBLOCK &&
                         act->data.catch_block.catch_object &&
+#else
+                    if (act->type == EAT_CATCHBLOCK &&
+                        act->data.catch_block.catch_object &&
+#endif
                         (var = IRO_FindVar(act->data.catch_block.catch_object, FALSE, TRUE))) {
                         Bv_ClearBit(var->index, IRO_VarKills);
                     }
@@ -3204,6 +3300,10 @@ static void CountRefToObject(Object* object, int depth) {
     object->u.var.info->used = TRUE;
 }
 
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (-515)
+#endif
 void IRO_CountARef(IROLinear* node, int depth) {
     Object* object;
 
@@ -3219,6 +3319,10 @@ void IRO_CountARef(IROLinear* node, int depth) {
         }
     }
 }
+#if MWCCPS2_B52
+#undef CError_B52_SHIFT
+#define CError_B52_SHIFT (0)
+#endif
 
 void IRO_CountDoubleInd(IROLinear* node, int depth) {
     if (IRO_IsVariable(node)) {
@@ -3263,9 +3367,15 @@ void IRO_CountUsage(void) {
                     IRO_CountARef(node, fnode->loopdepth);
                 } else if (IS_LINEAR_MONADIC(node, EINDIRECT)) {
                     IRO_CountDoubleInd(node->u.monadic, fnode->loopdepth);
+#if MWCCPS2_B52
                 } else if (node->type == IROLinearAsm &&
                            IRO_GetAsmEffectsHook &&
                            node->u.asm_stmt) {
+#else
+                } else if (node->type == IROLinearAsm &&
+                           IRO_GetAsmEffectsHook &&
+                           node->u.asm_stmt) {
+#endif
                     CountAsm(node, fnode->loopdepth);
                 }
                 if (node == fnode->last) {
@@ -3300,6 +3410,10 @@ extern BitVector* IRO_KillAll;
 extern BitVector* IRO_KillWritable;
 
 static Boolean MayBeWritten(Object* obj) {
+#if MWCCPS2_B52
+    // b52 (0x51EF30) has no read-only test: a const object is killed too
+    return TRUE;
+#endif
     return !CParser_IsReadOnly(obj->type, obj->qual) ||
         (IS_TYPE_CLASS(obj->type) &&
          (CClass_Constructor(TYPE_CLASS(obj->type)) || CClass_Destructor(TYPE_CLASS(obj->type))));
@@ -3349,13 +3463,28 @@ void IRO_ComputeKillSets(void) {
             if (MayBeWritten(obj)) {
                 NeedVector(&IRO_KillWritable);
                 Bv_SetBit(var->index, IRO_KillWritable);
+#if MWCCPS2_B52
+                // b52 (0x51F155): the size table it reads (0x5A2810) has every
+                // addressed or global variable; the global/static subset goes
+                // to a second table (0x5A180C) nothing here reads
+                if (!var->noregister && !MWCCPS2_B52_ON) {
+                    Boolean isGlobal = (obj->datatype == DDATA || obj->datatype == DABSOLUTE) &&
+                        obj->sclass != TK_STATIC;
+#else
                 if (!var->noregister) {
                     Boolean isGlobal = (obj->datatype == DDATA || obj->datatype == DABSOLUTE) &&
                         obj->sclass != TK_STATIC;
+#endif
                     if (!isGlobal &&
+#if MWCCPS2_B52
+                        (!(obj->datatype == DDATA || obj->datatype == DABSOLUTE) ||
+                         obj->sclass != TK_STATIC ||
+                         0 /* 3.0.1 u.data.islocalstatic: b52 has none (as b69; unverified) */)) {
+#else
                         (!(obj->datatype == DDATA || obj->datatype == DABSOLUTE) ||
                          obj->sclass != TK_STATIC ||
                          obj->u.data.islocalstatic)) {
+#endif
                         continue;
                     }
                 }

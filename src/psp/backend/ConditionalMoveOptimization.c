@@ -45,14 +45,23 @@ void func_004B06E0(MPCodeBlock* arm, MPCodeBlock* block) {
 
     for (pc = arm->first; pc; pc = next) {
         next = pc->next;
+#if MWCCPS2_B52
+        if ((UInt16)(pc->op - OPC(0xAA)) <= 1 && (pc->flags & 0x10)) {
+#else
         if ((UInt16)(pc->op - 0xAA) <= 1 && (pc->flags & 0x10)) {
+#endif
             d = pc->args[0].reg;
             s = pc->args[1].reg;
             if (LIVEOUT(arm, d) && !LIVEOUT(block, s) && !LIVEOUT(arm, s)) {
                 for (scan = arm->first; scan != pc; scan = scan->next) {
                     for (i = scan->argcount - 1; i >= 0; i--) {
+#if MWCCPS2_B52
                         if (scan->args[i].kind == 0 &&
                             scan->args[i].rclass == 0 &&
+#else
+                        if (scan->args[i].kind == 0 &&
+                            scan->args[i].rclass == 0 &&
+#endif
                             scan->args[i].reg == s) {
                             scan->args[i].reg = d;
                         }
@@ -170,7 +179,11 @@ UInt8 func_004B0850(MPCode* pc) {
                     return 0;
                 }
             }
+#if MWCCPS2_B52
+        } else if (i == 0 && pc->op != OPC(0x39)) {
+#else
         } else if (i == 0 && pc->op != 0x39) {
+#endif
             return 0;
         }
     }
@@ -185,15 +198,71 @@ UInt8 func_004B0850(MPCode* pc) {
                 return 5;
             }
             return 3;
+#if MWCCPS2_B52
+        case OPC(0x39):
+#else
         case 0x39:
+#endif
             return 6;
+#if MWCCPS2_B52
+        case OPC(0xAA):
+        case OPC(0xAB):
+#else
         case 0xAA:
         case 0xAB:
+#endif
             return LIVEOUT(pc->block, pc->args[0].reg) ? 1 : 2;
         case 1:
         case 4:
         case 6:
         case 7:
+#if MWCCPS2_B52
+        case OPC(0x82):
+        case 0x83:
+        case 0x84:
+        case 0x85:
+        case 0x86:
+        case 0x87:
+        case 0x88:
+        case OPC(0x89):
+        case 0x8A:
+        case 0x8B:
+        case 0x8C:
+        case 0x8D:
+        case 0x8E:
+        case OPC(0x90):
+        case OPC(0xB8):
+        case OPC(0xB9):
+        case OPC(0xBC):
+        case 0xBD:
+        case 0xBE:
+        case 0xBF:
+        case OPC(0xD2):
+        case 0xD3:
+        case 0xD4:
+        case 0xD5:
+        case 0xD6:
+        case 0xD7:
+        case OPC(0xDA):
+        case 0xDB:
+        case 0xDC:
+        case 0xDD:
+        case OPC(0xE4):
+        case OPC(0xE5):
+        case OPC(0x3EE):
+        case 0x3EF:
+        case 0x3F0:
+        case 0x3F1:
+        case 0x3F2:
+        case 0x3F3:
+        case OPC(0x3FB):
+        case 0x3FC:
+        case 0x3FD:
+        case 0x3FE:
+        case 0x3FF:
+        case OPC(0x402):
+        case OPC(0x404):
+#else
         case 0x82:
         case 0x83:
         case 0x84:
@@ -239,6 +308,7 @@ UInt8 func_004B0850(MPCode* pc) {
         case 0x3FF:
         case 0x402:
         case 0x404:
+#endif
             return LIVEOUT(pc->block, pc->args[0].reg) ? 3 : 4;
         default:
             return 0;
@@ -274,23 +344,47 @@ void BE_EarlyConditionalMoves(void) {
             goto next;
         }
         switch (br->op) {
+#if MWCCPS2_B52
+            case OPC(0x18): // beq: xor
+#else
             case 0x18: // beq: xor
+#endif
                 swap = 1;
+#if MWCCPS2_B52
+            case OPC(0x28): // bne
+#else
             case 0x28: // bne
+#endif
                 cmpop = 0xE4;
                 src = br->args[0].reg;
                 third = br->args[1].reg;
                 break;
+#if MWCCPS2_B52
+            case OPC(0x1C): // bgez: slt r, 0
+#else
             case 0x1C: // bgez: slt r, 0
+#endif
                 swap = 1;
+#if MWCCPS2_B52
+            case OPC(0x24): // bltz
+#else
             case 0x24: // bltz
+#endif
                 cmpop = 0xD4;
                 third = 0;
                 src = br->args[0].reg;
                 break;
+#if MWCCPS2_B52
+            case OPC(0x20): // bgtz: slti r, 1
+#else
             case 0x20: // bgtz: slti r, 1
+#endif
                 swap = 1;
+#if MWCCPS2_B52
+            case OPC(0x22): // blez
+#else
             case 0x22: // blez
+#endif
                 cmpop = 0xD5;
                 src = br->args[0].reg;
                 third = 1;
@@ -451,11 +545,20 @@ MPCode* func_004B0C40(MPCode* br, MPCode* pc, Boolean flag) {
         src = pc->args[1].reg;
         dst = pc->args[0].reg;
     }
+#if MWCCPS2_B52
+    isd = pc->op == OPC(0xF8);
+#else
     isd = pc->op == 0xF8;
+#endif
     gpr = pc->args[RESULTIDX(pc)].rclass == 0;
     switch (br->op) {
+#if MWCCPS2_B52
+        case OPC(0x18): // beq
+        case OPC(0x1A): // beqz
+#else
         case 0x18: // beq
         case 0x1A: // beqz
+#endif
             cond = br->args[0].reg;
             if (gpr) {
                 op = flag ? 0x110 : 0x111;
@@ -465,8 +568,13 @@ MPCode* func_004B0C40(MPCode* br, MPCode* pc, Boolean flag) {
                 op = flag ? 0x119 : 0x11B;
             }
             return makepcode(op, dst, src, cond);
+#if MWCCPS2_B52
+        case OPC(0x28): // bne
+        case OPC(0x2A): // bnez
+#else
         case 0x28: // bne
         case 0x2A: // bnez
+#endif
             cond = br->args[0].reg;
             if (gpr) {
                 op = flag ? 0x111 : 0x110;
@@ -502,9 +610,15 @@ MPCode* func_004B0C40(MPCode* br, MPCode* pc, Boolean flag) {
 
 // Replace the branch `br` by a conditional move of `arm`'s instruction, then
 // `other`'s instructions (if any), then a branch to `join`.
+#if MWCCPS2_B52
 void func_004B0AD0(
     MPCode* br, Boolean flag, MPCodeBlock* arm, MPCodeBlock* other, MPCodeBlock* join
 ) {
+#else
+void func_004B0AD0(
+    MPCode* br, Boolean flag, MPCodeBlock* arm, MPCodeBlock* other, MPCodeBlock* join
+) {
+#endif
     MPCode* first = arm->first;
     MPCodeBlock* block = br->block;
     MPBlockLink* link;
@@ -516,8 +630,13 @@ void func_004B0AD0(
     }
     for (link = join->predecessors; link; link = link->nextpred) {
         from = link->from;
+#if MWCCPS2_B52
         if (from->number == br->block->number ||
             from->number == arm->number ||
+#else
+        if (from->number == br->block->number ||
+            from->number == arm->number ||
+#endif
             (other && from->number == other->number)) {
             unlinkblocks(from, join);
         }
@@ -525,7 +644,11 @@ void func_004B0AD0(
     appendpcode(block, func_004B0C40(br, first, flag));
     if (other) {
         for (pc = other->first; pc; pc = pc->next) {
+#if MWCCPS2_B52
+            if (pc->op != OPC(0x39) && pc->op != OPC(0x38A) && pc->op != OPC(0x38B)) {
+#else
             if (pc->op != 0x39 && pc->op != 0x38A && pc->op != 0x38B) {
+#endif
                 appendpcode(block, copypcode(pc));
             }
         }
@@ -560,14 +683,22 @@ Boolean func_004B1030(MPCodeBlock* block, SInt32 reg) {
     }
     if (block->pcodecount == 1) {
         op = block->last->op;
+#if MWCCPS2_B52
+        if (op == OPC(0x39) || (UInt16)(op - OPC(0x38A)) <= 1) {
+#else
         if (op == 0x39 || (UInt16)(op - 0x38A) <= 1) {
+#endif
             if (reg == first->args[RESULTIDX(first)].reg) {
                 return 1;
             }
         }
     }
     op = first->op;
+#if MWCCPS2_B52
+    return op == OPC(0x39) || (UInt16)(op - OPC(0x38A)) <= 1;
+#else
     return op == 0x39 || (UInt16)(op - 0x38A) <= 1;
+#endif
 }
 
 // Is block a single instruction with a result (optionally followed by a
@@ -581,7 +712,11 @@ Boolean func_004B10D0(MPCodeBlock* block, SInt32 reg) {
             return 0;
         }
         op = block->last->op;
+#if MWCCPS2_B52
+        if (op != OPC(0x39) && (UInt16)(op - OPC(0x38A)) > 1) {
+#else
         if (op != 0x39 && (UInt16)(op - 0x38A) > 1) {
+#endif
             return 0;
         }
     }
@@ -601,10 +736,18 @@ Boolean func_004B10D0(MPCodeBlock* block, SInt32 reg) {
 Boolean func_004B1170(MPCode* pc) {
     UInt16 op = pc->op;
 
+#if MWCCPS2_B52
+    if (op == OPC(0x1A) || op == OPC(0x2A)) {
+#else
     if (op == 0x1A || op == 0x2A) {
+#endif
         return 1;
     }
+#if MWCCPS2_B52
+    if (op == OPC(0x18) || op == OPC(0x28)) {
+#else
     if (op == 0x18 || op == 0x28) {
+#endif
         if (pc->args[1].reg == 0) {
             return 1;
         }

@@ -11,12 +11,18 @@
 extern "C" {
 #endif
 
+#if MWCCPS2_B52
+struct VFile {
+    char displayName[32];
+    Handle data;
+#else
 struct VFile {
     char displayName[32];
 #if MWCCPSP
     OSHandle data;
 #else
     Handle data;
+#endif
 #endif
     struct VFile* next;
 };
@@ -34,6 +40,18 @@ struct File {
     SInt16 writeToDisk;
     SInt16 wroteToDisk;
     SInt16 tempOnDisk;
+#if MWCCPS2_B52
+    struct Plugin* compiler;
+    SInt32 dropinflags;
+    SInt32 objectflags;
+    SInt32 mappingflags;
+    SInt16 sourceUsage;
+    SInt16 objectUsage;
+    Handle textdata;
+    Handle objectdata;
+    Handle browsedata;
+    OSSpec tempfss; // b52 (as 3.0.1): File_New allocates 0x8A8, b69's 0x6A4 + an OSSpec
+#else
     struct Plugin* compiler;
     SInt32 dropinflags;
     SInt32 objectflags;
@@ -52,6 +70,7 @@ struct File {
 #if MWCCPSP
     OSSpec tempfss; // +0x64C: text output the compiler wrote to a temporary file
 #endif
+#endif
     SInt32 codesize;
     SInt32 udatasize;
     SInt32 idatasize;
@@ -64,8 +83,15 @@ struct File {
     Boolean weakimport;
     Boolean initbefore;
     Boolean mergeintooutput;
+#if MWCCPS2_B52
+    // b69's File is 0x6A4 bytes (File_New allocates and clears that much) and
+    // every field from deps on is 4 bytes later (Deps_ListDependencies,
+    // UCBGetFileInfo, RecordBrowseInfo)
+    SInt32 b69_unk;
+#else
 #if MWCCPSP
     Boolean objectOnDisk; // +0x868: the plugin wrote the object file itself (UCBStoreObjectData)
+#endif
 #endif
     Deps deps;
     Boolean recordbrowseinfo;
@@ -86,12 +112,18 @@ extern Boolean Files_InsertFile(Files* files, File* file, SInt32 position);
 extern File* Files_GetFile(Files* files, SInt32 filenum);
 extern File* Files_FindFile(Files* files, OSSpec* spec);
 extern int Files_Count(Files* files);
+#if MWCCPS2_B52
+extern Boolean VFiles_Initialize(VFile** list);
+extern void VFiles_Terminate(VFile** list);
+extern VFile* VFile_New(const char* name, Handle data);
+#else
 extern Boolean VFiles_Initialize(VFile** list);
 extern void VFiles_Terminate(VFile** list);
 #if MWCCPSP
 extern VFile* VFile_New(const char* name, DriverHandle data);
 #else
 extern VFile* VFile_New(const char* name, Handle data);
+#endif
 #endif
 extern Boolean VFiles_Add(VFile** list, VFile* entry);
 extern VFile* VFiles_Find(VFile* list, const char* name);

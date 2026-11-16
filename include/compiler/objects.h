@@ -71,6 +71,11 @@ enum {
     OBJECT_INTERNAL = 0x10,
     OBJECT_IMPORT = 0x20,
     OBJECT_EXPORT = 0x40,
+#if MWCCPS2_B52
+    OBJECT_LIB_EXPORT = 0x60
+};
+#pragma pack(push, 2)
+#else
     OBJECT_LIB_EXPORT = 0x60
 };
 #if MWCCPSP
@@ -79,10 +84,16 @@ typedef UInt8 ObjAccess;
 #else
 #pragma pack(push, 2)
 #endif
+#endif
 struct ObjectList {
     ObjectList* next;
     Object* object;
 };
+#if MWCCPS2_B52
+struct ObjBase {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjBase {
     UInt8 otype;
 #if MWCCPSP
@@ -90,7 +101,13 @@ struct ObjBase {
 #else
     AccessType access;
 #endif
+#endif
 };
+#if MWCCPS2_B52
+struct ObjEnumConst {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjEnumConst {
     UInt8 otype;
 #if MWCCPSP
@@ -98,11 +115,17 @@ struct ObjEnumConst {
 #else
     AccessType access;
 #endif
+#endif
     ObjEnumConst* next;
     HashNameNode* name;
     Type* type;
     CInt64 val;
 };
+#if MWCCPS2_B52
+struct ObjNameSpace {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjNameSpace {
     UInt8 otype;
 #if MWCCPSP
@@ -110,8 +133,14 @@ struct ObjNameSpace {
 #else
     AccessType access;
 #endif
+#endif
     NameSpace* nspace;
 };
+#if MWCCPS2_B52
+struct ObjType {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjType {
     UInt8 otype;
 #if MWCCPSP
@@ -119,15 +148,22 @@ struct ObjType {
 #else
     AccessType access;
 #endif
+#endif
     Type* type;
     UInt32 qual;
 };
+#if MWCCPS2_B52
+struct ObjMemberVar {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjMemberVar {
     UInt8 otype;
 #if MWCCPSP
     ObjAccess access;
 #else
     AccessType access;
+#endif
 #endif
     Boolean anonunion;
     Boolean has_path;
@@ -137,6 +173,11 @@ struct ObjMemberVar {
     UInt32 qual;
     UInt32 offset;
 };
+#if MWCCPS2_B52
+struct ObjTypeTag {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjTypeTag {
     UInt8 otype;
 #if MWCCPSP
@@ -144,14 +185,21 @@ struct ObjTypeTag {
 #else
     AccessType access;
 #endif
+#endif
     Type* type;
 };
+#if MWCCPS2_B52
+struct ObjMemberVarPath {
+    UInt8 otype;
+    AccessType access;
+#else
 struct ObjMemberVarPath {
     UInt8 otype;
 #if MWCCPSP
     ObjAccess access;
 #else
     AccessType access;
+#endif
 #endif
     Boolean anonunion;
     Boolean has_path;
@@ -168,6 +216,21 @@ struct InlineXRef {
     UInt16 xrefoffset;
     UInt16 numxrefs;
     struct {
+#if MWCCPS2_B52
+        UInt32 offset;
+        SInt32 varoffset;
+    } xref[1];
+};
+struct Object {
+    UInt8 otype;
+    // b69 (as 3.0.1): access, datatype and section are bytes (CParser_UpdateObject
+    // stores the section at +3; type at +0xC); sizeof(Object) is 0x40
+    // (CParser_NewLocalDataObject), the value at +0x28 is a 16-byte CInt64 and a
+    // data object's link name is at +0x38 (CMangler_GetLinkName)
+    UInt8 access;
+    UInt8 datatype;
+    UInt8 section;
+#else
         UInt32 offset;
         SInt32 varoffset;
     } xref[1];
@@ -188,6 +251,7 @@ struct Object {
     UInt8 datatype;
     UInt16 section;
 #endif
+#endif
     NameSpace* nspace;
     HashNameNode* name;
     Type* type;
@@ -206,6 +270,24 @@ struct Object {
     struct VarRecord* varptr;
     union {
         struct {
+#if MWCCPS2_B52
+            union {
+                CInt64 intconst;
+                Float* floatconst;
+                char* string;
+                struct {
+                    char* data;
+                    SInt32 size;
+                } switchtable;
+            } u;
+            // b69: no register info (CParser_UpdateObject copies none) and, as
+            // in GC 2.0, no islocalstatic; info at +0x3C is unverified
+            HashNameNode* linkname;
+            union {
+                VarInfo* info;
+                struct InterruptGenerationRecord* interruptInfo;
+            };
+#else
             union {
                 CInt64 intconst;
                 Float* floatconst;
@@ -252,6 +334,7 @@ struct Object {
 #endif
             Boolean islocalstatic;
 #endif
+#endif
         } data;
         struct {
             union {
@@ -264,6 +347,16 @@ struct Object {
             TemplFuncInstance* inst;
             struct PTFList* ptfList;
             ObjectList* argList;
+#if MWCCPS2_B52
+        } func;
+        struct {
+            VarInfo* info;
+            SInt32 uid;
+            union {
+                struct Object* realObj;
+                SInt32 offset; // a local's frame offset (MIPS back end, as 3.0.1)
+            };
+#else
 #if !MWCCPSP // 3.0.1: gone, sizeof(Object) is 0x40
             UInt8 interruptflags;
 #endif
@@ -279,6 +372,7 @@ struct Object {
 #else
             struct Object* realObj;
 #endif
+#endif
         } var;
         struct {
             UInt8* data;
@@ -293,20 +387,24 @@ struct Object {
         SInt16 intrinsic;
         ENode* expr;
         UInt32 address;
+#if !MWCCPS2_B52
 #if MWCCPSP
         struct {
             struct Object* function; // a label object's function (IRO_CollectAddressedLabels)
         } label;
+#endif
 #endif
     } u;
 };
 struct ObjectTemplated {
     Object object;
     Object* parent;
+#if !MWCCPS2_B52
 #if MWCCPSP
     // 3.0.1: the instance stack when a templated function was first referenced
     // (CInline_ObjectAddrRef; sizeof is 0x48 in CTemplClass_CopyObject)
     TemplStack* inststack;
+#endif
 #endif
 };
 struct VarInfo {
@@ -316,6 +414,11 @@ struct VarInfo {
     SInt16 varnumber;
     Boolean noregister;
     Boolean used;
+#if MWCCPS2_B52
+    // b52: two bytes (func_00438160 tests +0x2D), flags +0x2E, rclass +0x2F,
+    // reg +0x30, sizeof 0x34 (CodeGen_GetNewVarInfo allocates 0x34)
+    UInt8 unk24[2];
+#else
 #if MWCCPS2
     UInt8 unk24
         [4]; // mwccps2 b210: rclass +0x31, reg +0x32 (func_0049DE40), 2 bytes more than mwccpsp
@@ -323,17 +426,23 @@ struct VarInfo {
     UInt8 unk24
         [2]; // 3.0.1: flags at +0x26, rclass +0x27, reg +0x28, regHi +0x2A (Coloring.c, RegClasses.c)
 #endif
+#endif
     UInt8 flags;
     UInt8 rclass;
     SInt16 reg;
     SInt16 regHi;
+#if !MWCCPS2_B52
 #if MWCCPS2
     UInt8 unk2C[2]; // mwccps2 b210: CodeGen_GetNewVarInfo allocates 0x38
 #elif MWCCPSP
     UInt8 unk2C[4]; // 3.0.1: CodeGen_GetNewVarInfo allocates 0x30
 #endif
+#endif
 };
 #pragma pack(pop)
+#if MWCCPS2_B52
+#define PS2_VARINFO_AT(vi, x86off) ((char*)(vi) + (x86off))
+#else
 #if MWCCPS2
 // b210 code addresses VarInfo's tail by its x86 offsets (0x2C..0x37: the
 // register-variable record's class at +0x2E, register at +0x32); natively
@@ -342,6 +451,7 @@ struct VarInfo {
 #define PS2_VARINFO_AT(vi, x86off) ((char*)(vi) + offsetof(VarInfo, unk24) + ((x86off) - 0x2C))
 #else
 #define PS2_VARINFO_AT(vi, x86off) ((char*)(vi) + (x86off))
+#endif
 #endif
 #endif
 enum {

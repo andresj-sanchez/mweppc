@@ -25,6 +25,25 @@ typedef enum StatementType {
     ST_GOTOEXPR,
     ST_ASM,
     ST_BEGINLOOP,
+#if MWCCPS2_B52
+    ST_ENDLOOP,
+    ST_ILLEGAL
+} StatementType;
+enum {
+    StmtFlag_KeepLabel = 1,
+    StmtFlag_EndsConstruction = 2,
+    StmtFlag_LoopBranch = 4,
+    StmtFlag_AfterNoReturn = 8,
+    StmtFlag_Unrolled = 0x10
+};
+#pragma pack(push, 2)
+typedef struct DeclBlock {
+    struct DeclBlock* next;
+    struct ExceptionAction* dobjstack;
+    NameSpace* parent_nspace;
+    UInt16 index;
+} DeclBlock;
+#else
     ST_ENDLOOP,
     ST_ILLEGAL
 } StatementType;
@@ -59,18 +78,25 @@ typedef struct DeclBlock {
     UInt16 index;
 } DeclBlock;
 #endif
+#endif
 typedef struct LoopInfo {
     int unused0;
     int unused4;
     short unused8;
     Statement* stmt;
 } LoopInfo;
+#if MWCCPS2_B52
+struct Statement {
+    Statement* next;
+    StatementType type;
+#else
 struct Statement {
     Statement* next;
 #if MWCCPSP
     UInt8 type; // 3.0.1: one byte at +4; value at +8, sourceoffset at +0x18
 #else
     StatementType type;
+#endif
 #endif
     UInt8 marked;
     UInt8 flags;
@@ -79,10 +105,16 @@ struct Statement {
     CLabel* label;
     struct ExceptionAction* dobjstack;
     SInt32 sourceoffset;
+#if MWCCPS2_B52
+    HashNameNode* sourcefilepath;
+};
+#pragma pack(pop)
+#else
     HashNameNode* sourcefilepath;
 };
 #if !MWCCPSP
 #pragma pack(pop)
+#endif
 #endif
 struct InitExpr {
     struct InitExpr* next;
@@ -145,6 +177,9 @@ extern SInt32 symdeclend;
 extern DeclBlock* CFunc_NewDeclBlock(void);
 extern void CFunc_RestoreBlock(DeclBlock* block);
 extern void CFunc_SetupLocalVarInfo(Object* obj);
+#if MWCCPS2_B52
+extern void CFunc_AppendLocal(Object* object);
+#endif
 extern Boolean CFunc_ParseFakeArgList(Boolean stopAtComma);
 extern FuncArg* parameter_type_list(DeclInfo* declinfo);
 extern CLabel* findlabel(void);
@@ -184,8 +219,10 @@ extern void InitExpr_Register(ENode* expr, Object* object);
 extern void CFunc_GenerateDummyFunction(Object* func);
 extern void CFunc_GenerateSingleExprFunc(Object* func, ENode* expr);
 extern void CFunc_GenerateDummyCtorFunc(Object* func, Object* real_ctor);
+#if !MWCCPS2_B52
 #if MWCCPSP
 extern void CFunc_AppendLocal(Object* object);
+#endif
 #endif
 
 #ifdef __cplusplus

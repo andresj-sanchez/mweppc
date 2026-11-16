@@ -47,9 +47,15 @@ extern VOperand func_00479E40(UInt16 op, VOperand* src, CInt64 value);
 extern void func_00479310(UInt16 op, VOperand* a, SInt32 imm, CLabel* label);
 extern void func_0047A850(VOperand* a, CInt64* imm, Type* type, CLabel* label); // branch if equal
 extern void func_0047A170(VOperand* a, CInt64* imm, Type* type, CLabel* label); // branch if less
+#if MWCCPS2_B52
 extern void func_0047A0C0(
     VOperand* a, CInt64* imm, Type* type, CLabel* label
 ); // branch if not greater
+#else
+extern void func_0047A0C0(
+    VOperand* a, CInt64* imm, Type* type, CLabel* label
+); // branch if not greater
+#endif
 extern void func_0047B480(VOperand* a, SInt32 imm, CLabel* label);
 extern void func_0047B6A0(VOperand* a, SInt32 imm, CLabel* label);
 extern void func_00480710(MPCodeLabel* label); // branch_always
@@ -130,8 +136,13 @@ void func_004A4A40(ENode* expr, SwitchInfo* info) {
             if (CInt64_Greater(data_00625268->max, data_00625268->min)) {
                 // as written: the next value is always min + 1, so a range
                 // of three or more values never ends
+#if MWCCPS2_B52
                 for (v = CInt64_Add(data_00625268->min, cint64_one);
                      CInt64_LessEqual(v, data_00625268->max);
+#else
+                for (v = CInt64_Add(data_00625268->min, cint64_one);
+                     CInt64_LessEqual(v, data_00625268->max);
+#endif
                      v = CInt64_Add(data_00625268->min, cint64_one)) {
                     idx = CInt64_Sub(v, lo);
                     op = lalloc(sizeof(MOperand));
@@ -170,12 +181,21 @@ void func_004A4A40(ENode* expr, SwitchInfo* info) {
             func_004A64C0(&t, NULL, 0);
         }
         r1 = data_00625A98[0]++;
+#if MWCCPS2_B52
+        emitpcode(OPC(0xD2), r1, data_006247C4.reg, 2);
+#else
         emitpcode(0xD2, r1, data_006247C4.reg, 2);
+#endif
         r2 = data_00625A98[0]++;
         emitpcode(4, r2, r1, t.reg);
         r3 = data_00625A98[0]++;
+#if MWCCPS2_B52
+        emitpcode(OPC(0x9D), r3, 0, 0, r2);
+        emitpcode(OPC(0x3B), r3);
+#else
         emitpcode(0x9D, r3, 0, 0, r2);
         emitpcode(0x3B, r3);
+#endif
         for (data_00625268 = info->cases; data_00625268; data_00625268 = data_00625268->next) {
             pcbranch(data_006246B4, (MPCodeLabel*)data_00625268->label->pclabel, 0);
         }

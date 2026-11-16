@@ -21,6 +21,7 @@ enum {
     LinkModel_Overlay1 = 2
 };
 
+#if !MWCCPS2_B52
 #if MWCCPSP
 // 3.0.1: the shell keeps its own target info (0x820 bytes, Target_New)
 typedef struct ShellTargetInfo {
@@ -38,17 +39,24 @@ typedef struct ShellTargetInfo {
 #define TARGET_INFO ShellTargetInfo
 
 #endif
+#endif
 struct Target {
     struct BuildInfo {
         UInt32 linesCompiled;
         UInt32 codeSize;
         UInt32 iDataSize;
+#if MWCCPS2_B52
+        UInt32 uDataSize;
+    } info;
+    CWTargetInfo* targetinfo;
+#else
         UInt32 uDataSize;
     } info;
 #if MWCCPSP
     TARGET_INFO* targetinfo;
 #else
     CWTargetInfo* targetinfo;
+#endif
 #endif
     struct {
         Segments segs;

@@ -1,4 +1,17 @@
 #ifndef MWCC_HOST_PROBE_STDDEF_H
+#if MWCCPS2_B52
+#define MWCC_HOST_PROBE_STDDEF_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef unsigned int size_t;
+typedef int ptrdiff_t;
+#ifndef NULL
+#define NULL 0L
+#endif
+#else
 #define MWCC_HOST_PROBE_STDDEF_H
 
 #ifdef __cplusplus
@@ -19,6 +32,7 @@ typedef int ptrdiff_t;
 #endif
 #ifndef NULL
 #define NULL 0L
+#endif
 #endif
 #ifdef __clang__
 #define offsetof(type, member) __builtin_offsetof(type, member)

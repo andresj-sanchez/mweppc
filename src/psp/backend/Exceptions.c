@@ -266,6 +266,10 @@ extern GList data_005F0C18; // exceptmodule: the table being built
 
 // 0x49F1F0: value in one to four bytes, big-endian, its length in the low
 // bits of the first
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT (-57)
+#endif
 int func_0049F1F0(UInt32 value, UInt8* p) {
     if (value < 0x80) {
         p[0] = value << 1;
@@ -292,6 +296,10 @@ int func_0049F1F0(UInt32 value, UInt8* p) {
     CError_FATAL(166);
     return 0;
 }
+#if MWCCPS2_B52
+#undef CError_B69_SHIFT
+#define CError_B69_SHIFT 0
+#endif
 
 // 0x49F100: append value to the table
 void func_0049F100(UInt32 value) {
@@ -537,10 +545,17 @@ void func_0049E330(EANode* node) {
                 break;
             case EAT_DESTROYLOCALOFFSET:
                 AppendGListByte(&data_005F0C18, flags | 2);
+#if MWCCPS2_B52
                 PutSigned(
                     func_004A4530(ea->data.destroy_local_offset.local) +
                     ea->data.destroy_local_offset.offset
                 );
+#else
+                PutSigned(
+                    func_004A4530(ea->data.destroy_local_offset.local) +
+                    ea->data.destroy_local_offset.offset
+                );
+#endif
                 PutReloc(ea->data.destroy_local_offset.dtor);
                 break;
             case EAT_DESTROYLOCALPOINTER:
@@ -665,14 +680,24 @@ void func_0049E330(EANode* node) {
     }
 }
 
+#if MWCCPS2_B52
 extern void func_004624F0(
     Object* func, SInt32 size, void* data, SInt32 datasize, OLinkList* refs
 ); // ObjGen_DeclareExceptionTables
+#else
+extern void func_004624F0(
+    Object* func, SInt32 size, void* data, SInt32 datasize, OLinkList* refs
+); // ObjGen_DeclareExceptionTables
+#endif
 
 // the pc of an instruction for the table: branches (0x37E..0x3E5) count
 // from their delay slot
 static inline SInt32 TablePC(MPCode* pc) {
+#if MWCCPS2_B52
+    if (pc->op >= OPC(0x37E) && pc->op <= OPC(0x3E5)) {
+#else
     if (pc->op >= 0x37E && pc->op <= 0x3E5) {
+#endif
         return pc->offset + 6;
     }
     return pc->offset + 8;

@@ -40,6 +40,10 @@ void Path_Free(Path* path) {
     }
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (2)
+#endif
 Boolean Paths_Initialize(Paths* paths) {
 #if MWCCPSP
     OS_ASSERT(54, paths != NULL);
@@ -51,7 +55,15 @@ Boolean Paths_Initialize(Paths* paths) {
     paths->pathsArray = NULL;
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (2)
+#endif
 Boolean Paths_Terminate(Paths* paths) {
     UInt16 index;
 
@@ -71,7 +83,15 @@ Boolean Paths_Terminate(Paths* paths) {
     paths->pathsArray = NULL;
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (2)
+#endif
 static Boolean Paths_GrowPaths(Paths* paths, UInt16* index) {
     Path** newArray;
 
@@ -90,6 +110,10 @@ static Boolean Paths_GrowPaths(Paths* paths, UInt16* index) {
     *index = paths->pathsCount++;
     return TRUE;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 Boolean Paths_AddPath(Paths* paths, Path* path) {
     UInt16 ni;
@@ -144,6 +168,10 @@ Boolean Paths_DeletePath(Paths* paths, UInt16 index) {
     return Paths_RemovePath(paths, index);
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (2)
+#endif
 Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
 #if MWCCPSP
     OS_ASSERT(153, paths != NULL);
@@ -157,7 +185,15 @@ Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
         return NULL;
     }
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (2)
+#endif
 UInt16 Paths_Count(const Paths* paths) {
 #if MWCCPSP
     OS_ASSERT(163, paths != NULL);
@@ -167,6 +203,10 @@ UInt16 Paths_Count(const Paths* paths) {
 
     return paths->pathsCount;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 Boolean Paths_FindPath(const Paths* paths, const Path* path) {
     UInt16 idx;
@@ -182,6 +222,10 @@ Boolean Paths_FindPath(const Paths* paths, const Path* path) {
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (34)
+#endif
 Path* Paths_FindPathSpec(const Paths* paths, const OSPathSpec* dir) {
     UInt16 idx;
     Path* path;
@@ -201,6 +245,10 @@ Path* Paths_FindPathSpec(const Paths* paths, const OSPathSpec* dir) {
 
     return NULL;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 static Boolean GatherRecurse(Paths* list, Path* path) {
     int err;
@@ -258,6 +306,10 @@ Boolean Paths_GatherRecurse(Path* path) {
     return Paths_Count(path->recursive) != 0;
 }
 
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT (42)
+#endif
 int Paths_CountRecurse(Paths* paths) {
     UInt16 idx;
     int mine;
@@ -279,6 +331,10 @@ int Paths_CountRecurse(Paths* paths) {
 
     return mine;
 }
+#if MWCCPS2_B52
+#undef OS_B52_SHIFT
+#define OS_B52_SHIFT 0
+#endif
 
 #if MWCCPSP
 #if CW_SHELL_OSSPEC

@@ -497,6 +497,9 @@ static const char* Unmangle_QClassName(
 }
 
 static const char* Unmangle_Modifiers(UnmangleBuffer* ub, const char* p) {
+#if MWCCPS2_B52
+    const char* b69_dead;
+#endif
     const char* what;
     Boolean isFirst = TRUE;
 
@@ -524,7 +527,11 @@ static const char* Unmangle_Modifiers(UnmangleBuffer* ub, const char* p) {
         Unmangle_BufferAppendString(ub, what);
 
         isFirst = FALSE;
+#if MWCCPS2_B52
+        b69_dead = (p++);
+#else
         p++;
+#endif
     }
 }
 
@@ -728,6 +735,7 @@ static const char* Unmangle_Pointer(
     }
 }
 
+#if !MWCCPS2_B52
 static const char* Unmangle_Vector(
     jmp_buf errorbuf, UnmangleBuffer* ub, const char* p, const char* modifiers
 ) {
@@ -776,13 +784,21 @@ static const char* Unmangle_Vector(
         default:
             p2 = p + 1;
     }
+#endif
 
+#if !MWCCPS2_B52
     return p2;
 }
 
+#endif
 static const char* Unmangle_Type(jmp_buf errorbuf, UnmangleBuffer* ub, const char* p) {
+#if !MWCCPS2_B52
     const char* modifiers;
+#endif
     const char* what;
+#if MWCCPS2_B52
+    const char* modifiers;
+#endif
 
     modifiers = p;
     p = Unmangle_Modifiers(NULL, p);
@@ -828,8 +844,10 @@ static const char* Unmangle_Type(jmp_buf errorbuf, UnmangleBuffer* ub, const cha
             what = "long double";
             break;
 #if !MWCCPSP // 3.0.1: no vector types
+#if !MWCCPS2_B52
         case 'X':
             return Unmangle_Vector(errorbuf, ub, p, modifiers);
+#endif
 #endif
         case 'P':
             return Unmangle_Pointer(errorbuf, ub, p, modifiers, '*');
@@ -1005,6 +1023,9 @@ void MWUnmangle(const char* input, char* output, size_t maxLen) {
     }
 
     if (setjmp(errorbuf) == 0) {
+#if MWCCPS2_B52
+        p = input;
+#endif
         Unmangle_BufferInit(&ub_internal, mybuf, sizeof(mybuf));
         Unmangle_BufferInit(&ub, output, maxLen);
 

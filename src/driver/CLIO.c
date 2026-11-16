@@ -20,12 +20,17 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if MWCCPS2_B52
+#include <string.h>
+#endif
 #if MWCCPSP_NATIVE
 // paths here have Windows separators; the native shim translates them
 extern FILE* win32_fopen(const char* path, const char* mode);
 #define fopen win32_fopen
 #endif
+#if !MWCCPS2_B52
 #include <string.h>
+#endif
 
 static Boolean ioPiping;
 static Boolean ioInHelp;

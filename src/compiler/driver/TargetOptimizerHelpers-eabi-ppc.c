@@ -3,6 +3,16 @@
 #include "driver/pref_structs.h"
 #include "driver/StringUtils.h"
 
+#if MWCCPS2_B52
+// b69 0x421920/0x421950: 3.0.1's MIPS version (tools/mwccpsp's MWCCPSP
+// branch, the PS2 display): the only target flag is -opt [no]intrinsics, in
+// the "PS2 MIPS CodeGen" panel (0x510B94, 0x14 bytes) at +0x0D
+extern struct {
+    UInt8 unk00[0xD];
+    UInt8 inline_intrinsics;
+} pMIPSCodeGen;
+
+#endif
 #if MWCCPSP
 // 3.0.1 PSP: the only target optimization flag is -opt [no]intrinsics,
 // kept in the MIPS code generator prefs (CodeGen.c: data_005B0A78, +0x0D)
@@ -40,15 +50,22 @@ void TargetDisplayOptimizationOptions(Handle txt) {
 #else
 int TargetSetOptFlags(short val, Boolean set) {
     switch (val) {
+#if MWCCPS2_B52
+        case 'In':
+            pMIPSCodeGen.inline_intrinsics = set;
+#else
         case 'Pe':
             pBackEnd.peephole = set;
+#endif
             break;
+#if !MWCCPS2_B52
         case 'Sn':
             pBackEnd.schedule = FALSE;
             break;
         case 'Sh':
             pBackEnd.schedule = set;
             break;
+#endif
         default:
             return FALSE;
     }
@@ -57,6 +74,12 @@ int TargetSetOptFlags(short val, Boolean set) {
 }
 
 void TargetDisplayOptimizationOptions(Handle txt) {
+#if MWCCPS2_B52
+    if (pMIPSCodeGen.inline_intrinsics) {
+        HPrintF(
+            txt, "\t- inline intrinsics %s\n", (pMIPSCodeGen.inline_intrinsics == 1) ? "on" : "off"
+        );
+#else
     int p;
 
     HPrintF(txt, "\t- peephole optimizations %s\n", pBackEnd.peephole ? "on" : "off");
@@ -93,6 +116,7 @@ void TargetDisplayOptimizationOptions(Handle txt) {
                 : (p == CPU_PPC7450)                  ? "7450"
                                                       : "???"
         );
+#endif
     }
 }
 

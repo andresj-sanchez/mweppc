@@ -198,25 +198,74 @@ static int IsSubscript(IROLinear* nd) {
     return FALSE;
 }
 
+#if MWCCPS2_B52
+#include "compiler/IrOptimizer.h"
+#include "compiler/CParser.h"
+extern Boolean func_004323D0(
+    CInt64 value
+); // CodeGen.c: a constant needing more than one instruction
+
+extern Boolean IRO_IsArithmeticOp[]; // IrOptimizer.c
+
+// b52 0x4D58C0 (its hook 0): 3.0's subable test, by IRO_IsArithmeticOp
+// (0x59E8D8), not 3.0.1's IsSubableOp (the commutative operators). An address sum &obj + c
+// of a non-local object is not subable; with opt_pulloutconstants (set by
+// the target, 0x43B980) an integer constant that takes more than one
+// instruction to load, and any float constant, is; a widening cast is only
+// of an integral type below 0x11
+#endif
 Boolean IRO_IsSubableExpression(IROLinear* nd) {
     Object* varobj;
+#if MWCCPS2_B52
+    IROLinear* left;
+    Object* obj;
+    Type* rtype;
+#else
     Boolean result;
+#endif
 
     switch (nd->type) {
         case IROLinearOp2Arg:
+#if MWCCPS2_B52
+            if ((nd->nodetype == EADD || nd->nodetype == ESUB) &&
+                IRO_IsConstant(nd->u.diadic.right)) {
+                varobj = IRO_IsVariable(nd->u.diadic.left);
+                if (varobj && varobj->datatype == DLOCAL) {
+                    if (varobj->u.var.info && !varobj->u.var.info->noregister) {
+#else
             if (nd->nodetype == EADD || nd->nodetype == ESUB) {
                 if (IRO_IsConstant(nd->u.diadic.right) &&
                     (varobj = IRO_IsVariable(nd->u.diadic.left)) &&
                     varobj->datatype == DLOCAL &&
                     varobj->u.var.info &&
                     !varobj->u.var.info->noregister) {
-                    return FALSE;
+#endif
+                        return FALSE;
+                    }
+#if MWCCPS2_B52
+                } else {
+                    left = nd->u.diadic.left;
+                    if (left->type == IROLinearOperand &&
+                        left->u.node->type == EOBJREF &&
+                        (obj = left->u.node->data.objref) &&
+                        obj->datatype != DLOCAL) {
+                        return FALSE;
+#endif
+                    }
+#if MWCCPS2_B52
                 }
             }
+            return IRO_IsArithmeticOp[nd->nodetype] && !IsSubscript(nd);
+#else
             result = IsSubableOp[nd->nodetype] && !IsSubscript(nd);
             return result;
+#endif
         case IROLinearOp1Arg:
+#if MWCCPS2_B52
+            if (IRO_IsArithmeticOp[nd->nodetype] && !IsSubscript(nd)) {
+#else
             if (IsSubableOp[nd->nodetype] && !IsSubscript(nd)) {
+#endif
                 return TRUE;
             }
 
@@ -237,14 +286,46 @@ Boolean IRO_IsSubableExpression(IROLinear* nd) {
                     return FALSE;
                 }
                 return TRUE;
+#if MWCCPS2_B52
+            }
+            if (nd->nodetype == ETYPCON) {
+                rtype = nd->rtype;
+                if (IS_TYPE_INT(rtype) &&
+                    TYPE_INTEGRAL(rtype)->integral < 0x11 &&
+                    rtype->size >= nd->u.monadic->rtype->size) {
+#else
             } else if (nd->nodetype == ETYPCON &&
                        IS_TYPE_INT(nd->rtype) &&
                        nd->rtype->size >= nd->u.monadic->rtype->size) {
-                return TRUE;
-            } else {
-                return FALSE;
+#endif
+                    return TRUE;
+#if !MWCCPS2_B52
+                } else {
+                    return FALSE;
+#endif
+                }
+#if MWCCPS2_B52
             }
+            return FALSE;
+#endif
         case IROLinearOperand:
+#if MWCCPS2_B52
+            if (nd->u.node &&
+                nd->u.node->type == EOBJREF &&
+                IRO_Hook12 &&
+                ((Boolean (*)(ENode*))IRO_Hook12)(nd->u.node)) {
+                return TRUE;
+            }
+            if (copts.opt_pulloutconstants) {
+                if (IRO_IsIntConstant(nd) && func_004323D0(nd->u.node->data.intval)) {
+                    return TRUE;
+                }
+                if (IRO_IsFloatConstant(nd)) {
+                    return TRUE;
+                }
+            }
+            return FALSE;
+#endif
         default:
             return FALSE;
     }
