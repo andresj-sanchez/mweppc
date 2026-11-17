@@ -1,0 +1,6 @@
+{
+  "description": "PlayStation 2 3.0.1 build 198 (mwccps2.exe, 2005-10-11)",
+  "pipeline": "mwccps2",
+  "original": "build/compilers/PS2/3.0.1b198/mwccps2.exe",
+  "sha1": "266d5488c2860364e1cf600350ea982cbc1d9b96"
+}

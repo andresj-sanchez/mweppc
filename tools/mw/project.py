@@ -24,6 +24,7 @@ class Version:
     name: str
     index: int
     base: str | None = None
+    pipeline: str | None = None  # a version built by a pipeline of its own (config.json's "pipeline"), not this one
 
     @property
     def config(self) -> Path:
@@ -46,7 +47,10 @@ def _read_versions() -> tuple[Version, ...]:
             raise Error(f"include/version.h defines VERSION_{name}, but config/ has no directory for it")
         raw = (ROOT / "config" / directories[name.upper()] / "config.json").read_text()
         base = re.search(r'"derived_from": "(\w+)"', raw)
-        versions.append(Version(directories[name.upper()], int(index), base[1] if base else None))
+        pipeline = re.search(r'"pipeline": "(\w+)"', raw)
+        versions.append(
+            Version(directories[name.upper()], int(index), base[1] if base else None, pipeline[1] if pipeline else None)
+        )
     if sorted(v.index for v in versions) != list(range(len(versions))):
         raise Error("include/version.h: the VERSION_* indices are not 0, 1, 2, ...")
     extra = set(directories.values()) - {v.name for v in versions}
@@ -55,15 +59,19 @@ def _read_versions() -> tuple[Version, ...]:
     return tuple(sorted(versions, key=lambda v: v.index))
 
 
-ALL_VERSIONS = _read_versions()
+# The PS2 compiler's versions are matched by tools/mwccps2/matching.py, against their own sources and with
+# CodeWarrior 9.x as the host compiler; none of the GameCube versions' tools takes them.
+PS2_VERSIONS = tuple(v for v in _read_versions() if v.pipeline == "mwccps2")
+ALL_VERSIONS = tuple(v for v in _read_versions() if v.pipeline is None)
 VERSIONS = tuple(v for v in ALL_VERSIONS if v.base is None)
 DERIVED = tuple(v for v in ALL_VERSIONS if v.base is not None)
 
 
 def version(name: str | Version | None = None, *, original: bool = False) -> Version:
-    found = name if isinstance(name, Version) else next((v for v in ALL_VERSIONS if v.name == (name or PRIMARY)), None)
+    known = ALL_VERSIONS + PS2_VERSIONS
+    found = name if isinstance(name, Version) else next((v for v in known if v.name == (name or PRIMARY)), None)
     if found is None:
-        raise Error(f"unknown version {name!r} (one of {', '.join(v.name for v in ALL_VERSIONS)})")
+        raise Error(f"unknown version {name!r} (one of {', '.join(v.name for v in known)})")
     if original and found.base:
         raise Error(
             f"{found} is derived from {found.base} and has no original executable: only its compiler from the sources "

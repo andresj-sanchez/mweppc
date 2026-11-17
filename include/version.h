@@ -6,6 +6,7 @@
 #define VERSION_GC_2_5 2
 #define VERSION_GC_2_6 3
 #define VERSION_GC_2_7 4
+#define VERSION_PS2_3_0_1B198 5
 
 #ifndef VERSION
 #define VERSION VERSION_GC_2_6

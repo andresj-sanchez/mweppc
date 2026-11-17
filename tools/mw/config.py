@@ -91,6 +91,7 @@ def sources(text: str | None = None) -> dict[str, Source]:
 
 VERSION_KEYS = {
     "derived_from": str,
+    "pipeline": str,
     "description": str,
     "original": str,
     "sha1": str,
