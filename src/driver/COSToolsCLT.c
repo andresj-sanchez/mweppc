@@ -1,3 +1,17 @@
+#if MWCCPS2_B198
+#include "driver/COSToolsCLT.h"
+#include "compiler/win32.h"
+#include "driver/Files.h"
+#include "driver/LowMem.h"
+#include "driver/MacSpecs.h"
+#include "driver/CCompiler.h"
+#include "driver/Memory.h"
+
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/TextUtils.h"
+
+#else
 #include "driver/COSToolsCLT.h"
 #if MWCCPSP
 #include "driver/MacFileTypes.h"
@@ -21,12 +35,14 @@
 #include <string.h>
 #endif
 
+#endif
 static void COS_pstrcpy(StringPtr dst, ConstStringPtr src) {
     short cnt;
     for (cnt = src[0]; cnt >= 0; cnt--) {
         *(dst++) = *(src++);
     }
 }
+#if !MWCCPS2_B198
 #if MWCCPSP
 
 #endif
@@ -119,7 +135,13 @@ Handle TempNewHandle301(SInt32 size, Boolean sys) {
     return (Handle)rec;
 }
 #endif
+#endif
 
+#if MWCCPS2_B198
+Handle COS_NewHandle(SInt32 byteCount) {
+    return COSNewHandle(byteCount, 0);
+}
+#else
 Handle COS_NewHandle(SInt32 byteCount) {
 #if MWCCPSP
     return TempNewHandle301(byteCount, FALSE);
@@ -127,7 +149,13 @@ Handle COS_NewHandle(SInt32 byteCount) {
     return NewHandle(byteCount);
 #endif
 }
+#endif
 
+#if MWCCPS2_B198
+Handle COS_NewOSHandle(SInt32 logicalSize) {
+    return COSNewHandle(logicalSize, 1);
+}
+#else
 #if MWCCPSP
 Handle COS_NewOSHandle(SInt32 logicalSize) {
     return TempNewHandle301(logicalSize, TRUE);
@@ -147,7 +175,13 @@ Handle COS_NewOSHandle(SInt32 logicalSize) {
     return NULL;
 }
 #endif
+#endif
 
+#if MWCCPS2_B198
+SInt32 COS_GetTicks(void) {
+    return GetTickCount() * 60 / 1000;
+}
+#else
 #if MWCCPSP
 void COS_FreeHandle(Handle handle) {
     COSHandleRec* rec = (COSHandleRec*)handle;
@@ -190,13 +224,25 @@ Boolean COS_ResizeHandle(Handle handle, SInt32 newSize) {
     return LMGetMemErr() == noErr;
 }
 #endif
+#endif
 
+#if MWCCPS2_B198
+OSErr COS_FileSetPos(SInt16 refNum, SInt32 filePos) {
+    return SetFPos(refNum, fsFromStart, filePos);
+}
+#else
 void COS_LockHandle(Handle handle) {
 #if !MWCCPSP
     HLock(handle);
 #endif
 }
+#endif
 
+#if MWCCPS2_B198
+int COS_FileClose(HANDLE refNum) {
+    return CloseHandle(refNum);
+}
+#else
 void COS_LockHandleHi(Handle handle) {
 #if !MWCCPSP
     HLockHi(handle);
@@ -547,6 +593,7 @@ void COS_FileGetFSSpecInfo(const FSSpec* spec, SInt16* vRefNum, SInt32* dirID, S
     }
 }
 #endif
+#endif
 
 #ifdef __MWERKS__
 static void COS_MakePath(SInt16 vRefNum, SInt32 dirID, StringPtr path) {
@@ -577,6 +624,28 @@ static void COS_MakePath(SInt16 vRefNum, SInt32 dirID, StringPtr path) {
 }
 #endif
 
+#if MWCCPS2_B198
+void COS_FileGetPathName(char* buffer, const CWFileSpec* spec, CWFileTime* mdDat) {
+    WIN32_FIND_DATAA data;
+    HANDLE handle;
+    UInt32 length = strlen(spec->path);
+    if (length >= sizeof(spec->path)) {
+        length = sizeof(spec->path) - 1;
+    }
+    memcpy(buffer, spec->path, length);
+    buffer[length] = 0;
+    COS_FileFixDirectoryPath(buffer);
+    if (mdDat) {
+        handle = FindFirstFileA(spec->path, &data);
+        if (handle != INVALID_HANDLE_VALUE) {
+            *mdDat = data.ftLastWriteTime;
+            FindClose(handle);
+        } else {
+            *mdDat = COS_GetTime();
+        }
+    }
+}
+#else
 #if MWCCPSP
 void COS_FileGetPathName(char* buffer, const COSFileSpec* spec, COSFileTime* mdDat) {
     WIN32_FIND_DATAA fd;
@@ -643,5 +712,6 @@ const char* COS_GetFileName(const char* path) {
     }
     return p ? p + 1 : path;
 }
+#endif
 #endif
 #endif

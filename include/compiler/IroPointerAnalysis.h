@@ -5,6 +5,12 @@
 #if MWCCPS2_B52
 #pragma pack(push, 2)
 #endif
+#if MWCCPS2_B198
+extern Boolean PointerAnalysis_IsLinearNodePointerExprDefinite(Object* proc, IROLinear* nd);
+extern void PointerAnalysis_LookupLinearNodePointerExpr(
+    Object* proc, IROLinear* indirect, IROListNode** list
+);
+#else
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +34,7 @@ extern void PointerAnalysis_ParseFunctionModifiesSpecifier(DeclInfo* di);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #if MWCCPS2_B52

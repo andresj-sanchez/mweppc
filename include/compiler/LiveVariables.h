@@ -1,6 +1,7 @@
 #ifndef COMPILER_LIVEVARIABLES_H
 #define COMPILER_LIVEVARIABLES_H
 
+#if !MWCCPS2_B198
 #include "compiler/common.h"
 
 #ifdef __cplusplus
@@ -23,4 +24,5 @@ extern int dead(PCode* instr, RegClass rclass, UInt32* vec);
 }
 #endif
 
+#endif
 #endif

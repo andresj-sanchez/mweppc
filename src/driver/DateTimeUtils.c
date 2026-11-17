@@ -1,3 +1,8 @@
+#if MWCCPS2_B198
+#include "driver/DateTimeUtils.h"
+#include "driver/MsDos.h"
+
+#else
 #include "driver/DateTimeUtils.h"
 #include "driver/MsDos.h"
 #include <stdio.h>
@@ -75,6 +80,7 @@ void IUTimeString(UInt32 seconds, Boolean wantSeconds, char* text) {
     }
 }
 
+#endif
 UInt32 __stdcall TickCount(void) {
     return OS_GetMilliseconds() * 60 / 1000;
 }

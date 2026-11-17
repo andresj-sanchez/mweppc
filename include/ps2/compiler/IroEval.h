@@ -1,0 +1,20 @@
+#ifndef COMPILER_IROEVAL_H
+#define COMPILER_IROEVAL_H
+
+#include "compiler/common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void IRO_InitializeIsAssociativeENodeTypeArray(void);
+extern void IRO_ConstantFolding(void);
+extern Boolean IRO_EvaluateConditionals(void);
+extern int IRO_SimplifyConditionals(void);
+extern Boolean IRO_EvaluateDefinitePointers(Object* func);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

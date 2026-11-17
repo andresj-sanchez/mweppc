@@ -1,3 +1,38 @@
+#if MWCCPS2_B198
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
+#include "driver/CLPlugins.h"
+#include "driver/CLMain.h"
+#include "driver/pref_structs.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/CLWriteObjectFile.h"
+#include "driver/Generic.h"
+#include "driver/CLFiles.h"
+#include "driver/CLBrowser.h"
+#include "driver/CLErrors.h"
+#include <stdio.h>
+#include "driver/CLIO.h"
+
+int WriteObjectFile(File* file, OSType maccreator, OSType mactype) {
+    OPTION_ASSERT(19, file->objectdata && file->compiler);
+    if (optsCmdLine.verbose) {
+        CLReport(
+            CLStr16,
+            (file->tempOnDisk & CmdLineStageMask_Cg) ? "temporary " : "",
+            OS_SpecToStringRelative(&file->outfss, NULL, STSbuf, sizeof(STSbuf))
+        );
+    }
+    if (!Plugin_CL_WriteObjectFile(
+            file->compiler, &file->srcfss, &file->outfss, maccreator, mactype, file->objectdata
+        )) {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+}
+#else
 #include "driver/CLWriteObjectFile.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLErrors.h"
@@ -94,6 +129,7 @@ int WriteObjectFile(File* file, OSType maccreator, OSType mactype) {
         return TRUE;
     }
 }
+#endif
 #endif
 #endif
 

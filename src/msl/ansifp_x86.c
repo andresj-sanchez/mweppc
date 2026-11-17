@@ -1,5 +1,6 @@
 #include "msl/ansifp_x86.h"
 
+#if !MWCCPS2_B198
 typedef struct Extended80 {
     unsigned short mantissa[4];
     unsigned short exponent;
@@ -325,4 +326,5 @@ void __num2dec(const decform *f, double x, decimal *d)
         d->sig.length = 18;
     }
 }
+#endif
 #endif

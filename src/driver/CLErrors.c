@@ -10,6 +10,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if MWCCPS2_B198
+static char* CLGetErrorString(SInt16 errid, char* buffer) {
+    getindstring(buffer, 12000, errid);
+    strcat(buffer, "\n");
+    return buffer;
+}
+#else
 static char* CLGetErrorString(SInt16 errid, char* buffer) {
 #if MWCCPS2
     GetIndString((StringPtr)buffer, 12000, errid);
@@ -20,6 +27,7 @@ static char* CLGetErrorString(SInt16 errid, char* buffer) {
     strcat(buffer, "\n");
     return buffer;
 }
+#endif
 
 static void CLMessageReporter(int flags, SInt16 errid, va_list va) {
     static char stmsg[256];

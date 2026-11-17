@@ -1,3 +1,13 @@
+#if MWCCPS2_B198
+#include "compiler/CError.h"
+#include "compiler/CExpr.h"
+#include "compiler/CParser.h"
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/types.h"
+
+#else
 #include "compiler/CExpr.h"
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
@@ -938,9 +948,11 @@ static ENode* pointer_generation2(ENode* expr) {
     return expr;
 }
 
+#endif
 ENode* pointer_generation(ENode* expr) {
     return CExpr_RewriteConst(pointer_generation2(expr));
 }
+#if !MWCCPS2_B198
 
 ENode* CExpr_PointerGeneration(ENode* expr) {
     switch (expr->type) {
@@ -10436,6 +10448,7 @@ ENode* assignment_expression(void) {
     }
 }
 #endif
+#endif
 
 ENode* conv_assignment_expression(void) {
     return pointer_generation(assignment_expression());
@@ -10445,6 +10458,13 @@ ENode* conv_assignment_expression(void) {
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT (-7)
 #endif
+#if MWCCPS2_B198
+void CExpr_CheckUnwantedAssignment(ENode* expr) {
+    if (copts.warn_possunwant && expr->type == EASS && !(expr->flags & 0x80)) {
+        CError_Warning(108);
+    }
+}
+#else
 #if MWCCPS2
 // b210 (0x51BB00) has the 3.0.1 bodies: a cast to void silences the
 // compare warning, the side-effect test knows the 3.0.1 node kinds
@@ -11211,3 +11231,4 @@ Boolean CExpr_ParseAsmExpr(Object** objptr, CInt64* valptr) {
     CError_Error(ERR_ILLEGAL_ADDRESSING_MODE);
     return FALSE;
 }
+#endif

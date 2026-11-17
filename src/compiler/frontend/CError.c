@@ -1,3 +1,15 @@
+#if MWCCPS2_B198
+#include "compiler/CError.h"
+#include "compiler/CParser.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CScope.h"
+#include "compiler/common.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+#include <string.h>
+
+#else
 #include "compiler/CError.h"
 #if MWCCPSP
 #include "compiler/CExpr.h"
@@ -41,7 +53,9 @@ typedef struct CErrorBuffer {
 TStreamElement* cerror_locktoken;
 static TStreamElement* cerror_token;
 static short cerror_errorcount;
+#endif
 static SInt32 cerror_lasterrorline;
+#if !MWCCPS2_B198
 char cerror_synchdata[32];
 short cerror_synchoffset;
 int CError_BreakPointcount;
@@ -163,6 +177,7 @@ static void CError_GetErrorString(char* buf, short code) {
 #endif
 #endif
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -184,6 +199,21 @@ static void CError_BufferGrow(CErrorBuffer* eb, UInt32 amount) {
     eb->remaining += amount;
 }
 
+#if MWCCPS2_B198
+static void CError_BufferAppendString(CErrorBuffer* eb, const char* str) {
+    UInt32 len;
+
+    if (eb) {
+        len = strlen(str);
+        if (eb->remaining < len) {
+            CError_BufferGrow(eb, len);
+        }
+        memcpy(eb->end, str, len);
+        eb->end += len;
+        eb->remaining -= len;
+    }
+}
+#else
 static void CError_BufferAppendChar(CErrorBuffer* eb, char ch) {
     if (eb) {
         if (!eb->remaining) {
@@ -211,6 +241,7 @@ static void CError_BufferAppendString(CErrorBuffer* eb, const char* str) {
         eb->remaining -= len;
     }
 }
+#endif
 
 static void CError_BufferTerminate(CErrorBuffer* eb) {
     if (eb->remaining == 0) {
@@ -220,6 +251,11 @@ static void CError_BufferTerminate(CErrorBuffer* eb) {
     eb->remaining = 0;
 }
 
+#if MWCCPS2_B198
+void CError_ResetErrorSkip(void) {
+    cerror_lasterrorline = -1;
+}
+#else
 static void CError_BufferAppendQualifier(CErrorBuffer* eb, UInt32 qual) {
     if (qual & Q_PASCAL) {
         CError_BufferAppendString(eb, "pascal ");
@@ -237,7 +273,27 @@ static void CError_BufferAppendQualifier(CErrorBuffer* eb, UInt32 qual) {
         CError_BufferAppendString(eb, "restrict ");
     }
 }
+#endif
 
+#if MWCCPS2_B198
+char* CError_GetQualifiedName(NameSpace* nspace, HashNameNode* name) {
+    char buf[256];
+    CErrorBuffer eb;
+    char* ptr;
+
+    CError_BufferInit(&eb, buf, sizeof(buf));
+    CError_BufferAppendNameSpace(&eb, nspace);
+    CError_BufferAppendString(&eb, name->name);
+    CError_BufferTerminate(&eb);
+
+    if (eb.start != buf) {
+        return eb.start;
+    }
+
+    ptr = lalloc(eb.size + 1);
+    return strcpy(ptr, eb.start);
+}
+#else
 static void CError_BufferAppendTemplArgExpr(CErrorBuffer* eb, ENode* node) {
     char buf[32];
 
@@ -258,11 +314,30 @@ static void CError_BufferAppendTemplArgExpr(CErrorBuffer* eb, ENode* node) {
 
     CError_BufferAppendString(eb, "{targ_expr}");
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (82)
 #endif
+#if MWCCPS2_B198
+char* CError_GetFunctionName(NameSpace* nspace, HashNameNode* name, TypeFunc* tfunc) {
+    char buf[256];
+    CErrorBuffer eb;
+    char* ptr;
+
+    CError_BufferInit(&eb, buf, sizeof(buf));
+    CError_AppendFunctionName(&eb, nspace, name, 0, tfunc);
+    CError_BufferTerminate(&eb);
+
+    if (eb.start != buf) {
+        ptr = eb.start;
+    } else {
+        ptr = strcpy(lalloc(eb.size + 1), eb.start);
+    }
+    return ptr;
+}
+#else
 static void CError_BufferAppendTemplArg(CErrorBuffer* eb, TemplArg* targ) {
     switch (targ->pid.type) {
         case TPT_TYPE:
@@ -282,11 +357,30 @@ static void CError_BufferAppendTemplArg(CErrorBuffer* eb, TemplArg* targ) {
 #endif
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
 #endif
 
+#if MWCCPS2_B198
+char* CError_GetObjectName(Object* obj) {
+    char buf[256];
+    CErrorBuffer eb;
+    char* ptr;
+
+    CError_BufferInit(&eb, buf, sizeof(buf));
+    CError_AppendObjectName(&eb, obj);
+    CError_BufferTerminate(&eb);
+
+    if (eb.start != buf) {
+        return eb.start;
+    }
+
+    ptr = lalloc(eb.size + 1);
+    return strcpy(ptr, eb.start);
+}
+#else
 static void CError_BufferAppendTemplArgs(CErrorBuffer* eb, TemplArg* targs) {
     if (!targs) {
         return;
@@ -1500,11 +1594,13 @@ void CError_ExpressionTooComplex(void) {
     CError_ErrorMessage(10002, string, TRUE, FALSE);
     longjmp(errorreturn, 1);
 }
+#endif
 
 void CError_NoMem(void) {
     cprep_nomem_exit = TRUE;
     longjmp(errorreturn, 1);
 }
+#if !MWCCPS2_B198
 
 void CError_UserBreak(void) {
     CompilerGetCString(8, string);
@@ -1612,3 +1708,4 @@ void CError_QualifierCheck(UInt32 qual) {
 }
 
 #pragma pack(2)
+#endif

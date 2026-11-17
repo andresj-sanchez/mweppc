@@ -1,9 +1,18 @@
+#if MWCCPS2_B198
+#include "driver/cc-eabi-ppc.h"
+#include "driver/ClientGlue.h"
+#include "driver/CWPlugins.h"
+#include "driver/DropInCompilerLinker.h"
+#include "driver/CCompiler.h"
+
+#else
 #include "driver/cc-eabi-ppc.h"
 #include "driver/CCompiler.h"
 #include "driver/ClientGlue.h"
 #include "driver/CWPlugins.h"
 #include "driver/DropInCompilerLinker.h"
 
+#endif
 CWPLUGIN_ENTRY(CWPlugin_GetDropInFlags)(const DropInFlags** flags, SInt32* flagsSize) {
     static const DropInFlags sFlags = {
         kCurrentDropInFlagsVersion,
@@ -213,6 +222,9 @@ static CompilerLinkerPluginCallbacks lk_cl_cb = {
     NULL
 };
 // clang-format on
+#if MWCCPS2_B198
+#include "driver/cc-eabi-ppc.r"
+#else
 
 int RegisterStaticCompilerPlugin(void) {
     return RegisterStaticCompilerLinkerPlugin(&plugin_cb, &plugin_cl_cb) &&
@@ -227,3 +239,4 @@ int RegisterCompilerResources(void) {
         RegisterResource("PPC Compiler Errors", 10001, STR10001) &&
         RegisterResource("Linker Errors", 11001, STR11001);
 }
+#endif

@@ -250,3 +250,10 @@ __marimo__/
 .streamlit/secrets.toml
 
 !/tools/lmgr_stub/*.dll
+
+# PS2 b198: the C library files its build makes (tools/mwccps2/msl.py)
+/src/msl/ps2/alloc.c
+/src/msl/ps2/time.c
+/src/msl/ps2/scanf_core.c
+/src/msl/ps2/strtoull.c
+/src/msl/ps2/printf_g.c

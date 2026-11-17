@@ -1,0 +1,23 @@
+#include "compiler/IroPropagate.h"
+#include "compiler/IroCSE.h"
+#include "compiler/IroDump.h"
+#include "compiler/IroEval.h"
+#include "compiler/IroFlowgraph.h"
+#include "compiler/IroLinearForm.h"
+#include "compiler/IROUseDef.h"
+#include "compiler/IroUtil.h"
+#include "compiler/IroVars.h"
+#include "compiler/BitVector.h"
+#include "compiler/CError.h"
+#include "compiler/CExpr.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CParser.h"
+#include "compiler/enode.h"
+#include "compiler/InlineAsm.h"
+#include "compiler/objects.h"
+#include "compiler/types.h"
+#include "compiler/IroDependsKills.h"
+
+IROAssign* IRO_FirstAssign;
+IROAssign* IRO_LastAssign;
+SInt32 IRO_NumAssign;

@@ -1,3 +1,20 @@
+#if MWCCPS2_B198
+#include "driver/cmdline.h"
+#include "driver/Arguments.h"
+#include "driver/FileHandles.h"
+#include "driver/Generic.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include "driver/option_system.h"
+#include "driver/oslib.h"
+#include "driver/ParserErrors.h"
+#include "driver/StringExtras.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#else
 #include "driver/Arguments.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/FileHandles.h"
@@ -13,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 char compat;
 char* MAINOPTCHAR;
 char* FIRSTARGCHAR;
@@ -152,6 +170,25 @@ restart:
     }
 }
 
+#if MWCCPS2_B198
+static unsigned char Arg_OpenRespFile(const char* name) {
+    struct OSSpec spec;
+    int err;
+
+    if ((err = OS_MakeFileSpec(name, &spec)) ||
+        (err = OS_NewFileHandle(&spec, 0, FALSE, &respfilehandle)) ||
+        (err = OS_AppendHandle(&respfilehandle.hand, "", 1)) ||
+        (err = OS_LockFileHandle(&respfilehandle, (void**)&respfile, &respfilesize))) {
+        CLPOSAlert(CLPStr74, (short)err, "response ", name);
+        return FALSE;
+    } else {
+        respfilestart = respfile;
+        Arg_SkipRespFileWS();
+        in_response_file = TRUE;
+        return TRUE;
+    }
+}
+#else
 static unsigned char Arg_OpenRespFile(const char* name) {
     struct OSSpec spec;
     int err;
@@ -169,6 +206,7 @@ static unsigned char Arg_OpenRespFile(const char* name) {
         return TRUE;
     }
 }
+#endif
 
 static void Arg_CloseRespFile(void) {
     in_response_file = FALSE;
@@ -209,6 +247,54 @@ static char* Arg_GetRespFileToken(void) {
     return start;
 }
 
+#if MWCCPS2_B198
+static char* Arg_GetNext(unsigned char allow_resp) {
+    char* ret;
+    int rfclen;
+    char* rfcequ;
+
+    while (1) {
+        if (!in_response_file) {
+            rfclen = 1;
+            rfcequ = 0;
+            ret = margv[margind++];
+            if ((rfcequ = strrchr(ret, '\r')) && rfcequ[1] == 0) {
+                *rfcequ = 0;
+            }
+            if (ret[0] == '\\' && ret[1] == RESPFILECHAR) {
+                ret++;
+            } else if (allow_resp) {
+                if (ret[0] == RESPFILECHAR ||
+                    ((RESPFILESTR[0] &&
+                      !ustrncmp(ret, RESPFILESTR, rfclen = strlen(RESPFILESTR))) &&
+                     ret[rfclen])) {
+                    rfcequ = strchr(ret + rfclen, '=');
+                    if (rfcequ) {
+                        rfclen = (rfcequ + 1) - ret;
+                    }
+                    if (Arg_OpenRespFile(ret + rfclen)) {
+                        continue;
+                    }
+                    ret = 0;
+                }
+            }
+        } else {
+            ret = Arg_GetRespFileToken();
+            if (!ret) {
+                Arg_CloseRespFile();
+                continue;
+            }
+        }
+        break;
+    }
+
+    if (parserDebug) {
+        fprintf(stderr, "Got arg = '%s'\n", ret ? ret : "<NULL>");
+    }
+
+    return ret;
+}
+#else
 static char* Arg_GetNext(unsigned char allow_resp) {
     char* ret;
     int rfclen;
@@ -252,6 +338,7 @@ restart:
 
     return ret;
 }
+#endif
 
 static unsigned char Arg_GotMore(void) {
     if (!in_response_file) {
@@ -263,6 +350,103 @@ static unsigned char Arg_GotMore(void) {
     }
 }
 
+#if MWCCPS2_B198
+static void Arg_Parse(void) {
+    unsigned char isOpt;
+    unsigned char isList;
+    char* arg;
+    char* argstart;
+    char buffer[4096];
+    char* bufptr;
+    char ch;
+
+    isOpt = FALSE;
+    isList = FALSE;
+    while (Arg_GotMore()) {
+        argstart = arg = Arg_GetNext(TRUE);
+        if (!arg) {
+            break;
+        }
+
+        bufptr = buffer;
+        *bufptr = 0;
+        isList = FALSE;
+
+        if (arg[0] && arg[1] && strchr(MAINOPTCHAR, arg[0])) {
+            if (isOpt || isList) {
+                Arg_AddToken(ATK_ARG_END, 0);
+            }
+            *bufptr = arg[1];
+            bufptr++;
+            *bufptr = 0;
+            arg += 2;
+            isOpt = TRUE;
+            isList = FALSE;
+        } else {
+            isOpt = FALSE;
+        }
+
+        while (arg && arg[0]) {
+            ch = arg[0];
+            if (ch == '\\' && (arg[1] == SEP1 || arg[1] == SEP2 || arg[1] == SEP3)) {
+                ch = 0x80 | *(++arg);
+            } else if (compat == COMPAT_DOS && ch == ':' && arg[1] == '\\') {
+                ch |= 0x80;
+            }
+
+            if (ch != SEP1 && ch != SEP2 && ch != SEP3) {
+                if ((ch & 0x7F) == SEP1 || (ch & 0x7F) == SEP2 || (ch & 0x7F) == SEP3) {
+                    ch &= 0x7F;
+                }
+                *(bufptr++) = ch;
+                if (bufptr >= &buffer[sizeof(buffer)]) {
+                    CLPReportError(
+                        CLPStr2, argstart, argstart + strlen(argstart) - 15, sizeof(buffer)
+                    );
+                }
+                *bufptr = 0;
+            } else {
+                if (isOpt) {
+                    Arg_AddToken(ATK_OPTION, buffer);
+                    Arg_AddToken(ATK_ARG, buffer);
+                } else {
+                    Arg_AddToken(ATK_ARG, buffer);
+                }
+
+                Arg_AddToken(
+                    (SInt16)((ch == ',')
+                                 ? (int)ATK_COMMA
+                                 : ((ch == '=' || ch == SEP3) ? (int)ATK_EQUALS : (int)ATK_END)),
+                    0
+                );
+
+                bufptr = buffer;
+                *bufptr = 0;
+
+                if (ch == SEP1 || ch == SEP2 || ch == SEP3) {
+                    isOpt = FALSE;
+                }
+                isList = TRUE;
+            }
+
+            arg++;
+        }
+
+        if (isOpt && bufptr > &buffer[0]) {
+            Arg_AddToken(ATK_OPTION, buffer + (isList && strchr(MAINOPTCHAR, buffer[0])));
+            Arg_AddToken(ATK_ARG, buffer + 1 + (isList && strchr(MAINOPTCHAR, buffer[0])));
+        } else {
+            Arg_AddToken(ATK_ARG, buffer);
+            Arg_AddToken(ATK_ARG_END, 0);
+        }
+    }
+
+    if (isOpt || isList) {
+        Arg_AddToken(ATK_ARG_END, 0);
+    }
+    Arg_AddToken(ATK_END, 0);
+}
+#else
 static void Arg_Parse(void) {
     unsigned char isOpt;
     unsigned char isList;
@@ -358,7 +542,87 @@ static void Arg_Parse(void) {
     }
     Arg_AddToken(ATK_END, 0);
 }
+#endif
 
+#if MWCCPS2_B198
+void Arg_Init(int theargc, char** theargv) {
+    int p;
+    int x;
+
+    numargtoks = (maxargtoks = 0);
+    parserDebug = FALSE;
+    if (theargc > 1 && !__builtin_memcmp(theargv[1], "--parser-debug", 15)) {
+        parserDebug = TRUE;
+        memmove(&theargv[1], &theargv[2], sizeof(char*) * (theargc - 1));
+        theargc--;
+    }
+
+    if ((int)compat == COMPAT_DEFAULT) {
+        MAINOPTCHAR = "-";
+        FIRSTARGCHAR = "=";
+        SEPOPTSTR = " ";
+        SEP1 = ',';
+        SEP2 = '=';
+        SEP3 = '=';
+        RESPFILECHAR = '@';
+        RESPFILESTR = "";
+    } else if ((int)compat == COMPAT_DOS) {
+        MAINOPTCHAR = "/-";
+        FIRSTARGCHAR = ":";
+        SEPOPTSTR = ":";
+        SEP1 = ',';
+        SEP2 = '=';
+        SEP3 = ':';
+        RESPFILECHAR = '@';
+        RESPFILESTR = "";
+    } else if ((int)compat == COMPAT_CUSTOM) {
+        if (!MAINOPTCHAR) {
+            MAINOPTCHAR = "-";
+        }
+        if (!FIRSTARGCHAR) {
+            FIRSTARGCHAR = "=";
+        }
+        if (!SEPOPTSTR) {
+            SEPOPTSTR = " ";
+        }
+        if (!SEP1) {
+            SEP1 = ',';
+        }
+        if (!SEP2) {
+            SEP2 = '=';
+        }
+        if (!SEP3) {
+            SEP3 = '=';
+        }
+        if (!RESPFILECHAR) {
+            RESPFILECHAR = '@';
+        }
+        if (!RESPFILESTR) {
+            RESPFILESTR = "";
+        }
+    } else {
+        CLPFatalError("Unknown parser compatibility type (%d)\n", (int)compat);
+    }
+
+    if (parserDebug) {
+        printf("Incoming arguments: \n");
+        for (p = 0; p < theargc; p++) {
+            printf("[%s] ", theargv[p]);
+        }
+        printf("\n");
+    }
+
+    Arg_Setup(theargc, theargv);
+    Arg_Parse();
+    Arg_Reset();
+
+    if (parserDebug) {
+        for (x = 0; x < numargtoks; x++) {
+            printf("TOKEN:  '%s'\n", Arg_GetTokenName(&argtoks[x]));
+        }
+    }
+}
+#else
 void Arg_Init(int theargc, char** theargv) {
     int p;
     int x;
@@ -437,6 +701,7 @@ void Arg_Init(int theargc, char** theargv) {
         }
     }
 }
+#endif
 
 void Arg_Terminate(void) {
     ArgToken* cur;
@@ -457,6 +722,7 @@ void Arg_Terminate(void) {
 void Arg_Reset(void) {
     scantok = 0;
 }
+#if !MWCCPS2_B198
 
 void Arg_Stop(ArgToken* where) {
     ArgToken* cur;
@@ -474,6 +740,7 @@ void Arg_Stop(ArgToken* where) {
     argtoks[numargtoks++].val = ATK_END;
     scantok = numargtoks - 2;
 }
+#endif
 
 ArgToken* Arg_PeekToken(void) {
     if (scantok >= numargtoks) {
@@ -591,6 +858,15 @@ static void Arg_GrowArg(PtrList* ta, char* txt) {
     }
 }
 
+#if MWCCPS2_B198
+static void fn_004146DD(PtrList* ta, char* txt) {
+    Arg_GrowArgs(ta);
+    memmove(&ta->argv[2], &ta->argv[1], (ta->nargv - 1) * sizeof(char*));
+    ta->argv[1] = xmalloc("command line", strlen(txt) + 1);
+    strcpy(ta->argv[1], txt);
+}
+
+#endif
 void Arg_InitToolArgs(PtrList* ta) {
     ta->argc = 0;
     ta->nargv = 0;
@@ -598,6 +874,43 @@ void Arg_InitToolArgs(PtrList* ta) {
     Arg_GrowArgs(ta);
 }
 
+#if MWCCPS2_B198
+void Arg_AddToToolArgs(PtrList* ta, short tokval, char* toktxt) {
+    int value = tokval;
+    int atstart = (value & 0x8000) != 0;
+    value &= ~0x8000;
+    tokval = value;
+    switch (tokval) {
+        case ATK_END:
+            Arg_FinishToolArgs(ta);
+            break;
+        case ATK_ARG_END:
+            if (ta->argv && ta->argv[ta->argc]) {
+                Arg_GrowArgs(ta);
+            }
+            break;
+        case ATK_ARG:
+            if (atstart) {
+                fn_004146DD(ta, toktxt);
+            } else {
+                Arg_GrowArg(ta, toktxt);
+            }
+            break;
+        case ATK_OPTION:
+            Arg_GrowArg(ta, "-");
+            break;
+        case ATK_EQUALS:
+            Arg_GrowArg(ta, "=");
+            break;
+        case ATK_COMMA:
+            Arg_GrowArg(ta, ",");
+            break;
+        default:
+            CLPFatalError(__FILE__, 802, "Unknown token (%d)", tokval);
+            break;
+    }
+}
+#else
 void Arg_AddToToolArgs(PtrList* ta, short tokval, char* toktxt) {
     switch (tokval) {
         case ATK_END:
@@ -625,6 +938,7 @@ void Arg_AddToToolArgs(PtrList* ta, short tokval, char* toktxt) {
             break;
     }
 }
+#endif
 
 void Arg_FinishToolArgs(PtrList* ta) {
     Arg_GrowArgs(ta);
@@ -641,6 +955,7 @@ void Arg_ToolArgsForPlugin(PtrList* ta, struct CWCommandLineArgs* args) {
 
     args->envp = 0;
 }
+#if !MWCCPS2_B198
 
 void Arg_FreeToolArgs(PtrList* ta) {
     int x;
@@ -654,3 +969,4 @@ void Arg_FreeToolArgs(PtrList* ta) {
         free(ta->argv);
     }
 }
+#endif

@@ -1,6 +1,10 @@
 #ifndef DRIVER_MEMUTILS_H
 #define DRIVER_MEMUTILS_H
 
+#if MWCCPS2_B198
+#include "compiler/common.h"
+
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

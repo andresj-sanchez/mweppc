@@ -1,0 +1,6 @@
+#ifndef DRIVER_DROPINCOMPILERLINKERCONTEXT_H
+#define DRIVER_DROPINCOMPILERLINKERCONTEXT_H
+
+#include "driver/CWPluginsPrivate.h"
+
+#endif

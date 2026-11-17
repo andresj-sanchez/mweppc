@@ -1,3 +1,21 @@
+#if MWCCPS2_B198
+#include "driver/CWPlugins.h"
+#include "driver/CWParserPluginsContext.h"
+#include "driver/CWParserPluginsPrivate.h"
+#include "driver/pref_structs.h"
+#include "driver/ParserFace.h"
+#include "driver/Arguments.h"
+#include "driver/cmdline.h"
+#include "driver/CWSecretPluginCallbacks.h"
+#include "driver/Option.h"
+#include "driver/ParserErrors.h"
+#include "driver/StringExtras.h"
+#include "driver/Targets.h"
+#include <setjmp.h>
+#include <stdio.h>
+#include <string.h>
+
+#else
 #include "driver/ParserFace.h"
 #include "driver/Arguments.h"
 #include "driver/cmdline.h"
@@ -15,10 +33,70 @@
 #include <stdio.h>
 #include <string.h>
 
+#endif
 const char* failedCallback;
 jmp_buf exit_plugin;
 ParseOptsType parseopts;
 
+#if MWCCPS2_B198
+static CWResult SetupParamBlock(CWPluginContext context) {
+    CWResult result;
+    int x;
+    Handle h;
+    PCmdLineEnvir* cle;
+    CWMemHandle mh;
+
+    memset(&parseopts, 0, sizeof(parseopts));
+    parseopts.context = context;
+
+    result = CWSecretGetNamedPreferences(context, "CmdLine Environment", &h);
+    if (result) {
+        return result;
+    }
+
+    cle = (PCmdLineEnvir*)*h;
+    parseopts.underIDE = cle->underIDE;
+    parseopts.ioRows = cle->rows;
+    parseopts.ioCols = cle->cols;
+
+    CWSecretAttachHandle(context, h, &mh);
+    CWFreeMemHandle(context, mh);
+
+    result = CWParserGetCommandLine(context, &parseopts.args);
+    if (result) {
+        return result;
+    }
+
+    result = CWParserGetToolInfo(context, &parseopts.toolVersion);
+    if (result) {
+        return result;
+    }
+
+    result = CWParserGetTargetInfo(context, &parseopts.cpu, &parseopts.os);
+    if (result) {
+        return result;
+    }
+
+    result = CWParserGetPanels(context, &parseopts.numPanels, &parseopts.panelNames);
+    if (result) {
+        return result;
+    }
+
+    result = CWParserGetPlugins(context, &parseopts.numPlugins, &parseopts.plugins);
+    if (result) {
+        return result;
+    }
+
+    parseopts.passingArgs = FALSE;
+    for (x = 0; x < parseopts.numPlugins; x++) {
+        if (parseopts.plugins[x].storeCommandLine) {
+            parseopts.passingArgs = TRUE;
+        }
+    }
+
+    return 0;
+}
+#else
 static CWResult SetupParamBlock(CWPluginContext context) {
     CWResult result;
     int x;
@@ -87,6 +165,7 @@ static CWResult SetupParamBlock(CWPluginContext context) {
 
     return 0;
 }
+#endif
 
 static CWResult SetupOptions(CWPluginContext context) {
     if (!pTool) {
@@ -150,6 +229,28 @@ static CWResult Parse(CWPluginContext context) {
     return (parseopts.success && !parseopts.hadErrors) ? cwNoErr : cwErrRequestFailed;
 }
 
+#if MWCCPS2_B198
+CWMemHandle Parser_FindPrefPanel(const char* name) {
+    int idx;
+    CWMemHandle h;
+    void* ptr;
+
+    for (idx = 0; idx < pTool->numPrefDataPanels; idx++) {
+        if (!ustrcmp(name, pTool->prefDataPanels[idx].name)) {
+            if (CWAllocMemHandle(parseopts.context, pTool->prefDataPanels[idx].size, FALSE, &h)) {
+                return NULL;
+            }
+
+            CWLockMemHandle(parseopts.context, h, FALSE, &ptr);
+            memcpy(ptr, pTool->prefDataPanels[idx].ptr, pTool->prefDataPanels[idx].size);
+            CWUnlockMemHandle(parseopts.context, h);
+            return h;
+        }
+    }
+
+    return NULL;
+}
+#else
 #if MWCCPSP
 // 3.0.1 allocates the copy through the plugin context
 Handle Parser_FindPrefPanel(const char* name) {
@@ -194,7 +295,30 @@ Handle Parser_FindPrefPanel(const char* name) {
     return NULL;
 }
 #endif
+#endif
 
+#if MWCCPS2_B198
+CWResult Parser_StorePanels(CWPluginContext context) {
+    int idx;
+    CWResult result;
+    const char* name;
+    CWMemHandle h;
+
+    for (idx = 0; idx < parseopts.numPanels; idx++) {
+        name = parseopts.panelNames[idx];
+        h = Parser_FindPrefPanel(name);
+        if (h) {
+            result = CWParserSetNamedPreferences(parseopts.context, name, h);
+            if (result) {
+                CLPReportError(CLPStr68, name);
+                return result;
+            }
+        }
+    }
+
+    return cwNoErr;
+}
+#else
 CWResult Parser_StorePanels(CWPluginContext context) {
     int idx;
     CWResult result;
@@ -215,6 +339,7 @@ CWResult Parser_StorePanels(CWPluginContext context) {
 
     return cwNoErr;
 }
+#endif
 
 static CWResult StoreResults(CWPluginContext context) {
     int idx;
@@ -263,6 +388,16 @@ static CWResult StoreResults(CWPluginContext context) {
     return cwNoErr;
 }
 
+#if MWCCPS2_B198
+CWPLUGIN_ENTRY(CWParser_GetDropInFlags)(const DropInFlags** flags, SInt32* flagsSize) {
+    static const DropInFlags sFlags = {
+        kCurrentDropInFlagsVersion, CWDROPINPARSERTYPE, 7, 0, 'Seep', 13
+    };
+    *flags = &sFlags;
+    *flagsSize = sizeof(sFlags);
+    return 0;
+}
+#else
 CWPLUGIN_ENTRY(CWParser_GetDropInFlags)(const DropInFlags** flags, SInt32* flagsSize) {
     static const DropInFlags sFlags = {
 #if MWCCPS2
@@ -275,6 +410,7 @@ CWPLUGIN_ENTRY(CWParser_GetDropInFlags)(const DropInFlags** flags, SInt32* flags
     *flagsSize = sizeof(sFlags);
     return 0;
 }
+#endif
 
 CWPLUGIN_ENTRY(CWParser_GetDropInName)(const char** dropinName) {
     static const char* sDropInName = "Command-Line Parser";
@@ -294,6 +430,7 @@ CWPLUGIN_ENTRY(CWParser_GetPanelList)(const CWPanelList** panelList) {
     return 0;
 }
 
+#if !MWCCPS2_B198
 CWPLUGIN_ENTRY(CWParser_GetTargetList)(const CWTargetList** targetList) {
     static SInt32 sCPU = '****';
     static SInt32 sOS = '****';
@@ -302,6 +439,7 @@ CWPLUGIN_ENTRY(CWParser_GetTargetList)(const CWTargetList** targetList) {
     return 0;
 }
 
+#endif
 CWPLUGIN_ENTRY(CWParser_GetVersionInfo)(const VersionInfo** versioninfo) {
     static const VersionInfo vi = {1, 1, 0, 0};
     *versioninfo = &vi;
@@ -322,6 +460,50 @@ CWPLUGIN_ENTRY(Parser_SupportsPanels)(
     return 0;
 }
 
+#if MWCCPS2_B198
+CWPLUGIN_ENTRY(parser_main)(CWPluginContext context) {
+    CWResult result = cwNoErr;
+    SInt32 request;
+
+    CWGetPluginRequest(context, &request);
+    result = setjmp(exit_plugin);
+    if (result == 0) {
+        switch (request) {
+            case reqInitialize:
+                CWSetCWPluginAPI(context, 2);
+                result = 0;
+                break;
+            case reqTerminate:
+                break;
+            case 1:
+                result = SetupParamBlock(context);
+                if (!result) {
+                    result = Parser_StorePanels(context);
+                }
+                break;
+            case 2:
+                result = SetupParamBlock(context);
+                if (!result) {
+                    result = SetupOptions(context);
+                    if (!result) {
+                        result = Parse(context);
+                        if (!result) {
+                            result = StoreResults(context);
+                        }
+                    }
+                }
+                break;
+        }
+    } else {
+        if (failedCallback && result != 1) {
+            fprintf(stderr, "Unexpected error in %s [%d]\n", failedCallback, (int)result);
+        }
+    }
+    CWDonePluginRequest(context, result);
+
+    return result;
+}
+#else
 CWPLUGIN_ENTRY(parser_main)(CWPluginContext context) {
     CWResult result = cwNoErr;
     SInt32 request;
@@ -363,3 +545,4 @@ CWPLUGIN_ENTRY(parser_main)(CWPluginContext context) {
 
     return result;
 }
+#endif

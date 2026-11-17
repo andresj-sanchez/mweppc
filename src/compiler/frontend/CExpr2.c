@@ -1,3 +1,21 @@
+#if MWCCPS2_B198
+#include "compiler/CDecl.h"
+#include "compiler/CError.h"
+#include "compiler/CExpr.h"
+#include "compiler/CMachine.h"
+#include "compiler/CParser.h"
+#include "compiler/CScope.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CTemplateTools.h"
+#include "compiler/CInline.h"
+#include "compiler/CInt64.h"
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/types.h"
+#include "compiler/CExpr2.h"
+
+#else
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -906,6 +924,7 @@ ENode* CExpr_BinaryFloatExpression(ENode* expr) {
     return expr;
 }
 
+#endif
 ENode* CExpr_NewENode(ENodeType ty) {
     ENode* expr = lalloc(sizeof(ENode));
     memclrw(expr, sizeof(ENode));
@@ -922,6 +941,14 @@ ENode* CExpr_CopyENode(ENode* expr) {
 }
 
 #endif
+#if MWCCPS2_B198
+ENode* CExpr_NewTemplDepENode(TemplDepSubType t) {
+    ENode* expr = CExpr_NewENode(ETEMPLDEP);
+    expr->rtype = &sttemplexpr;
+    expr->data.templdep.subtype = t;
+    return expr;
+}
+#else
 ENode* CExpr_NewTemplDepENode(TemplDepSubType t) {
     ENode* expr = CExpr_NewENode(ETEMPLDEP);
     expr->rtype = &sttemplexpr;
@@ -936,6 +963,7 @@ ENode* CExpr_CopyENode(ENode* expr) {
     return copy;
 #endif
 }
+#endif
 
 ENode* nullnode(void) {
     ENode* expr = CExpr_NewENode(EINTCONST);
@@ -950,6 +978,20 @@ ENode* intconstnode(Type* type, SInt32 value) {
     return expr;
 }
 
+#if MWCCPS2_B198
+ENode* makemonadicnode(ENode* inner, ENodeType ty) {
+    ENode* expr = CExpr_NewENode(ty);
+
+    if ((expr->cost = inner->cost) == 0) {
+        expr->cost = 1;
+    }
+
+    expr->flags = inner->flags & ENODE_FLAG_QUALS;
+    expr->rtype = inner->rtype;
+    expr->data.monadic = inner;
+    return expr;
+}
+#else
 ENode* stringconstnode(char* str) {
     ENode* expr;
     SInt32 size;
@@ -968,7 +1010,32 @@ ENode* stringconstnode(char* str) {
     expr->data.monadic->rtype = CDecl_NewPointerType(expr->rtype);
     return expr;
 }
+#endif
 
+#if MWCCPS2_B198
+ENode* makediadicnode(ENode* left, ENode* right, ENodeType ty) {
+    ENode* expr = CExpr_NewENode(ty);
+
+    expr->rtype = left->rtype;
+    expr->data.diadic.left = left;
+    expr->data.diadic.right = right;
+
+    if (left->cost != right->cost) {
+        expr->cost = right->cost;
+        if (left->cost > expr->cost) {
+            expr->cost = left->cost;
+        }
+    } else {
+        expr->cost = right->cost + 1;
+        if (expr->cost > 200) {
+            expr->cost = 200;
+        }
+    }
+
+    expr->flags = (left->flags | right->flags) & ENODE_FLAG_QUALS;
+    return expr;
+}
+#else
 ENode* forceintegral(ENode* expr) {
     if (!IS_TYPE_ENUM(expr->rtype)) {
         CError_Error(ERR_ILLEGAL_OPERAND);
@@ -978,7 +1045,20 @@ ENode* forceintegral(ENode* expr) {
         return expr;
     }
 }
+#endif
 
+#if MWCCPS2_B198
+short iszero(ENode* expr) {
+    switch (expr->type) {
+        case EINTCONST:
+            return CInt64_IsZero(&expr->data.intval);
+        case EFLOATCONST:
+            return CMach_FloatIsZero(expr->data.floatval.value);
+        default:
+            return FALSE;
+    }
+}
+#else
 ENode* makemonadicnode(ENode* inner, ENodeType ty) {
 #if MWCCPS2_B52
     ENode* expr = CExpr_NewENode(ty); // b52 clears its nodes (3.0.1's form)
@@ -999,7 +1079,19 @@ ENode* makemonadicnode(ENode* inner, ENodeType ty) {
     expr->data.monadic = inner;
     return expr;
 }
+#endif
 
+#if MWCCPS2_B198
+Boolean CExpr_IsOne(ENode* expr) {
+    if (ENODE_IS(expr, EINTCONST)) {
+        return CInt64_Equal(expr->data.intval, cint64_one);
+    } else if (ENODE_IS(expr, EFLOATCONST)) {
+        return CMach_FloatIsOne(expr->data.floatval.value);
+    } else {
+        return FALSE;
+    }
+}
+#else
 ENode* makediadicnode(ENode* left, ENode* right, UInt8 ty) {
 #if MWCCPS2_B52
     ENode* expr = CExpr_NewENode(ty);
@@ -1110,6 +1202,7 @@ Boolean CExpr_IsOne(ENode* expr) {
         return FALSE;
     }
 }
+#endif
 
 Boolean CExpr_AllBitsSet(ENode* expr) {
     SInt32 v;
@@ -1135,6 +1228,7 @@ Boolean CExpr_AllBitsSet(ENode* expr) {
 
     return FALSE;
 }
+#if !MWCCPS2_B198
 
 ENode* CExpr_NewETEMPNode(Type* type, Boolean assign_id) {
 #if MWCCPS2_B52
@@ -2898,6 +2992,7 @@ static short is_compatible_conversion(Type* a, Type* b) {
     }
     return iscpp_typeequal(b, a);
 }
+#endif
 
 static void CExpr_ConIteratorInit(ConIterator* iter) {
     ClassList* base;
@@ -2939,6 +3034,18 @@ void CExpr_ConversionIteratorInit(ConversionIterator* iter, TypeClass* tclass) {
 #define CError_B69_SHIFT 0
 #endif
 
+#if MWCCPS2_B198
+static inline short is_compatible_conversion(Type* a, Type* b) {
+    if (IS_TYPE_REFERENCE(a)) {
+        a = TYPE_POINTER(a)->target;
+    }
+    if (IS_TYPE_REFERENCE(b)) {
+        b = TYPE_POINTER(b)->target;
+    }
+    return iscpp_typeequal(b, a);
+}
+
+#endif
 static inline Boolean CExpr_ConversionIteratorIsHidden(ConIterator* iter, TypeFunc* tfunc) {
     CScopeObjectIterator objiter;
     ObjBase* obj;
@@ -2966,6 +3073,41 @@ static inline Boolean CExpr_ConversionIteratorIsHidden(ConIterator* iter, TypeFu
     return FALSE;
 }
 
+#if MWCCPS2_B198
+Object* CExpr_ConversionIteratorNext(ConversionIterator* iter) {
+    ConIterator* ci;
+    Object* obj;
+
+    ci = iter->coniter;
+    if (!ci) {
+        return NULL;
+    }
+
+    while (1) {
+        if ((obj = OBJECT(CScope_NextObjectIteratorObject(&iter->objiter))) != NULL) {
+            if (IS_TYPE_FUNC(obj->type) &&
+                (TYPE_FUNC(obj->type)->flags & FUNC_CONVERSION) &&
+                !CExpr_ConversionIteratorIsHidden(ci->parent, TYPE_FUNC(obj->type))) {
+                return obj;
+            }
+            continue;
+        }
+
+        while (1) {
+            if (ci->children) {
+                iter->coniter = ci->children->iter;
+                ci->children = ci->children->next;
+                ci = iter->coniter;
+                CScope_InitObjectIterator(&iter->objiter, ci->tclass->nspace);
+                break;
+            }
+            if (!(ci = ci->parent)) {
+                return NULL;
+            }
+        }
+    }
+}
+#else
 Object* CExpr_ConversionIteratorNext(ConversionIterator* iter) {
     ConIterator* ci;
     Object* obj;
@@ -2997,7 +3139,25 @@ restart:
 
     return NULL;
 }
+#endif
 
+#if MWCCPS2_B198
+ENode* CExpr_GetDefaultArgument(ENode* funcexpr, FuncArg* arg) {
+    ENode* expr;
+
+    if (CTemplTool_IsValueDepExpr(arg->dexpr)) {
+        CError_ASSERT(3977, ENODE_IS(funcexpr, EOBJREF));
+        expr = CTemplTool_DeduceDefaultArg(
+            funcexpr->data.objref, CInline_CopyExpression(arg->dexpr, CopyModeLocal)
+        );
+        expr = argumentpromotion(expr, arg->type, arg->qual, TRUE);
+    } else {
+        expr = CInline_CopyExpression(arg->dexpr, CopyModeLocal);
+    }
+
+    return expr;
+}
+#else
 short user_assign_check(
     ENode* expr,
     Type* type,
@@ -3269,7 +3429,54 @@ short user_assign_check(
         return CheckResult_NoMatch;
     }
 }
+#endif
 
+#if MWCCPS2_B198
+ENode* CExpr_VarArgPromotion(ENode* expr, Boolean toEllipsis) {
+    if (!copts.old_argmatch) {
+        expr = pointer_generation(expr);
+    }
+
+    if (expr->type == EOBJACCESS && expr->data.objaccess.unk19) {
+        expr = fn_00522920(expr, NULL, NULL, TRUE, NULL);
+    }
+
+    switch ((SInt8)expr->rtype->type) {
+        case TYPEVOID:
+        case TYPEFUNC:
+            CError_Error(ERR_CANNOT_PASS_VOID_FUNCTION_PARAMETER);
+            expr = nullnode();
+            break;
+        case TYPEINT:
+        case TYPEENUM:
+            expr = integralpromote(expr);
+            break;
+        case TYPEFLOAT:
+            if (TYPE_INTEGRAL(expr->rtype)->integral < IT_DOUBLE) {
+                expr = promote(expr, TYPE(&stdouble));
+            }
+            break;
+        case TYPECLASS:
+            expr = classargument(expr);
+            break;
+        default:
+            break;
+    }
+
+    if (CMach_PassResultInHiddenArg(expr->rtype)) {
+        expr = argumentpromotion(expr, expr->rtype, expr->flags, TRUE);
+    }
+
+    if (!toEllipsis && copts.warn_largeargs) {
+        if ((IS_TYPE_INT(expr->rtype) && TYPE_INTEGRAL(expr->rtype)->integral >= IT_LONGLONG) ||
+            IS_TYPE_FLOAT(expr->rtype)) {
+            CError_Warning(ERR_ASSIGNING_NON_INT_NUMERIC_VALUE_UNPROTOTYPED);
+        }
+    }
+
+    return expr;
+}
+#else
 ENode* CExpr_ConvertToCondition(ENode* expr) {
     switch (expr->rtype->type) {
         case TYPEINT:
@@ -6839,3 +7046,4 @@ ENode* scandelete(Boolean isGlobal) {
 }
 
 #pragma pack(2)
+#endif

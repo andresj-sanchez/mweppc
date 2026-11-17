@@ -14,6 +14,12 @@
 #include "compiler/Switch.h"
 #include "compiler/types.h"
 
+#if MWCCPS2_B198
+typedef struct LoopInfo {
+    Statement* stmt;
+} LoopInfo;
+
+#endif
 typedef struct COptBlock COptBlock;
 typedef struct COptCSE COptCSE;
 typedef struct COptCSEList COptCSEList;
@@ -23,10 +29,14 @@ static Boolean stmtchanged;
 static short setbytes;
 static COptBlock* currentblock;
 static ENode* mexpr;
+#if MWCCPS2_B198
+static COptCSE* csenodes[1];
+#else
 #if MWCCPS2_B52
 static COptCSE* csenodes[IRO_MAXEXPR]; // 124 entries: stmtchanged is 0xA4 bytes further up in b52
 #else
 static COptCSE* csenodes[MAXEXPR];
+#endif
 #endif
 static COptCSEList* cselist;
 static short extravars;
@@ -91,6 +101,31 @@ static void removeif(Statement* stmt, Boolean condValue) {
     stmtchanged = TRUE;
 }
 
+#if MWCCPS2_B198
+static void optimizeswitch(Statement* stmt) {
+    SwitchInfo* info;
+    SwitchCase* swcase;
+
+    info = (SwitchInfo*)stmt->label;
+    CError_ASSERT(1746, info && info->cases && info->defaultlabel);
+
+    info->defaultlabel = finallabel(info->defaultlabel, stmt);
+    for (swcase = info->cases; swcase; swcase = swcase->next) {
+        swcase->label = finallabel(swcase->label, stmt);
+    }
+
+    if (ENODE_IS(stmt->expr, EINTCONST)) {
+        for (swcase = info->cases; swcase; swcase = swcase->next) {
+            if (CInt64_Equal(swcase->min, stmt->expr->data.intval)) {
+                break;
+            }
+        }
+
+        stmt->type = ST_GOTO;
+        stmt->label = swcase ? swcase->label : info->defaultlabel;
+    }
+}
+#else
 static void optimizeif(Statement* stmt) {
     Statement* scan;
     Statement* jump;
@@ -170,11 +205,73 @@ static void optimizeif(Statement* stmt) {
 
     stmt->label = finallabel(stmt->label, stmt);
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (24)
 #endif
+#if MWCCPS2_B198
+static void removeunusedlabels(Statement* stmt) {
+    Statement* scan;
+    CLabel* label;
+    SwitchCase* swcase;
+    ExceptionAction* action;
+
+    for (scan = stmt; scan; scan = scan->next) {
+        scan->marked = FALSE;
+    }
+
+    for (scan = stmt; scan; scan = scan->next) {
+        switch (scan->type) {
+            case ST_GOTO:
+            case ST_IFGOTO:
+            case ST_IFNGOTO:
+            case ST_OVF:
+                if (scan->label->stmt) {
+                    scan->label->stmt->marked = TRUE;
+                }
+                break;
+            case ST_SWITCH:
+                ((SwitchInfo*)scan->label)->defaultlabel->stmt->marked = TRUE;
+                for (swcase = ((SwitchInfo*)scan->label)->cases; swcase; swcase = swcase->next) {
+                    swcase->label->stmt->marked = TRUE;
+                }
+                break;
+            case ST_ASM:
+                if ((label = InlineAsm_GetReferencedLabel2(scan))) {
+                    label->stmt->marked = TRUE;
+                }
+                break;
+            case ST_BEGINLOOP:
+                ((LoopInfo*)scan->expr)->stmt->marked = TRUE;
+                break;
+            case ST_ENDLOOP:
+                if (scan->next->type == ST_GOTO && scan->next->next->type == ST_LABEL) {
+                    scan->next->next->marked = TRUE;
+                }
+                break;
+            default:
+                for (action = scan->dobjstack; action; action = action->prev) {
+                    if (action->type == EAT_CATCHBLOCK) {
+                        action->data.catch_block.catch_label->stmt->marked = TRUE;
+                        action->data.catch_block.catch_label->stmt->flags |= StmtFlag_KeepLabel;
+                    } else if (action->type == EAT_SPECIFICATION) {
+                        action->data.specification.unexp_label->stmt->marked = TRUE;
+                        action->data.specification.unexp_label->stmt->flags |= StmtFlag_KeepLabel;
+                    }
+                }
+        }
+    }
+
+    for (scan = stmt; scan; scan = scan->next) {
+        if (scan->type == ST_LABEL && !scan->marked && !(scan->flags & StmtFlag_KeepLabel)) {
+            scan->type = ST_NOP;
+            stmtchanged = TRUE;
+        }
+    }
+}
+#else
 static void optimizeswitch(Statement* stmt) {
     SwitchInfo* info;
     SwitchCase* swcase;
@@ -209,11 +306,13 @@ static void optimizeswitch(Statement* stmt) {
         stmt->label = swcase ? swcase->label : info->defaultlabel;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
 #endif
 
+#if !MWCCPS2_B198
 #if MWCCPSP
 static void removeunusedlabels(Statement* stmt) {
     Statement* scan;
@@ -349,6 +448,7 @@ static void removeunusedlabels(Statement* stmt) {
     }
 }
 #endif
+#endif
 
 static void optimizebranches(Statement* stmt) {
     Statement* scan;
@@ -376,6 +476,31 @@ static void optimizebranches(Statement* stmt) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (35)
 #endif
+#if MWCCPS2_B198
+void SetVarUsage(Object* obj, Boolean noregister) {
+    VarInfo* vi;
+
+    CError_ASSERT(1910, obj->datatype != DALIAS);
+
+    if (obj->datatype != DLOCAL) {
+        return;
+    }
+
+    vi = (VarInfo*)obj->u.varptr;
+    vi->used = TRUE;
+    if (!copts.globaloptimizer) {
+        if (copts.optimizesize) {
+            vi->usage++;
+        } else {
+            vi->usage += curstmtvalue;
+        }
+    }
+
+    if (noregister) {
+        vi->noregister = TRUE;
+    }
+}
+#else
 void SetVarUsage(Object* obj, Boolean noregister) {
     VarInfo* vi;
 
@@ -403,6 +528,7 @@ void SetVarUsage(Object* obj, Boolean noregister) {
         vi->noregister = TRUE;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -412,6 +538,107 @@ void SetVarUsage(Object* obj, Boolean noregister) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (49)
 #endif
+#if MWCCPS2_B198
+static void checkexpression(ENode* expr) {
+    ENodeList* list;
+
+    while (1) {
+        switch (expr->type) {
+            case EOBJREF:
+                SetVarUsage(expr->data.objref, TRUE);
+                return;
+            case EINDIRECT:
+                if (ENODE_IS(expr->data.monadic, EOBJREF)) {
+                    SetVarUsage(expr->data.monadic->data.objref, FALSE);
+                    return;
+                }
+                expr = expr->data.monadic;
+                break;
+            case EFUNCCALL:
+            case EFUNCCALLP:
+                copt_isleaffunction = FALSE;
+                checkexpression(expr->data.funccall.funcref);
+                for (list = expr->data.funccall.args; list; list = list->next) {
+                    checkexpression(list->node);
+                }
+                return;
+            case ECOND:
+            case ECONDASS:
+                checkexpression(expr->data.cond.cond);
+                checkexpression(expr->data.cond.expr1);
+                checkexpression(expr->data.cond.expr2);
+                return;
+            case EMUL:
+            case EMULV:
+            case EDIV:
+            case EMODULO:
+            case EADDV:
+            case ESUBV:
+            case EADD:
+            case ESUB:
+            case ESHL:
+            case ESHR:
+            case ELESS:
+            case EGREATER:
+            case ELESSEQU:
+            case EGREATEREQU:
+            case EEQU:
+            case ENOTEQU:
+            case EAND:
+            case EXOR:
+            case EOR:
+            case ELAND:
+            case ELOR:
+            case EASS:
+            case EMULASS:
+            case EDIVASS:
+            case EMODASS:
+            case EADDASS:
+            case ESUBASS:
+            case ESHLASS:
+            case ESHRASS:
+            case EANDASS:
+            case EXORASS:
+            case EORASS:
+            case ECOMMA:
+            case EPMODULO:
+            case EROTL:
+            case EROTR:
+            case EBCLR:
+            case EBTST:
+            case EBSET:
+                checkexpression(expr->data.diadic.left);
+                expr = expr->data.diadic.right;
+                break;
+            case EPOSTINC:
+            case EPOSTDEC:
+            case EPREINC:
+            case EPREDEC:
+            case EMONMIN:
+            case EBINNOT:
+            case ELOGNOT:
+            case EFORCELOAD:
+            case ETYPCON:
+            case EBITFIELD:
+                expr = expr->data.monadic;
+                break;
+            case ENULLCHECK:
+                checkexpression(expr->data.nullcheck.nullcheckexpr);
+                expr = expr->data.nullcheck.condexpr;
+                break;
+            case EINTCONST:
+            case EFLOATCONST:
+            case EPRECOMP:
+            case ELABEL:
+                return;
+            case ESTRINGCONST:
+                return;
+            default:
+                CError_FATAL(1998);
+        }
+    }
+}
+#else
 static void checkexpression(ENode* expr) {
     ENodeList* list;
 
@@ -535,6 +762,7 @@ static void checkexpression(ENode* expr) {
         }
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -554,6 +782,60 @@ static void checklocalusage(Statement* stmt) {
     }
 }
 
+#if MWCCPS2_B198
+static void colorcode(Statement* stmt) {
+    CLabel* label;
+    SwitchCase* swcase;
+
+    while (stmt && !stmt->marked) {
+        stmt->marked = TRUE;
+        switch (stmt->type) {
+            case ST_GOTOEXPR:
+                return;
+            case ST_IFGOTO:
+            case ST_IFNGOTO:
+            case ST_OVF:
+                colorcode(stmt->label->stmt);
+                break;
+            case ST_GOTO:
+            case ST_EXIT:
+                stmt = stmt->label->stmt;
+                continue;
+            case ST_RETURN:
+                return;
+            case ST_SWITCH:
+                for (swcase = ((SwitchInfo*)stmt->label)->cases; swcase; swcase = swcase->next) {
+                    colorcode(swcase->label->stmt);
+                }
+                stmt = ((SwitchInfo*)stmt->label)->defaultlabel->stmt;
+                continue;
+            case ST_ASM:
+                if ((label = InlineAsm_GetReferencedLabel2(stmt))) {
+                    colorcode(label->stmt);
+                }
+                break;
+            case ST_ENDLOOP:
+                if (stmt->next && stmt->next->type == ST_GOTO) {
+                    stmt = stmt->next;
+                    stmt->marked = TRUE;
+                }
+                break;
+            case ST_NOP:
+            case ST_LABEL:
+            case ST_EXPRESSION:
+            case ST_ENTRY:
+            case ST_BEGINCATCH:
+            case ST_ENDCATCH:
+            case ST_ENDCATCHDTOR:
+            case ST_BEGINLOOP:
+                break;
+            default:
+                CError_FATAL(2096);
+        }
+        stmt = stmt->next;
+    }
+}
+#else
 #if MWCCPSP
 // 3.0.1: one referenced label per asm statement; a loop's start also
 // colours the statement its label points at; ST_GOTOEXPR is not expected.
@@ -674,6 +956,7 @@ static void colorcode(Statement* stmt) {
     }
 }
 #endif
+#endif
 
 static void removeunusedcode(Statement* stmt) {
     Statement* scan;
@@ -697,6 +980,28 @@ static void removeunusedcode(Statement* stmt) {
     }
 }
 
+#if MWCCPS2_B198
+static void COpt_Optimize(Object* obj, Statement* stmt) {
+    Statement* scan;
+    Statement** ptr;
+
+    do {
+        stmtchanged = FALSE;
+        optimizebranches(stmt->next);
+        removeunusedcode(stmt->next);
+    } while (stmtchanged);
+
+    ptr = &stmt->next;
+    while (*ptr) {
+        scan = *ptr;
+        if (scan->type == ST_NOP) {
+            *ptr = scan->next;
+        } else {
+            ptr = &scan->next;
+        }
+    }
+}
+#else
 static void COpt_ReturnCheck(Object* obj, Statement* stmt) {
     Statement* scan;
 
@@ -717,7 +1022,15 @@ static void COpt_ReturnCheck(Object* obj, Statement* stmt) {
         }
     }
 }
+#endif
 
+#if MWCCPS2_B198
+void COpt_SimpleOptimizer(Object* obj, Statement* stmt) {
+    static_for_inlines = TRUE;
+    cleanreturnlabel = NULL;
+    COpt_Optimize(obj, stmt);
+}
+#else
 static void COpt_Optimize(Object* obj, Statement* stmt) {
     Statement* scan;
     Statement** ptr;
@@ -742,7 +1055,22 @@ static void COpt_Optimize(Object* obj, Statement* stmt) {
         }
     }
 }
+#endif
 
+#if MWCCPS2_B198
+Statement* COpt_Optimizer(Object* obj, Statement* stmt) {
+    copt_isleaffunction = TRUE;
+    if (copts.globaloptimizer) {
+        stmt = IRO_Optimizer(obj, stmt);
+    }
+
+    static_for_inlines = FALSE;
+    COpt_Optimize(obj, stmt);
+
+    checklocalusage(stmt->next);
+    return stmt;
+}
+#else
 static void COpt_ELABELCallBack(ENode* expr) {
 #if MWCCPSP
     if (!(ENODE_IS(expr, ELABEL))) {
@@ -917,4 +1245,5 @@ Statement* COpt_Optimizer(Object* obj, Statement* stmt) {
 #endif
 #if MWCCPSP
 
+#endif
 #endif

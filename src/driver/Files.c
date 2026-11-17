@@ -1,3 +1,16 @@
+#if MWCCPS2_B198
+#include "driver/Generic.h"
+#include "driver/MacFileTypes.h"
+#include "driver/MacSpecs.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/StringUtils.h"
+#include <stdio.h>
+#include <string.h>
+#include "driver/Files.h"
+#include "driver/Resources.h"
+
+#else
 #include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MacFileTypes.h"
@@ -9,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#endif
 typedef struct MacFileInfo {
     UInt32 ioFlCrDat;
     UInt32 ioFlMdDat;
@@ -155,6 +169,7 @@ OSErr __stdcall HOpen(
     return FSpOpenDF(&fss, permission, refNum);
 }
 
+#if !MWCCPS2_B198
 OSErr __stdcall HOpenDF(
     SInt16 vRefNum, SInt32 dirID, ConstStringPtr fileName, SInt8 permission, SInt16* refNum
 ) {
@@ -179,6 +194,7 @@ OSErr __stdcall HDelete(SInt16 vRefNum, SInt32 dirID, ConstStringPtr fileName) {
     return FSpDelete(&fss);
 }
 
+#endif
 OSErr __stdcall HGetFInfo(SInt16 vRefNum, SInt32 dirID, ConstStringPtr fileName, FInfo* fndrInfo) {
     FSSpec fss;
     OSErr __err;
@@ -301,6 +317,7 @@ OSErr __stdcall FSpSetFInfo(const FSSpec* fss, const FInfo* fndrInfo) {
     return err;
 }
 
+#if !MWCCPS2_B198
 OSErr __stdcall HGetVol(StringPtr volName, SInt16* vRefNum, SInt32* dirID) {
     OSSpec spec;
     int err;
@@ -331,6 +348,7 @@ OSErr __stdcall HGetVol(StringPtr volName, SInt16* vRefNum, SInt32* dirID) {
     return 0;
 }
 
+#endif
 OSErr __stdcall FSRead(SInt16 fRefNum, SInt32* Size, void* Buffer) {
     if (fRefNum == 0) {
         return rfNumErr;
@@ -391,6 +409,7 @@ OSErr __stdcall SetEOF(SInt16 fRefNum, SInt32 newEOF) {
     return OS_OSErrorToMacError(OS_SetSize(OS_MacToRef(fRefNum), newEOF));
 }
 
+#if !MWCCPS2_B198
 OSErr __stdcall GetFPos(SInt16 fRefNum, SInt32* pos) {
     if (fRefNum == 0) {
         return rfNumErr;
@@ -399,6 +418,7 @@ OSErr __stdcall GetFPos(SInt16 fRefNum, SInt32* pos) {
     return OS_OSErrorToMacError(OS_Tell(OS_MacToRef(fRefNum), pos));
 }
 
+#endif
 static OSSeekMode MacSeek[4] = {OSSeekAbs, OSSeekAbs, OSSeekEnd, OSSeekRel};
 
 OSErr __stdcall SetFPos(SInt16 fRefNum, SInt16 posMode, SInt32 posOffset) {
@@ -516,6 +536,105 @@ OSErr __stdcall PBHSetFInfoSync(HParmBlkPtr paramBlock) {
     return err;
 }
 
+#if MWCCPS2_B198
+OSErr __stdcall FSMakeFSSpec(SInt16 vRefNum, SInt32 dirID, ConstStringPtr pathName, FSSpec* fss) {
+    OSSpec spec;
+    OSSpec* specp;
+    int err;
+    char path[260];
+    FSSpec dirfss;
+    int idx;
+    char* pptr;
+    char vol[64];
+    char* nmptr;
+    int len;
+
+    fss->vRefNum = 0;
+    fss->parID = 0;
+
+    if (!vRefNum && !dirID) {
+        err = OS_GetCWD(&spec.path);
+        if (err) {
+            fss->name[0] = 0;
+            return OS_OSErrorToMacError(err);
+        }
+        OS_PathSpecToString(&spec.path, path, sizeof(path));
+    } else {
+        OS_ASSERT(852, vRefNum!=0);
+        dirfss.vRefNum = vRefNum;
+        specp = &spec;
+        dirfss.parID = dirID == 0 ? 2 : dirID;
+        dirfss.name[0] = 0;
+        err = OS_FSSpec_To_OSSpec(&dirfss, specp);
+        if (err) {
+            fss->name[0] = 0;
+            return OS_OSErrorToMacError(err);
+        }
+        OS_PathSpecToString(&spec.path, path, sizeof(path));
+    }
+
+    if (pstrchr(pathName, '\\')) {
+        idx = 1;
+        if (pathName[1] != '\\') {
+            while (idx <= pathName[0]) {
+                if (pathName[idx] == '\\') {
+                    break;
+                }
+                vol[idx - 1] = pathName[idx];
+                idx++;
+
+                if (idx >= 64) {
+                    fss->name[0] = 0;
+                    return nsvErr;
+                }
+            }
+            vol[idx - 1] = 0;
+            idx++;
+            if (!OS_MakePathSpec(vol, 0, &spec.path)) {
+                OS_PathSpecToString(&spec.path, path, sizeof(path));
+            } else {
+                c2pstrcpy(fss->name, vol);
+                return nsvErr;
+            }
+        }
+
+        pptr = path + strlen(path);
+        while (idx <= pathName[0]) {
+            if (pathName[idx] == '\\') {
+                if (idx < pathName[0] && pathName[idx + 1] == '\\') {
+                    do {
+                        pptr += sprintf(pptr, "..\\");
+                        idx++;
+                    } while (idx < pathName[0] && pathName[idx + 1] == '\\');
+                } else {
+                    *(pptr++) = OS_PATHSEP;
+                }
+            } else {
+                *(pptr++) = pathName[idx];
+            }
+            ++idx;
+        }
+        *pptr = 0;
+    } else {
+        p2cstrcpy(path + strlen(path), pathName);
+    }
+
+    err = OS_MakeSpec(path, &spec, 0);
+    if (!err) {
+        OS_OSSpec_To_FSSpec(&spec, fss);
+        return OS_OSErrorToMacError(OS_Status(&spec));
+    } else {
+        nmptr = OS_GetFileNamePtr(path);
+        len = strlen(nmptr);
+        if ((size_t)len >= sizeof(fss->name)) {
+            len = 63;
+        }
+        fss->name[0] = len;
+        memcpy(&fss->name[1], nmptr, len);
+        return OS_OSErrorToMacError(err);
+    }
+}
+#else
 #if MWCCPS2
 // b210 takes DOS separators in the Pascal path, and its assert is 12 lines on
 #define FSSPEC_SEP '\\'
@@ -648,4 +767,5 @@ OSErr __stdcall FSMakeFSSpec(SInt16 vRefNum, SInt32 dirID, ConstStringPtr pathNa
 #if MWCCPSP
 #undef FSSPEC_SEP
 #undef FSSPEC_LINE
+#endif
 #endif

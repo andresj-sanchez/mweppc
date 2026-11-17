@@ -1,0 +1,27 @@
+# alloc.c: from the MSL's MSL_C/MSL_Common/Src/alloc.c, CodeWarrior 9.2
++ #define _MSL_C99 0
++ #define _MSL_CDECL
++ #define _MSL_ALLOCATE __allocate
++ #define __ALTIVEC__ 0
++ #define __MIPS__ 0
++ #define UINT_MAX (~0U)
++ #define ULONG_MAX (~0UL)
+= 532-548
++ #include "msl/alloc.h"
++ #include "msl/critical_regions.h"
+= 549-549
+= 555-559
++ #define assert(x) ((void)0)
+= 561-836
++ #pragma avoid_ebp on
+= 837-850
++ #pragma avoid_ebp off
+= 851-1093
++ #pragma avoid_ebp on
+= 1094-1118
++ #pragma avoid_ebp off
+= 1119-1741
+= 1751-1765
+= 1794-2154
+= 2156-2178
+= 2180-2180

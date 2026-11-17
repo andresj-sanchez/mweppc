@@ -1,3 +1,15 @@
+#if MWCCPS2_B198
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/CLFiles.h"
+#include "driver/cmdline.h"
+#include "driver/MemUtils.h"
+#include <stddef.h>
+#include <string.h>
+#include "driver/CLLoadAndCache.h"
+
+#else
 #include "driver/CLFiles.h"
 #include "driver/CLLoadAndCache.h"
 #if MWCCPSP
@@ -11,6 +23,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#endif
 #if MWCCPS2_B52
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT (4)
@@ -29,13 +42,34 @@ File* File_New(void) {
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT 0
 #endif
+#if !MWCCPS2_B198
 #if MWCCPSP
 
 #endif
 #if MWCCPSP
 #define DisposeHandle OS_FreeHandle // 3.0.1: File and VFile data are OS handles
 #endif
+#endif
 
+#if MWCCPS2_B198
+void File_Free(File* file) {
+    if (file) {
+        if (file->textdata) {
+            OS_FreeHandle(file->textdata);
+            file->textdata = NULL;
+        }
+        if (file->objectdata) {
+            OS_FreeHandle(file->objectdata);
+            file->objectdata = NULL;
+        }
+        if (file->browsedata) {
+            OS_FreeHandle(file->browsedata);
+            file->browsedata = NULL;
+        }
+        xfree(file);
+    }
+}
+#else
 void File_Free(File* file) {
     if (file) {
         if (file->textdata) {
@@ -53,11 +87,18 @@ void File_Free(File* file) {
         xfree(file);
     }
 }
+#endif
 
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (5)
 #endif
+#if MWCCPS2_B198
+Boolean Files_Initialize(Files* this) {
+    OS_ASSERT(47, this != NULL);
+    return TRUE;
+}
+#else
 Boolean Files_Initialize(Files* this) {
 #if MWCCPSP
     OS_ASSERT(52, this != NULL);
@@ -66,6 +107,7 @@ Boolean Files_Initialize(Files* this) {
 #endif
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -75,6 +117,21 @@ Boolean Files_Initialize(Files* this) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (5)
 #endif
+#if MWCCPS2_B198
+Boolean Files_Terminate(Files* this) {
+    File* file;
+    File* next;
+
+    OS_ASSERT(56, this != NULL);
+
+    for (file = this->fileList; file; file = next) {
+        next = file->next;
+        File_Free(file);
+    }
+
+    return TRUE;
+}
+#else
 Boolean Files_Terminate(Files* this) {
     File* file;
     File* next;
@@ -92,19 +149,59 @@ Boolean Files_Terminate(Files* this) {
 
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
 #endif
 
+#if MWCCPS2_B198
+Boolean Files_InsertFile(Files* this, File* file, SInt32 position) {
+    File** scan;
+
+    OS_ASSERT(80, this != NULL);
+    OS_ASSERT(81, file != NULL);
+
+    if (position < 0) {
+        position = 0;
+    } else if (position > this->fileCount) {
+        position = this->fileCount;
+    }
+
+    scan = &this->fileList;
+    while (position-- > 0) {
+        scan = &(*scan)->next;
+    }
+
+    file->filenum = this->fileCount++;
+    file->next = *scan;
+    *scan = file;
+    return TRUE;
+}
+#else
 Boolean Files_AddFile(Files* this, File* file) {
     return Files_InsertFile(this, file, this->fileCount);
 }
+#endif
 
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (5)
 #endif
+#if MWCCPS2_B198
+File* Files_GetFile(Files* this, SInt32 filenum) {
+    File* file;
+
+    OS_ASSERT(104, this != NULL);
+    OS_ASSERT(105, filenum >= 0);
+
+    file = this->fileList;
+    while (file && file->filenum != filenum) {
+        file = file->next;
+    }
+    return file;
+}
+#else
 Boolean Files_InsertFile(Files* this, File* file, SInt32 position) {
     File** scan;
 
@@ -132,6 +229,7 @@ Boolean Files_InsertFile(Files* this, File* file, SInt32 position) {
     *scan = file;
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -141,6 +239,13 @@ Boolean Files_InsertFile(Files* this, File* file, SInt32 position) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (5)
 #endif
+#if MWCCPS2_B198
+int Files_Count(Files* this) {
+    OS_ASSERT(127, this != NULL);
+
+    return this->fileCount;
+}
+#else
 File* Files_GetFile(Files* this, SInt32 filenum) {
     File* file;
 
@@ -182,12 +287,27 @@ int Files_Count(Files* this) {
 
     return this->fileCount;
 }
+#endif
 
 Boolean VFiles_Initialize(VFile** list) {
     *list = NULL;
     return TRUE;
 }
 
+#if MWCCPS2_B198
+void VFiles_Terminate(VFile** list) {
+    VFile* next;
+
+    while (*list) {
+        next = (*list)->next;
+        DisposeHandle((*list)->data.addr);
+        xfree(*list);
+        list = &next;
+    }
+
+    *list = NULL;
+}
+#else
 void VFiles_Terminate(VFile** list) {
     VFile* next;
 
@@ -204,7 +324,40 @@ void VFiles_Terminate(VFile** list) {
 
     *list = NULL;
 }
+#endif
 
+#if MWCCPS2_B198
+VFile* VFile_New(const char* name, OSHandle* data) {
+    VFile* vf;
+    void* ptr;
+    UInt32 size;
+
+    vf = xmalloc(NULL, sizeof(VFile));
+    if (!vf) {
+        return NULL;
+    }
+
+    strncpy(vf->displayName, name, sizeof(vf->displayName));
+    vf->displayName[sizeof(vf->displayName) - 1] = 0;
+
+    if (OS_NewHandle(0, &vf->data)) {
+        xfree(vf);
+        return NULL;
+    }
+    ptr = OS_LockHandle(data);
+    OS_GetHandleSize(data, &size);
+    if (OS_AppendHandle(&vf->data, ptr, size)) {
+        OS_UnlockHandle(data);
+        xfree(vf);
+        return NULL;
+    }
+    OS_UnlockHandle(data);
+
+    FixTextHandle(&vf->data);
+    vf->next = NULL;
+    return vf;
+}
+#else
 #if MWCCPSP
 VFile* VFile_New(const char* name, OSHandle* data) {
     VFile* vf;
@@ -259,6 +412,7 @@ VFile* VFile_New(const char* name, Handle data) {
     vf->next = NULL;
     return vf;
 }
+#endif
 #endif
 
 Boolean VFiles_Add(VFile** list, VFile* entry) {

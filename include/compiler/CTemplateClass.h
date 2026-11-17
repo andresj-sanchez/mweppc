@@ -3,6 +3,9 @@
 
 #include "compiler/common.h"
 
+#if MWCCPS2_B198
+extern Boolean CTempl_InstantiateTemplateClass(TypeClass* tclass);
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +47,7 @@ extern Boolean CTempl_InstantiateTemplateClass(TypeClass* tclass);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

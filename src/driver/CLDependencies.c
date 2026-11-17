@@ -1,3 +1,24 @@
+#if MWCCPS2_B198
+#include "driver/CLDependencies.h"
+#include "driver/CLAccessPaths.h"
+#include "driver/CLFiles.h"
+#include "driver/CLTarg.h"
+#include "driver/CLMain.h"
+#include "driver/CLIO.h"
+#include "driver/pref_structs.h"
+#include "driver/MacSpecs.h"
+#include "driver/Generic.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include "driver/CLErrors.h"
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "compiler/CPrep.h"
+#include "driver/CLPluginAPI.h"
+
+#else
 #include "driver/CLDependencies.h"
 #include "compiler/CPrep.h"
 #include "driver/CLAccessPaths.h"
@@ -16,17 +37,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 static OSSpec* currentsrcfss;
 static Path* specialAccessPath;
 
 static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepath, OSSpec* spec);
 Path* Deps_GetSpecialAccessPath(void);
+#if MWCCPS2_B198
+static void SetSpecialAccessPathFromIncludeStackTOS(int pluginapi);
+#else
 #if MWCCPSP
 static void SetSpecialAccessPathFromIncludeStackTOS(SInt32 specFormat);
 // 0x4246A0: a compiler file spec as an OSSpec (by the plugin's spec format)
 extern void func_004246A0(SInt32 specFormat, const void* cwspec, OSSpec* spec);
 #else
 static void SetSpecialAccessPathFromIncludeStackTOS(void);
+#endif
 #endif
 
 Boolean Incls_Initialize(Incls* incls, Target* targ) {
@@ -122,6 +148,22 @@ static Boolean _FindFileInPath(Path* path, const char* filename, Path** thepath,
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-9)
 #endif
+#if MWCCPS2_B198
+static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepath, OSSpec* spec) {
+    UInt16 idx;
+    Path* path;
+
+    for (idx = 0; idx < Paths_Count(paths); idx++) {
+        path = Paths_GetPath(paths, idx);
+        OS_ASSERT(175, path);
+        if (_FindFileInPath(path, filename, thepath, spec)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+#else
 static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepath, OSSpec* spec) {
     UInt16 idx;
     Path* path;
@@ -140,6 +182,7 @@ static Boolean FindFileInPaths(Paths* paths, const char* filename, Path** thepat
 
     return FALSE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -194,6 +237,75 @@ static void AddFileToIncls(
     *index = incls->numincls++;
 }
 
+#if MWCCPS2_B198
+Boolean Incls_FindFileInPaths(
+    int pluginapi, Incls* incls, char* filename, Boolean fullsearch, OSSpec* spec, SInt32* inclidx
+) {
+    Boolean found;
+    InclFile* incl;
+    Boolean userpath;
+    Boolean foundglobal;
+    Path* globalpath;
+    Path* accesspath;
+    Path* specialpath;
+
+    found = FALSE;
+    if (optsCompiler.includeSearch == IncludeSearch_Include && fullsearch) {
+        SetSpecialAccessPathFromIncludeStackTOS(pluginapi);
+    }
+    *inclidx = -1;
+
+    foundglobal = QuickFindFileInIncls(incls, fullsearch, filename, spec, inclidx, &incl);
+    if (foundglobal) {
+        if (incl->specialpath == specialAccessPath && incl->syspath && !fullsearch) {
+            found = TRUE;
+        } else if (!incl->accesspath) {
+            foundglobal = FALSE;
+        }
+    }
+
+    if (!found) {
+        globalpath = NULL;
+        accesspath = NULL;
+        userpath = fullsearch;
+        if (OS_IsFullPath(filename)) {
+            found = OS_MakeFileSpec(filename, spec) == 0 && OS_Status(spec) == 0;
+            accesspath = globalpath = specialpath = NULL;
+        } else {
+            globalpath = specialpath = Deps_GetSpecialAccessPath();
+            if (specialpath) {
+                found = _FindFileInPath(globalpath, filename, &globalpath, spec);
+                accesspath = NULL;
+            }
+            if (!found && foundglobal && incl->syspath && !fullsearch) {
+                globalpath = incl->globalpath;
+                accesspath = incl->accesspath;
+                specialpath = NULL;
+                MakeInclFileSpec(incls, *inclidx, spec);
+                found = TRUE;
+            }
+            if (!found && fullsearch) {
+                userpath = TRUE;
+                globalpath = NULL;
+                found = FindFileInPaths(&incls->targ->userPaths, filename, &accesspath, spec);
+            }
+            if (!found) {
+                userpath = FALSE;
+                globalpath = NULL;
+                found = FindFileInPaths(&incls->targ->sysPaths, filename, &accesspath, spec);
+            }
+        }
+
+        if (found && *inclidx < 0) {
+            AddFileToIncls(
+                incls, filename, !userpath, accesspath, globalpath, specialpath, inclidx
+            );
+        }
+    }
+
+    return found;
+}
+#else
 #if MWCCPSP
 Boolean Incls_FindFileInPaths(
     SInt32 specFormat,
@@ -287,6 +399,7 @@ Boolean Incls_FindFileInPaths(
 
     return found;
 }
+#endif
 
 Boolean Deps_Initialize(Deps* deps, Incls* incls) {
     deps->numDeps = 0;
@@ -296,6 +409,56 @@ Boolean Deps_Initialize(Deps* deps, Incls* incls) {
     return TRUE;
 }
 
+#if MWCCPS2_B198
+int Deps_ChangeSpecialAccessPath(OSSpec* srcfss, Boolean initialize) {
+    OSPathSpec pathspec;
+    OSPathSpec* pathspecptr;
+
+    if (initialize && srcfss) {
+        currentsrcfss = srcfss;
+    }
+
+    switch (optsCompiler.includeSearch) {
+        case IncludeSearch_Explicit:
+            specialAccessPath = NULL;
+            return TRUE;
+        case IncludeSearch_Proj:
+            if (!initialize) {
+                return TRUE;
+            }
+            OS_GetCWD(&pathspec);
+            pathspecptr = &pathspec;
+            break;
+        case IncludeSearch_Source:
+            if (!initialize) {
+                return TRUE;
+            }
+        case IncludeSearch_Include:
+            if (srcfss) {
+                pathspecptr = &srcfss->path;
+            } else if (currentsrcfss) {
+                pathspecptr = &currentsrcfss->path;
+            } else {
+                OS_GetCWD(&pathspec);
+                pathspecptr = &pathspec;
+            }
+            break;
+        default:
+            CLInternalError(
+                "CLDependencies.c",
+                482,
+                "Unhandled include file search type (%d)\n",
+                optsCompiler.includeSearch
+            );
+    }
+
+    specialAccessPath = FindOrAddGlobalInclPath(gTarg->incls.allPaths, pathspecptr);
+    if (optsCmdLine.verbose > 2) {
+        CLReport(CLStr105, OS_PathSpecToString(pathspecptr, STSbuf, sizeof(STSbuf)));
+    }
+    return TRUE;
+}
+#else
 void Deps_Terminate(Deps* deps) {
     if (deps->list) {
         xfree(deps->list);
@@ -353,11 +516,46 @@ int Deps_ChangeSpecialAccessPath(OSSpec* srcfss, Boolean initialize) {
     }
     return TRUE;
 }
+#endif
 
 Path* Deps_GetSpecialAccessPath(void) {
     return specialAccessPath;
 }
 
+#if MWCCPS2_B198
+static void SetSpecialAccessPathFromIncludeStackTOS(int pluginapi) {
+    OSSpec spec;
+    SInt16 index;
+    char* fnameptr;
+    VFile* vf;
+    struct CPrepFileInfo* file;
+
+    if (optsCompiler.includeSearch == IncludeSearch_Include && CLT_filesp && CLT_filestack) {
+        if (*CLT_filesp >= 0) {
+            index = *CLT_filesp;
+            while (index) {
+                if (!(file = CLT_filestack[index])) {
+                    break;
+                }
+                index--;
+                CL_CWFileSpecToOSSpec(pluginapi, &file->textfile, &spec);
+                fnameptr =
+                    OS_GetFileNamePtr(OS_NameSpecToString(&spec.name, STSbuf, sizeof(STSbuf)));
+                vf = VFiles_Find(gTarg->virtualFiles, fnameptr);
+                if (!vf) {
+                    if (!specialAccessPath ||
+                        !OS_EqualPathSpec(&spec.path, specialAccessPath->spec)) {
+                        Deps_ChangeSpecialAccessPath(&spec, FALSE);
+                        return;
+                    }
+                    return;
+                }
+            }
+        }
+        Deps_ChangeSpecialAccessPath(NULL, FALSE);
+    }
+}
+#else
 #if MWCCPSP
 // 0x42E070
 static void SetSpecialAccessPathFromIncludeStackTOS(SInt32 specFormat) {
@@ -423,6 +621,7 @@ static void SetSpecialAccessPathFromIncludeStackTOS(void) {
         Deps_ChangeSpecialAccessPath(NULL, FALSE);
     }
 }
+#endif
 #endif
 
 static Boolean FindDepFile(Deps* deps, SInt32 incl) {
@@ -514,6 +713,60 @@ static char* DepsName(char* buf, const char* name) {
 #define DEPS_NAME(buf, name) DepsName(buf, name)
 
 #endif
+#if MWCCPS2_B198
+void Deps_ListDependencies(Incls* incls, File* file, OSHandle* h) {
+    Boolean spaces;
+    int idx;
+    char linebuf[520];
+    char outfilename[260];
+    int totdeps;
+    char path[260];
+    char escbuf[516];
+    OSSpec spec;
+
+#define LIST_DEP(format, name, ...) \
+    do { \
+        sprintf( \
+            linebuf, \
+            format, \
+            spaces ? "" : "", \
+            EscapeName(spaces, escbuf, (name)), \
+            spaces ? "" : "", \
+            __VA_ARGS__ \
+        ); \
+        if (OS_AppendHandle(h, linebuf, strlen(linebuf))) { \
+            goto memFail; \
+        } \
+    } while (0)
+
+    if (!OS_NewHandle(0, h)) {
+        totdeps = file->deps.numDeps;
+        OS_SpecToStringRelative(&file->outfss, NULL, outfilename, sizeof(outfilename));
+        if (outfilename[0]) {
+            spaces = strchr(outfilename, ' ') != NULL;
+            LIST_DEP("%s%s%s%s ", outfilename, ":");
+            spaces = strchr(file->srcfilename, ' ') != NULL;
+            LIST_DEP("%s%s%s %s\n", file->srcfilename, totdeps ? "\\" : "");
+        } else {
+            spaces = strchr(file->srcfilename, ' ') != NULL;
+            LIST_DEP("%s%s%s%s %s\n", file->srcfilename, ":", totdeps ? "\\" : "");
+        }
+
+        for (idx = 0; idx < file->deps.numDeps; idx++) {
+            totdeps--;
+            MakeInclFileSpec(incls, file->deps.list[idx], &spec);
+            OS_SpecToString(&spec, path, sizeof(path));
+            spaces = strchr(path, ' ') != NULL;
+            LIST_DEP("\t%s%s%s %s\n", path, totdeps ? "\\" : "");
+        }
+        return;
+    }
+
+memFail:
+    fprintf(stderr, "\n*** Out of memory\n");
+    exit(-23);
+}
+#else
 #if MWCCPSP
 #if MWCCPSP_NATIVE
 // the native tool writes POSIX names (the specs keep Windows separators)
@@ -617,3 +870,4 @@ memFail:
     fprintf(stderr, "\n*** Out of memory\n");
     exit(-23);
 }
+#endif

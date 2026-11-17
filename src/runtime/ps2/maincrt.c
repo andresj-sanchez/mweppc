@@ -1,0 +1,7 @@
+#include "runtime/maincrt.h"
+#include "driver/CLStaticMain.h"
+#include "msl/crtl.h"
+#include "msl/setupargs.h"
+#include "msl/abort_exit.h"
+#include "msl/runinit.h"
+#include "msl/sysenv_api.h"

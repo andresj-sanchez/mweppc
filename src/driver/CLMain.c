@@ -1,3 +1,36 @@
+#if MWCCPS2_B198
+#include "driver/pref_structs.h"
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
+#include "driver/CLPlugins.h"
+#include "driver/CLMain.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/CWPlugins.h"
+#include "driver/CLErrors.h"
+#include "driver/CLFileOps.h"
+#include "driver/ClientGlue.h"
+#include "driver/CLIO.h"
+#include "driver/CLLicenses.h"
+
+#include "driver/CLPluginRequests.h"
+#include "driver/CLPrefs.h"
+#include "driver/CLProj.h"
+#include "driver/CLTarg.h"
+#include "driver/CLToolExec.h"
+#include "driver/cmdline.h"
+#include "driver/Generic.h"
+#include "driver/LowMem.h"
+#include "driver/MemUtils.h"
+#include "driver/CLFiles.h"
+#include "driver/Resources.h"
+#include "driver/StringExtras.h"
+#include <setjmp.h>
+#include <string.h>
+
+static int (*PrefPanelsChangedCallback)(const char*);
+#else
 #include "driver/CLMain.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
@@ -26,6 +59,7 @@
 #include "compiler/win32.h"
 #endif
 
+#endif
 jmp_buf exit_program;
 int numPlugins;
 CLPluginInfo* pluginInfo;
@@ -43,20 +77,36 @@ CLState clState;
 char cmdline_build_date[32];
 char cmdline_build_time[32];
 Project* gProj = &mainProj;
+#if !MWCCPS2_B198
 #if MWCCPSP
 
 #endif
 #if MWCCPSP
 extern CW_CALLBACK CWSetPluginAPI(CWPluginContext context, SInt32 api);
 #endif
+#endif
 
+#if MWCCPS2_B198
+static CWPLUGIN_ENTRY(CLT_dummymain)(CWPluginContext context) {
+    return cwNoErr;
+}
+#else
 static CWPLUGIN_ENTRY(CLT_dummymain)(CWPluginContext context) {
 #if MWCCPSP
     CWSetPluginAPI(context, 2); // 3.0.1: the plugin API with path-based file specs
 #endif
     return cwNoErr;
 }
+#endif
 
+#if MWCCPS2_B198
+static CWPLUGIN_ENTRY(CLT_GetDropInFlags)(const DropInFlags** flags, SInt32* flagsSize) {
+    static const DropInFlags sFlags = {kCurrentDropInFlagsVersion, CWDROPINDRIVERTYPE, 7, 0, 0, 12};
+    *flags = &sFlags;
+    *flagsSize = sizeof(sFlags);
+    return cwNoErr;
+}
+#else
 static CWPLUGIN_ENTRY(CLT_GetDropInFlags)(const DropInFlags** flags, SInt32* flagsSize) {
     // clang-format off
     static const DropInFlags sFlags = {
@@ -76,6 +126,7 @@ static CWPLUGIN_ENTRY(CLT_GetDropInFlags)(const DropInFlags** flags, SInt32* fla
     *flagsSize = sizeof(sFlags);
     return cwNoErr;
 }
+#endif
 
 static CWPLUGIN_ENTRY(CLT_GetDropInName)(const char** dropinName) {
     static const char* sDropInName = "Command-Line Driver";
@@ -172,8 +223,122 @@ static int RegisterStaticCmdLinePlugin(void) {
     return RegisterStaticPlugin(&clcb);
 }
 
+#if MWCCPS2_B198
+static const char* STR12000[] = {
+    "Could not get current working directory",
+    "Cannot find my executable '%s'",
+    "Could not initialize plugin '%s'",
+    "The %s '%s' requires functionality not present in the command-line driver.",
+    "The command-line parser does not support these panels:",
+    "\t%s\n",
+    "Compiling function: '%s'",
+    "Could not write file '%s'",
+    "Could not write file '%s' in directory '%s'",
+    "Write error on output (errno=%ld)",
+    "Current working directory is too long",
+    "Unknown filetype '%c%c%c%c', defaulting to '%s'",
+    "%s:\ttype %s",
+    "Storing output for '%s' in '%s'",
+    "Writing text file '%s'",
+    "Writing %sobject file '%s'",
+    "Writing browse data '%s'",
+    "Could not write %s '%s' (error %ld)",
+    "Deleting temporary file '%s'",
+    "Could not resolve alias for '%s' (error %ld)",
+    "%s:\t'%s'%s",
+    "File '%s' has browse fileID %d",
+    "Can't locate directory '%s'",
+    "  %8.2f seconds to %s %s%s%s",
+    "  %8d lines compiled",
+    "  %8d %s code\n  %8d %s init'd data\n  %8d %s uninit'd data",
+    "  %8d total %s code\n  %8d total %s init'd data\n  %8d total %s uninit'd data",
+    "File '%s' is not compilable source, target object data, or command file; ignoring",
+    "All specified files were ignored",
+    "Compiling: '%s'",
+    "Compiling: '%s' with '%s'",
+    "Precompiling: '%s'",
+    "Precompiling: '%s' with '%s'",
+    "Preprocessing: '%s'",
+    "Preprocessing: '%s' with '%s'",
+    "Finding dependencies: '%s'",
+    "Finding dependencies: '%s' with '%s'",
+    "Importing: '%s'",
+    "Importing: '%s' with '%s'",
+    "Linking project",
+    "Linking project with '%s'",
+    "Pre-linking project",
+    "Pre-linking project with '%s'",
+    "Post-linking project",
+    "Post-linking project with '%s'",
+    "Disassembling: '%s'",
+    "Disassembling: '%s' with '%s'",
+    "Syntax checking: '%s'",
+    "Syntax checking: '%s' with '%s'",
+    "Getting target info from '%s'",
+    "Initializing '%s'",
+    "Terminating '%s'",
+    "'%s' cannot preprocess, skipping '%s'",
+    "'%s' cannot precompile, skipping '%s'",
+    "'%s' cannot generate code, skipping '%s'",
+    "'%s' has no object code to disassemble",
+    "'%s' cannot disassemble, skipping '%s'",
+    "Neither '%s' nor '%s' can disassemble, skipping '%s'",
+    "No precompiled header name given, '%s' assumed",
+    "Precompile target '%s' given on command line; source-specified name '%s' ignored",
+    "Writing precompiled %s file '%s'",
+    "Reading precompiled %s file '%s'",
+    "Cannot %s memory for %s",
+    "Files/directories must have length <= %ld characters;\n'%s' not accepted",
+    "Guessed linker name '%s' from compiler name '%s'",
+    "Can't find %s '%s' in path",
+    "Calling %s '%s'",
+    "Can't execute %s '%s' (%s)",
+    "%s '%s' returned with exit code %d",
+    "Too many errors printed, aborting program",
+    "Too many errors printed, suppressing errors for current file",
+    "Too many warnings printed, suppressing warnings for current file",
+    "No %s mapping matches '%s' (unrecognized file contents or filename extension); %s",
+    "No plugin or target matches the file '%s', ignoring",
+    "File '%s' cannot be handled by this tool, ignoring",
+    "File '%s' does not match the active target",
+    "Adding%s:\t'%s'",
+    "Creating new overlay '%s' in group '%s'",
+    "Creating new overlay group '%s' at addr %08X:%08X",
+    "File '%s' cannot be added to overlay group; define an overlay in the group first",
+    "Cannot create virtual export file '%s' (from '-export name,...')",
+    "Too many %s defined; at most %d%s is allowed",
+    "Loading preference panel '%s'",
+    "%s:",
+    "\t%s%s",
+    "Already defined %s search path; '%s' added after other paths",
+    "License check failed: %s",
+    "The plugin '%s' (version '%s') cannot be used:\n%s",
+    "Plugin '%s' has already been registered",
+    "Preferences for '%s' have already been registered",
+    "Preferences for '%s' not found",
+    "Some preferences needed by the plugin '%s' have not been registered",
+    "Could not load file '%s'",
+    "Could not find change current working directory to '%s'",
+    "Out of memory",
+    "The tool did not produce any output while %s the file '%s'",
+    "The filename '%s' is invalid",
+    "The %slinker for this target was not found",
+    "%s\n%s (OS error %d)",
+    "%s\n%s (error %d)",
+    "Note:  '%s' did not generate any browse information \nfor '%s'; no browser output generated",
+    "Source and specified output for the file '%s' are identical; no output will be generated",
+    "More than one output filename specified for '%s'; ignoring '%s'",
+    "Pref panel data for '%s' is out-of-date or invalid",
+    "Changing primary user access path to '%s'",
+    "The linker does not expect duplicate files; ignoring repeated '%s'",
+    "",
+    NULL
+};
+
+#else
 #include "CLErrors.r"
 
+#endif
 static int RegisterCmdLineResources(void) {
     return RegisterResource("Command-line strings", 12000, STR12000);
 }
@@ -288,6 +453,60 @@ static Boolean warnedCompiler;
 static Boolean warnedPCmdLine;
 static int MainInitialized;
 
+#if MWCCPS2_B198
+int Main_Initialize(int argc, char** argv) {
+    char exename[260];
+
+    OS_InitProgram(&argc, &argv);
+    memset(&clState, 0, sizeof(CLState));
+    special_options[0].optname = secret;
+    secret[7] = 0;
+    secret[4] = 'b';
+    secret[1] = '-';
+    secret[5] = 'u';
+    secret[2] = 'd';
+    secret[0] = '-';
+    secret[3] = 'e';
+    secret[6] = 'g';
+
+    Main_PreParse(&argc, &argv);
+    clState.argc = argc;
+    clState.argv = argv;
+
+    strcpyn(exename, argv[0], strlen(argv[0]), 260);
+    exename[259] = 0;
+    if (strlen(exename) < 4 || ustrcmp(exename + strlen(exename) - 4, ".exe")) {
+        strcatn(exename, ".exe", 260);
+    }
+
+    IO_Initialize();
+    if (!RegisterCmdLineResources()) {
+        CLFatalError("Could not initialize resource strings");
+    }
+
+    if (!OS_IsFullPath(argv[0])) {
+        clState.programName = argv[0];
+    } else {
+        clState.programName = OS_GetFileNamePtr(argv[0]);
+    }
+
+    if (OS_FindProgram(exename, &clState.programSpec)) {
+        CLReportError(CLStr2, exename);
+    }
+
+    Plugins_Init();
+    if (!RegisterStaticCmdLinePlugin()) {
+        CLFatalError("Could not initialize built-in plugins");
+    }
+
+    Proj_Initialize(gProj);
+    SystemInitResources(&clState.programSpec);
+    License_Initialize();
+
+    MainInitialized = TRUE;
+    return 0;
+}
+#else
 #if MWCCPSP
 // 0x408090: the environment block as a NULL-terminated array of copies
 static char** Main_CopyEnvironment(void) {
@@ -388,6 +607,7 @@ int Main_Terminate(int exitcode) {
     }
     return exitcode;
 }
+#endif
 
 static int Main_ParseCommandLine(void) {
     Plugin* parser;
@@ -488,6 +708,7 @@ static int Main_SetupParamBlock(void) {
 
     return Result_Success;
 }
+#if !MWCCPS2_B198
 #if MWCCPSP
 
 #endif
@@ -507,7 +728,45 @@ static void Main_UpdateLinkerFlags(void) {
     }
 }
 #endif
+#endif
 
+#if MWCCPS2_B198
+static int Main_ResolveProject(void) {
+    SInt32 startTime;
+    SInt32 endTime;
+    int err;
+
+    if (optsCmdLine.state == OptsCmdLineState_Unset ||
+        optsCmdLine.state == OptsCmdLineState_NoAction) {
+        return Result_Success;
+    }
+
+    startTime = LMGetTicks();
+    err = CompileFilesInProject();
+    if (err) {
+        return err;
+    }
+
+    if (optsCmdLine.state == OptsCmdLineState_CompileAndLink) {
+        err = LinkProject();
+        if (err) {
+            return err;
+        }
+    }
+
+    if (!DeleteTemporaries()) {
+        return Result_Failed;
+    }
+
+    endTime = LMGetTicks();
+
+    if (optsCmdLine.timeWorking) {
+        CLReport(CLStr24, (endTime - startTime) / 60.0, "resolve", "", "project", "");
+    }
+
+    return Result_Success;
+}
+#else
 static int Main_ResolveProject(void) {
     SInt32 startTime;
     SInt32 endTime;
@@ -550,6 +809,7 @@ static int Main_ResolveProject(void) {
 
     return Result_Success;
 }
+#endif
 
 static int UpdatePCmdLineFromVersion(PCmdLine* given, PCmdLine* target) {
     SInt16 version = given->version;
@@ -662,6 +922,70 @@ static int UpdatePCmdLineLinkerFromVersion(PCmdLineLinker* given, PCmdLineLinker
     }
 }
 
+#if MWCCPS2_B198
+static int UpdatePrefPanels(const char* name) {
+    PrefPanel* panel;
+    OSHandle copy;
+    OSHandle* h;
+
+    if (!name || !ustrcmp(name, "CmdLine Panel")) {
+        if ((panel = Prefs_FindPanel("CmdLine Panel")) && (h = PrefPanel_GetHandle(panel, &copy))) {
+            if (name) {
+                if (!UpdatePCmdLineFromVersion((PCmdLine*)h->addr, &optsCmdLine)) {
+                    return FALSE;
+                }
+            }
+        } else {
+            CLReportError(CLStr91, "CmdLine Panel");
+            return FALSE;
+        }
+    }
+
+    if (!name || !ustrcmp(name, "CmdLine Environment")) {
+        if ((panel = Prefs_FindPanel("CmdLine Environment")) &&
+            (h = PrefPanel_GetHandle(panel, &copy))) {
+            if (name) {
+                if (!UpdatePCmdLineEnvirFromVersion((PCmdLineEnvir*)h->addr, &optsEnvir)) {
+                    return FALSE;
+                }
+            }
+        } else {
+            CLReportError(CLStr91, "CmdLine Environment");
+            return FALSE;
+        }
+    }
+
+    if (!name || !ustrcmp(name, "CmdLine Compiler Panel")) {
+        if ((panel = Prefs_FindPanel("CmdLine Compiler Panel")) &&
+            (h = PrefPanel_GetHandle(panel, &copy))) {
+            if (name) {
+                if (!UpdatePCmdLineCompilerFromVersion((PCmdLineCompiler*)h->addr, &optsCompiler)) {
+                    return FALSE;
+                }
+            }
+        } else {
+            CLReportError(CLStr91, "CmdLine Compiler Panel");
+            return FALSE;
+        }
+    }
+
+    if (!name || !ustrcmp(name, "CmdLine Linker Panel")) {
+        if ((panel = Prefs_FindPanel("CmdLine Linker Panel")) &&
+            (h = PrefPanel_GetHandle(panel, &copy))) {
+            if (name) {
+                if (!UpdatePCmdLineLinkerFromVersion((PCmdLineLinker*)h->addr, &optsLinker)) {
+                    return FALSE;
+                }
+            }
+        } else {
+            CLReportError(CLStr91, "CmdLine Linker Panel");
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+#else
 #if MWCCPSP
 // 0x408B50: the panel is copied into an OS handle; the first panel that
 // applies decides the result
@@ -798,6 +1122,7 @@ static int UpdatePrefPanels(const char* name) {
     return TRUE;
 }
 #endif
+#endif
 
 static int SetupCmdLinePrefPanels(void) {
     int ret;
@@ -811,6 +1136,7 @@ static int SetupCmdLinePrefPanels(void) {
 
     return ret;
 }
+#if !MWCCPS2_B198
 
 static int Main_SetupContext(void) {
     gTarg = Target_New("default", clState.cpu, clState.os, clState.language);
@@ -917,3 +1243,4 @@ int Main_Driver(void) {
 
     return result;
 }
+#endif

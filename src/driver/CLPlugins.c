@@ -1,3 +1,25 @@
+#if MWCCPS2_B198
+#include <alloca.h>
+#include "driver/CLPlugins.h"
+#include "compiler/win32.h"
+#include "driver/CLErrors.h"
+#include "driver/CLIO.h"
+#include "driver/CLMain.h"
+#include "driver/CLPluginRequests.h"
+#include "driver/CLPrefs.h"
+#include "driver/cmdline.h"
+#include "driver/CWPlugins.h"
+#include "driver/MacSpecs.h"
+#include "driver/MacFileTypes.h"
+#include "driver/MacSpecs.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/StringExtras.h"
+#include <stdio.h>
+#include <string.h>
+
+#else
 #include "driver/CLPlugins.h"
 #include "compiler/win32.h"
 #include "driver/CLErrors.h"
@@ -29,6 +51,7 @@
 extern void* alloca(unsigned int size);
 #endif
 
+#endif
 char* Plugin_GetVersionInfoASCII(Plugin* pl);
 
 #pragma pack(2)
@@ -36,6 +59,90 @@ static Boolean useToolVersion;
 static VersionInfo toolVersion;
 static ToolVersionInfo toolVersionInfo;
 
+#if MWCCPS2_B198
+static void GetToolVersionInfo(void) {
+    DWORD handle;
+    char path[260];
+    UINT length;
+    VS_FIXEDFILEINFO* fixed;
+    char* value;
+    char text[0x50];
+    DWORD size;
+    void* info;
+    char* copy;
+    char* source;
+    int i;
+
+    useToolVersion = FALSE;
+    OS_SpecToString(&clState.programSpec, path, sizeof(path));
+    size = GetFileVersionInfoSizeA(path, &handle);
+    if (size == 0) {
+        return;
+    }
+    info = alloca(size);
+    if (!GetFileVersionInfoA(path, handle, size, info)) {
+        return;
+    }
+    if (!VerQueryValueA(info, "\\", (LPVOID*)&fixed, &length)) {
+        return;
+    }
+    useToolVersion = TRUE;
+    toolVersion.major = fixed->dwProductVersionMS >> 16;
+    toolVersion.minor = fixed->dwProductVersionMS;
+    toolVersion.patch = fixed->dwProductVersionLS >> 16;
+    toolVersion.build = fixed->dwProductVersionLS;
+    if (VerQueryValueA(info, "\\StringFileInfo\\040904B0\\CompanyName", (LPVOID*)&value, &length)) {
+        toolVersionInfo.company = xstrdup(value);
+    } else {
+        toolVersionInfo.company = NULL;
+    }
+    if (VerQueryValueA(info, "\\StringFileInfo\\040904B0\\ProductName", (LPVOID*)&value, &length)) {
+        toolVersionInfo.product = xstrdup(value);
+    } else {
+        toolVersionInfo.product = NULL;
+    }
+    if (VerQueryValueA(
+            info, "\\StringFileInfo\\040904B0\\FileDescription", (LPVOID*)&value, &length
+        )) {
+        toolVersionInfo.tool = xstrdup(value);
+    } else {
+        toolVersionInfo.tool = NULL;
+    }
+    if (VerQueryValueA(
+            info, "\\StringFileInfo\\040904B0\\LegalCopyright", (LPVOID*)&value, &length
+        )) {
+        copy = toolVersionInfo.copyright = xmalloc(NULL, strlen(value) + 2);
+        for (i = 0; value[i]; i++) {
+            if (value[i] == (char)0xA9) {
+                *copy++ = '(';
+                *copy++ = 'c';
+                *copy++ = ')';
+            } else {
+                *copy++ = value[i];
+            }
+        }
+        *copy = 0;
+    } else {
+        toolVersionInfo.copyright = NULL;
+    }
+    if (VerQueryValueA(
+            info, "\\StringFileInfo\\040904B0\\ProductVersion", (LPVOID*)&value, &length
+        )) {
+        source = value;
+        while ((*source >= '0' && *source <= '9') || *source == '.' || *source == ' ') {
+            source++;
+        }
+        if (source <= value + 2 || *source == 0) {
+            snprintf(text, sizeof(text), "%s", Plugin_GetVersionInfoASCII(NULL));
+        } else {
+            snprintf(text, sizeof(text), "%s (%s)", Plugin_GetVersionInfoASCII(NULL), source);
+        }
+        toolVersionInfo.version = xstrdup(text);
+    } else {
+        toolVersionInfo.version = xstrdup("Version %%s");
+    }
+}
+#else
 static void GetToolVersionInfo(void) {
     DWORD handle;
     char path[260];
@@ -129,11 +236,24 @@ static void GetToolVersionInfo(void) {
         toolVersionInfo.version = xstrdup("Version %%s");
     }
 }
+#endif
 
 const ToolVersionInfo* Plugin_GetToolVersionInfo(void) {
     return useToolVersion ? &toolVersionInfo : NULL;
 }
 
+#if MWCCPS2_B198
+const char* Plugin_GetDropInName(Plugin* pl) {
+    const char* name;
+    OS_ASSERT(263, pl);
+
+    if (pl->cb->GetDropInName && pl->cb->GetDropInName(&name) == 0) {
+        return name;
+    } else {
+        return "(no name found)";
+    }
+}
+#else
 static const char* Plugin_GetDisplayName(Plugin* pl) {
     const char* name;
     OS_ASSERT(251, pl);
@@ -148,11 +268,25 @@ static const char* Plugin_GetDisplayName(Plugin* pl) {
         return "(no name found)";
     }
 }
+#endif
 
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const VersionInfo* Plugin_GetVersionInfo(Plugin* pl) {
+    static const VersionInfo fakeversion = {0, 0, 0, 0};
+    const VersionInfo* vi;
+    OS_ASSERT(276, pl);
+
+    if (pl->cb->GetVersionInfo && pl->cb->GetVersionInfo(&vi) == 0) {
+        return vi;
+    } else {
+        return &fakeversion;
+    }
+}
+#else
 const char* Plugin_GetDropInName(Plugin* pl) {
     const char* name;
 #if MWCCPSP
@@ -199,6 +333,7 @@ const VersionInfo* Plugin_GetVersionInfo(Plugin* pl) {
         return &fakeversion;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -236,6 +371,23 @@ char* Plugin_GetVersionInfoASCII(Plugin* pl) {
     }
 }
 
+#if MWCCPS2_B198
+DropInFlags* Plugin_GetDropInFlags(Plugin* pl) {
+    static DropInFlags retdf;
+    const DropInFlags* df;
+    SInt32 dfsize;
+
+    OS_ASSERT(329, pl);
+
+    if (pl->cb->GetDropInFlags && pl->cb->GetDropInFlags(&df, &dfsize) == 0) {
+        memset(&retdf, 0, sizeof(retdf));
+        memcpy(&retdf, df, dfsize);
+        return &retdf;
+    } else {
+        return NULL;
+    }
+}
+#else
 DropInFlags* Plugin_GetDropInFlags(Plugin* pl) {
     static DropInFlags retdf;
     const DropInFlags* df;
@@ -259,11 +411,26 @@ DropInFlags* Plugin_GetDropInFlags(Plugin* pl) {
         return NULL;
     }
 }
+#endif
 
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+OSType Plugin_GetPluginType(Plugin* pl) {
+    DropInFlags* df;
+
+    OS_ASSERT(345, pl);
+
+    df = Plugin_GetDropInFlags(pl);
+    if (df) {
+        return df->dropintype;
+    } else {
+        return 'NONE';
+    }
+}
+#else
 OSType Plugin_GetPluginType(Plugin* pl) {
     DropInFlags* df;
 
@@ -280,6 +447,7 @@ OSType Plugin_GetPluginType(Plugin* pl) {
         return 'NONE';
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -289,6 +457,21 @@ OSType Plugin_GetPluginType(Plugin* pl) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
+    static const CWTargetList faketl = {kCurrentCWTargetListVersion, 0, NULL, 0, NULL};
+    const CWTargetList* tl;
+
+    OS_ASSERT(358, pl);
+    OS_ASSERT(359, pl->cl_cb != NULL);
+
+    if (pl->cl_cb->GetTargetList && pl->cl_cb->GetTargetList(&tl) == 0) {
+        return tl;
+    } else {
+        return &faketl;
+    }
+}
+#else
 const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
     static const CWTargetList faketl = {kCurrentCWTargetListVersion, 0, NULL, 0, NULL};
     const CWTargetList* tl;
@@ -311,6 +494,7 @@ const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
         return &faketl;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -320,6 +504,20 @@ const CWTargetList* Plugin_CL_GetTargetList(Plugin* pl) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
+    static CWPanelList fakepnl = {kCurrentCWPanelListVersion, 0, NULL};
+    const CWPanelList* pnl;
+
+    OS_ASSERT(381, pl);
+
+    if (pl->cb->GetPanelList && pl->cb->GetPanelList(&pnl) == 0) {
+        return pnl;
+    } else {
+        return &fakepnl;
+    }
+}
+#else
 const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
     static CWPanelList fakepnl = {kCurrentCWPanelListVersion, 0, NULL};
     const CWPanelList* pnl;
@@ -340,6 +538,7 @@ const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
         return &fakepnl;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -349,6 +548,21 @@ const CWPanelList* Plugin_GetPanelList(Plugin* pl) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
+    static CWExtMapList fakeel = {kCurrentCWExtMapListVersion, 0, NULL};
+    const CWExtMapList* el;
+
+    OS_ASSERT(401, pl);
+    OS_ASSERT(402, pl->cl_cb != NULL);
+
+    if (pl->cl_cb->GetDefaultMappingList && pl->cl_cb->GetDefaultMappingList(&el) == 0) {
+        return el;
+    } else {
+        return &fakeel;
+    }
+}
+#else
 const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
     static CWExtMapList fakeel = {kCurrentCWExtMapListVersion, 0, NULL};
     const CWExtMapList* el;
@@ -371,6 +585,7 @@ const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
         return &fakeel;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -380,6 +595,19 @@ const CWExtMapList* Plugin_CL_GetExtMapList(Plugin* pl) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
+    const OSFileTypeMappingList* ftml;
+
+    OS_ASSERT(422, pl);
+
+    if (pl->cb->GetFileTypeMappings && pl->cb->GetFileTypeMappings(&ftml) == 0) {
+        return ftml;
+    } else {
+        return NULL;
+    }
+}
+#else
 const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
     const OSFileTypeMappingList* ftml;
 
@@ -399,6 +627,7 @@ const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
         return NULL;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -408,6 +637,23 @@ const OSFileTypeMappingList* Plugin_GetFileTypeMappingList(Plugin* pl) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+const CWObjectFlags* Plugin_CL_GetObjectFlags(Plugin* pl) {
+    static const CWObjectFlags fake = {2, 0, "", "", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const CWObjectFlags* cof;
+
+    OS_ASSERT(434, pl);
+    OS_ASSERT(435, pl->cl_cb != NULL);
+
+    if (pl->cl_cb->GetObjectFlags && pl->cl_cb->GetObjectFlags(&cof) == 0) {
+        return cof;
+    } else if (Plugin_GetDropInFlags(pl)->dropintype == CWDROPINCOMPILERTYPE) {
+        return NULL;
+    } else {
+        return &fake;
+    }
+}
+#else
 const CWObjectFlags* Plugin_CL_GetObjectFlags(Plugin* pl) {
     static const CWObjectFlags fake = {2, 0, "", "", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     const CWObjectFlags* cof;
@@ -432,6 +678,7 @@ const CWObjectFlags* Plugin_CL_GetObjectFlags(Plugin* pl) {
         return &fake;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -516,6 +763,20 @@ Boolean Plugin_MatchesType(Plugin* pl, OSType type, OSType lang, Boolean exact) 
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, OSType os) {
+    Boolean isSupported;
+
+    OS_ASSERT(566, pl->pr_cb != NULL);
+
+    if (pl->pr_cb->SupportsPlugin &&
+        pl->pr_cb->SupportsPlugin(pluginfo, cpu, os, &isSupported) == 0) {
+        return isSupported;
+    } else {
+        return FALSE;
+    }
+}
+#else
 Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, OSType os) {
     Boolean isSupported;
 
@@ -536,6 +797,7 @@ Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, 
         return FALSE;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -545,6 +807,20 @@ Boolean Plugin_Pr_MatchesPlugin(Plugin* pl, CLPluginInfo* pluginfo, OSType cpu, 
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (-1)
 #endif
+#if MWCCPS2_B198
+Boolean Plugin_Pr_MatchesPanels(Plugin* pl, int numPanels, const char** panelNames) {
+    Boolean isSupported;
+
+    OS_ASSERT(578, pl->pr_cb != NULL);
+
+    if (pl->pr_cb->SupportsPanels &&
+        pl->pr_cb->SupportsPanels(numPanels, panelNames, &isSupported) == 0) {
+        return isSupported;
+    } else {
+        return FALSE;
+    }
+}
+#else
 Boolean Plugin_Pr_MatchesPanels(Plugin* pl, int numPanels, const char** panelNames) {
     Boolean isSupported;
 
@@ -612,6 +888,7 @@ Boolean Plugin_CL_WriteObjectFile(
     return WriteBinaryHandleToFile(&outoss, creator, type, OS_PeekMacHandle(data));
 }
 #endif
+#endif
 
 Boolean Plugin_CL_GetCompilerMapping(Plugin* pl, OSType type, const char* ext, UInt32* flags) {
     const CWExtMapList* el;
@@ -638,6 +915,68 @@ Boolean Plugin_CL_GetCompilerMapping(Plugin* pl, OSType type, const char* ext, U
     }
 }
 
+#if MWCCPS2_B198
+static Boolean SupportedPlugin(Plugin* pl, const char** reason) {
+    static const SInt32 DropInFlagsSize[3] = {0, sizeof(DropInFlagsV1), sizeof(DropInFlags)};
+    const DropInFlags* df;
+    const CWObjectFlags* cof;
+    SInt32 dfsize;
+
+    *reason = "";
+    if (pl->cb->GetDropInFlags == NULL) {
+        *reason = "GetDropInFlags callback not found";
+        return FALSE;
+    }
+    if (pl->cb->GetDropInFlags(&df, &dfsize)) {
+        *reason = "GetDropInFlags callback failed";
+        return FALSE;
+    }
+    if (df->dropintype != CWDROPINCOMPILERTYPE &&
+        df->dropintype != CWDROPINLINKERTYPE &&
+        df->dropintype != CWDROPINPARSERTYPE &&
+        df->dropintype != CWDROPINDRIVERTYPE) {
+        *reason = "The plugin type is not supported by this driver";
+        return FALSE;
+    }
+    if (df->earliestCompatibleAPIVersion > 11) {
+        *reason = "The plugin's earliest compatible API version is too new for this driver";
+        return FALSE;
+    }
+    if (df->earliestCompatibleAPIVersion > 1 && df->newestAPIVersion < 11 && clState.pluginDebug) {
+        CLPrintErr(
+            "%s's newest compatible API version is probably too old for this driver\n",
+            Plugin_GetDropInName(pl)
+        );
+    }
+    if (dfsize != DropInFlagsSize[df->rsrcversion]) {
+        *reason = "The plugin's DropInFlags has an unexpected size";
+        return FALSE;
+    }
+    if (!(df->dropinflags & isExecutableTool) && !pl->cb->main) {
+        *reason = "The plugin has no entry point";
+        return FALSE;
+    }
+    if ((df->dropinflags & isExecutableTool) && pl->cb->main) {
+        *reason = "The executable tool stub has an entry point";
+        return FALSE;
+    }
+
+    if (pl->cl_cb) {
+        if (pl->cl_cb->GetObjectFlags == NULL && df->dropintype == CWDROPINCOMPILERTYPE) {
+            *reason = "GetObjectFlags callback not found in compiler plugin";
+            return FALSE;
+        }
+
+        cof = Plugin_CL_GetObjectFlags(pl);
+        if (cof->version < 2 || cof->flags & 0x7FFFFFFF) {
+            *reason = "The object flags data is out-of-date or invalid";
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+#else
 #if MWCCPSP
 // file scope so its name does not depend on what the headers declare
 static const SInt32 DropInFlagsSize[3] = {0, sizeof(DropInFlagsV1), sizeof(DropInFlags)};
@@ -733,7 +1072,28 @@ static Boolean SupportedPlugin(Plugin* pl, const char** reason) {
 
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+static Boolean VerifyPanels(Plugin* pl) {
+    const CWPanelList* pls;
+    Boolean failed;
+    int idx;
+
+    failed = FALSE;
+
+    if (pl->cb->GetPanelList && pl->cb->GetPanelList(&pls) == 0) {
+        for (idx = 0; idx < pls->count; idx++) {
+            if (Prefs_FindPanel(pls->names[idx]) == NULL) {
+                CLReportError(CLStr91, pls->names[idx]);
+                failed = TRUE;
+            }
+        }
+    }
+
+    return !failed;
+}
+#else
 static Boolean VerifyPanels(Plugin* pl) {
     const CWPanelList* pls;
     Boolean failed;
@@ -756,6 +1116,7 @@ static Boolean VerifyPanels(Plugin* pl) {
 
     return !failed;
 }
+#endif
 
 Plugin* Plugin_New(
     const BasePluginCallbacks* cb,
@@ -1082,6 +1443,30 @@ int Plugins_Add(Plugin* pl) {
     return TRUE;
 }
 
+#if MWCCPS2_B198
+Plugin* Plugins_GetPluginForFile(Plugin* list, OSType cpu, OSType os, OSType type, OSType lang) {
+    Plugin* scan;
+    Plugin* pick;
+
+    scan = list ? list : pluginlist;
+    pick = NULL;
+    while (scan) {
+        if (scan->cl_cb) {
+            if (Plugin_CL_MatchesTarget(scan, cpu, os, FALSE) &&
+                Plugin_MatchesType(scan, type, lang, FALSE)) {
+                pick = scan;
+                if (Plugin_CL_MatchesTarget(scan, cpu, os, TRUE) &&
+                    Plugin_MatchesType(scan, type, lang, TRUE)) {
+                    break;
+                }
+            }
+        }
+        scan = scan->next;
+    }
+
+    return pick;
+}
+#else
 Plugin* Plugins_CL_MatchTarget(Plugin* list, OSType cpu, OSType os, OSType type, OSType lang) {
     Plugin* scan;
     Plugin* pick;
@@ -1108,7 +1493,40 @@ Plugin* Plugins_CL_MatchTarget(Plugin* list, OSType cpu, OSType os, OSType type,
 
     return pick;
 }
+#endif
 
+#if MWCCPS2_B198
+Plugin* Plugins_CL_MatchTarget(
+    Plugin* list,
+    OSType plugintype,
+    OSType cpu,
+    OSType os,
+    OSType type,
+    const char* ext,
+    OSType lang
+) {
+    Plugin* scan;
+    Plugin* pick;
+
+    scan = list ? list : pluginlist;
+    pick = NULL;
+    while (scan) {
+        if (Plugin_MatchesType(scan, plugintype, lang, TRUE) && scan->cl_cb) {
+            if (Plugin_CL_MatchesTarget(scan, cpu, os, FALSE) &&
+                Plugin_CL_MatchesFileType(scan, type, ext, FALSE)) {
+                pick = scan;
+                if (Plugin_CL_MatchesTarget(scan, cpu, os, TRUE) &&
+                    Plugin_CL_MatchesFileType(scan, type, ext, TRUE)) {
+                    break;
+                }
+            }
+        }
+        scan = scan->next;
+    }
+
+    return pick;
+}
+#else
 Plugin* Plugins_GetPluginForFile(
     Plugin* list,
     OSType plugintype,
@@ -1139,6 +1557,7 @@ Plugin* Plugins_GetPluginForFile(
 
     return pick;
 }
+#endif
 
 Plugin* Plugins_GetLinker(Plugin* list, OSType cpu, OSType os) {
     Plugin* scan;
@@ -1278,6 +1697,45 @@ Plugin* Plugins_GetParserForPlugin(
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (22)
 #endif
+#if MWCCPS2_B198
+int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginInfo) {
+    Plugin* scan;
+    int idx;
+    const DropInFlags* df;
+    const VersionInfo* vi;
+
+    scan = list ? list : pluginlist;
+    idx = 0;
+    while (scan) {
+        idx++;
+        scan = scan->next;
+    }
+
+    *numPlugins = idx;
+    *pluginInfo = xmalloc(NULL, sizeof(CLPluginInfo) * idx);
+    if (!*pluginInfo) {
+        return FALSE;
+    }
+
+    scan = list ? list : pluginlist;
+    idx = 0;
+    while (scan) {
+        df = Plugin_GetDropInFlags(scan);
+        vi = Plugin_GetVersionInfo(scan);
+        OS_ASSERT(1295, df != NULL);
+        OS_ASSERT(1296, vi != NULL);
+        (*pluginInfo)[idx].plugintype = df->dropintype;
+        (*pluginInfo)[idx].language = df->edit_language;
+        (*pluginInfo)[idx].dropinflags = df->dropinflags;
+        (*pluginInfo)[idx].version = scan->cached_ascii_version;
+        (*pluginInfo)[idx].storeCommandLine = (df->dropinflags & 1) != 0;
+        scan = scan->next;
+        idx++;
+    }
+
+    return TRUE;
+}
+#else
 int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginInfo) {
     Plugin* scan;
     int idx;
@@ -1325,6 +1783,7 @@ int Plugins_GetPluginList(Plugin* list, int* numPlugins, CLPluginInfo** pluginIn
 
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -1381,6 +1840,19 @@ int Plugins_GetPrefPanelUnion(Plugin* list, int* numPanels, const char*** panelN
     return TRUE;
 }
 
+#if MWCCPS2_B198
+int Plugin_AddFileTypeMappings(Plugin* pl, OSFileTypeMappings** mlist) {
+    const OSFileTypeMappingList* ftml;
+
+    ftml = Plugin_GetFileTypeMappingList(pl);
+    if (!ftml) {
+        return TRUE;
+    } else {
+        OS_AddFileTypeMappingList(NULL, ftml);
+        return TRUE;
+    }
+}
+#else
 int Plugin_AddFileTypeMappings(Plugin* pl, OSFileTypeMappings** mlist) {
     const OSFileTypeMappingList* ftml;
 
@@ -1417,6 +1889,7 @@ int Plugins_AddFileTypeMappingsForTarget(
 
     return TRUE;
 }
+#endif
 
 SInt16 Plugin_Call(Plugin* pl, void* context) {
     if (pl->cb->main) {

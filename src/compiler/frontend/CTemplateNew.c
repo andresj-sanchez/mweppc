@@ -1,3 +1,10 @@
+#if MWCCPS2_B198
+#include "compiler/common.h"
+#include "compiler/tokens.h"
+#include "compiler/types.h"
+#include "compiler/templates.h"
+
+#else
 #include "compiler/CTemplateNew.h"
 #include "compiler/CBrowse.h"
 #include "compiler/CDecl.h"
@@ -24,12 +31,27 @@
 #include <setjmp.h>
 #include <string.h>
 
+#endif
 TemplClass* ctempl_templates;
 TemplateFunction* ctempl_templatefuncs;
+#if MWCCPS2_B198
+static SInt32 ctempl_recursionlimit;
+#else
 TemplStack* ctempl_curinstance;
 static jmp_buf ctempl_parseparse;
+#endif
 static Boolean ctempl_scanfuncparams;
 
+#if MWCCPS2_B198
+void CTempl_Setup(void) {
+    ctempl_curinstance = NULL;
+    ctempl_templates = NULL;
+    ctempl_templatefuncs = NULL;
+    ctempl_instdepth = 0;
+    ctempl_recursionlimit = 0x40;
+    ctempl_scanfuncparams = FALSE;
+}
+#else
 static TemplParam* CTempl_ParseParamList(NameSpace* nspace, UInt8 nindex);
 static Boolean CTempl_GenClassInstance(TemplClassInst* inst, Boolean isExplicit);
 
@@ -43,8 +65,10 @@ void CTempl_Setup(void) {
 #endif
     ctempl_scanfuncparams = FALSE;
 }
+#endif
 
 void CTempl_Cleanup(void) {}
+#if !MWCCPS2_B198
 
 static short CTempl_MemberParseLex(void) {
     switch ((tk = lex())) {
@@ -2396,3 +2420,4 @@ Boolean CTempl_InlineFunctionCheck(Object* funcobj) {
 #endif
 
 #pragma pack(2)
+#endif

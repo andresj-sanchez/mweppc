@@ -1,3 +1,38 @@
+#if MWCCPS2_B198
+#include "compiler/CRTTI.h"
+#include "compiler/CClass.h"
+#include "compiler/CDecl.h"
+#include "compiler/CError.h"
+#include "compiler/CExpr.h"
+#include "compiler/CInit.h"
+#include "compiler/CInt64.h"
+#include "compiler/CMachine.h"
+#include "compiler/CMangler.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CParser.h"
+#include "compiler/CPrep.h"
+#include "compiler/CPrepTokenizer.h"
+#include "compiler/CScope.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/tokens.h"
+#include "compiler/types.h"
+#include "compiler/templates.h"
+#include <string.h>
+#include "compiler/CTemplateTools.h"
+#include "compiler/CExprConvMatch.h"
+
+#define ERR_UNDEFINED_IDENTIFIER 0x1000
+#define ERR_RTTI_OPTION_DISABLED 0x1001
+#define ERR_CONSTNESS_CASTED_AWAY 0x1002
+#define ERR_LESS_EXPECTED 0x1003
+#define ERR_GREATER_EXPECTED 0x1004
+#define ERR_ILLEGAL_TYPE_CAST 0x1005
+#define ERR_ILLEGAL_EXPLICIT_CONVERSION_FROM 0x1006
+#define ERR_NOT_LVALUE 0x1007
+
+#else
 #include "compiler/CRTTI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -19,6 +54,7 @@
 #include "compiler/types.h"
 #include <string.h>
 
+#endif
 typedef struct Offset {
     struct Offset* next;
     SInt32 offset;
@@ -27,8 +63,10 @@ typedef struct Offset {
 static Offset* crtti_offsets;
 static OLinkList* crtti_olinks;
 
+#if !MWCCPS2_B198
 static Object* CRTTI_ConstructTypeInfoObject(Type* type, UInt32 qual);
 
+#endif
 typedef struct RTTISubClassList {
     struct RTTISubClassList* next;
     TypeClass* base;
@@ -45,6 +83,16 @@ typedef struct RTTIBaseList {
     Boolean isambiguous;
 } RTTIBaseList;
 
+#if MWCCPS2_B198
+TemplClass* CRTTI_Class2TemplClass(TemplClass* tmclass) {
+    if (tmclass->tail.inst_parent && !tmclass->theclass.nspace) {
+        return (TemplClass*)CTemplTool_Template2TemplClass(
+            (struct TemplClassTail*)tmclass->tail.templ_parent
+        );
+    }
+    return tmclass;
+}
+#else
 static RTTIBaseList* CRTTI_CreateBaseList(
     TypeClass* tclass, TypeClass* tclassbase, RTTIBaseList* list, SInt32 voffset, Boolean isPrivate
 ) {
@@ -1060,3 +1108,4 @@ ENode* CRTTI_Parse_const_cast(void) {
 
     return expr;
 }
+#endif

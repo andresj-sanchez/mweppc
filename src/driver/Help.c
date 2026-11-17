@@ -1,3 +1,25 @@
+#if MWCCPS2_B198
+#include "driver/cmdline.h"
+#include "driver/Help.h"
+#include "compiler/win32.h"
+#include "driver/Arguments.h"
+#include "driver/CWPlugins.h"
+#include "driver/Generic.h"
+#include "driver/IO.h"
+#include "driver/Option.h"
+#include "driver/option_system.h"
+#include "driver/Parameter.h"
+#include "driver/ParserFace.h"
+#include "driver/StringUtils.h"
+#include "driver/Targets.h"
+#include "driver/Utils.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "driver/Memory.h"
+
+#else
 #include "driver/Help.h"
 #include "compiler/win32.h"
 #include "driver/Arguments.h"
@@ -18,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 typedef struct Side {
     short offset;
     short width;
@@ -104,6 +127,72 @@ static unsigned char isBreaker(char c) {
     return (c == '\n') || (c == '\r') || (c == ' ') || (c == '\t') || (c == '\b') || (c == '|');
 }
 
+#if MWCCPS2_B198
+static void Side_DumpLine(Side* s) {
+    short col;
+    short len;
+    short afterspace;
+    short eol;
+    short ind;
+    char c;
+
+    eol = 0;
+    ind = 0;
+    col = s->offset + s->indent;
+    s->vcol = s->indent;
+    len = 0;
+    afterspace = s->width - s->indent;
+
+    while (s->blen > 0 && s->vcol < s->width && !eol && !ind) {
+        c = s->buffer[s->bptr];
+        outLine[col + len] = c;
+        len++;
+        s->vcol++;
+
+        if (isBreaker(c)) {
+            afterspace = len;
+            eol = (c == '\n') || (c == '\r');
+            eol += (c == '\r');
+            ind = (c == '\t') || (c == '\b');
+            ind += (c == '\b');
+        }
+
+        s->bptr = (s->bptr + 1) & 1023;
+        s->blen--;
+    }
+
+    if (s->blen || eol || ind) {
+        s->blen += len - afterspace;
+        s->bptr = (s->bptr - (len - afterspace)) & 1023;
+        if (eol || ind) {
+            len++;
+            afterspace--;
+        }
+
+        while (afterspace < len) {
+            outLine[col + --len] = ' ';
+        }
+    }
+
+    s->vcol = 0;
+    s->vrow++;
+    s->atEOL = (eol == 1) || ind || s->blen == 0;
+    if ((s->atEOL || ind) && s->impInd) {
+        Side_Outdent(s, parseopts.ioCols / 40);
+        s->impInd = FALSE;
+    }
+    if (ind) {
+        if (ind == 1) {
+            Side_Indent(s, parseopts.ioCols / 25);
+        } else {
+            Side_Outdent(s, parseopts.ioCols / 25);
+        }
+    } else if (!s->atEOL && s != &all && !s->impInd) {
+        Side_Indent(s, parseopts.ioCols / 40);
+        s->impInd = TRUE;
+    }
+}
+#else
 static void Side_DumpLine(Side* s) {
     short col;
     short len;
@@ -168,6 +257,7 @@ static void Side_DumpLine(Side* s) {
         s->impInd = TRUE;
     }
 }
+#endif
 
 static void Help_PrintLine(void) {
     HPrintF(helptext, "%.*s\n", parseopts.ioCols - 1, outLine);
@@ -628,6 +718,7 @@ void Help_Usage(void) {
     Help_OutputSingle(&all);
 }
 
+#if !MWCCPS2_B198
 void Help_Null(void) {
     Side_Print(
         &all,
@@ -639,6 +730,7 @@ void Help_Null(void) {
     Help_OutputSingle(&all);
 }
 
+#endif
 void Help_Init(void) {
     short lb;
     short le;

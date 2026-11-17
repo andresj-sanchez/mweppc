@@ -1,3 +1,22 @@
+#if MWCCPS2_B198
+#include "driver/OptimizerHelpers.h"
+#include "driver/Memory.h"
+#include "driver/pref_structs.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/ParserFace.h"
+#include "driver/oslib.h"
+#include "driver/Option.h"
+#include "driver/ParserErrors.h"
+#include "driver/IO.h"
+#include "driver/StringUtils.h"
+#include "driver/TargetOptimizerHelpers-mips.h"
+#include <stdlib.h>
+#include <string.h>
+#undef memset
+
+#else
 #include "driver/OptimizerHelpers.h"
 #include "driver/IO.h"
 #include "driver/Memory.h"
@@ -11,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 Boolean setOldOptimizerOptions;
 
 typedef struct PIROptimizer {
@@ -37,7 +57,114 @@ Pragma irPragmas[] = {
     {0, 0, 0}
 };
 // clang-format on
+#if MWCCPS2_B198
+int SetPragmaOptimizationsToUnspecified(const char* opt, void* str, const char* param, int flags) {
+    if (setOldOptimizerOptions) {
+        Option_Warning(CLPStr62);
+    }
 
+    memset(&pIrOptimizer, 0, sizeof(pIrOptimizer));
+    Utils_Empty();
+    return TRUE;
+}
+#endif
+
+#if MWCCPS2_B198
+int SetOptFlags(const char* opt, void* str, const char* param, int flags) {
+    unsigned char* ptr;
+    Boolean set;
+    volatile Boolean no;
+    UInt16 flag;
+    int minus;
+    int bar;
+
+    ptr = (unsigned char*)str;
+    if (flags & PARAMPARSEFLAGS_NEGATED) {
+        no = TRUE;
+    } else {
+        no = FALSE;
+    }
+    set = bar = (minus = no) ^ 1;
+
+    while (*ptr) {
+        if (*ptr == '+') {
+            set = !no;
+        } else if (*ptr == '-') {
+            set = minus;
+        } else if (*ptr == '|') {
+            set = bar;
+        } else {
+            flag = (ptr[0] << 8) | ptr[1];
+
+            if ((flag >= 'G0' && flag <= 'G4') || (flag == 'Gs') || (flag == 'Gp')) {
+                SetPragmaOptimizationsToUnspecified(opt, NULL, NULL, 0);
+            }
+
+            switch (flag) {
+                case 'Cs':
+                    pIrOptimizer.commonsubs = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Li':
+                    pIrOptimizer.loopinvariants = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Pr':
+                    pIrOptimizer.propagation = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Ds':
+                    pIrOptimizer.deadstore = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Sr':
+                    pIrOptimizer.strengthreduction = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Dc':
+                    pIrOptimizer.deadcode = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'Lt':
+                    pIrOptimizer.lifetimes = set ? PR_ON : PR_OFF;
+                    setOldOptimizerOptions = TRUE;
+                    break;
+                case 'G0':
+                    pGlobalOptimizer.optimizationlevel = set ? 0 : 0;
+                    break;
+                case 'G1':
+                    pGlobalOptimizer.optimizationlevel = set ? 1 : 0;
+                    break;
+                case 'G2':
+                    pGlobalOptimizer.optimizationlevel = set ? 2 : 0;
+                    break;
+                case 'G3':
+                    pGlobalOptimizer.optimizationlevel = set ? 3 : 0;
+                    break;
+                case 'G4':
+                    pGlobalOptimizer.optimizationlevel = set ? 4 : 0;
+                    break;
+                case 'Gs':
+                    pGlobalOptimizer.optfor = set ? (Boolean)1 : (Boolean)0;
+                    break;
+                case 'Gp':
+                    pGlobalOptimizer.optfor = set ? (Boolean)0 : (Boolean)1;
+                    break;
+                default:
+                    if (!TargetSetOptFlags(flag, set)) {
+                        CLPFatalError("Bad optimizer settings in %s (%c%c)\n", str, ptr[0], ptr[1]);
+                    }
+            }
+
+            ++ptr;
+        }
+
+        ++ptr;
+    }
+
+    return TRUE;
+}
+#else
 int SetPragmaOptimizationsToUnspecified(const char* opt, void* str, const char* param, int flags) {
     if (setOldOptimizerOptions) {
         Option_Warning(CLPStr62);
@@ -142,6 +269,7 @@ int SetOptFlags(const char* opt, void* str, const char* param, int flags) {
 
     return TRUE;
 }
+#endif
 
 int DisplayOptimizationOptions(const char* opt, void* str, const char* param, int flags) {
     SInt32 oldsize;

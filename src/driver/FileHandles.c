@@ -4,6 +4,30 @@
 #include "driver/MsDos.h"
 #include "driver/oslib.h"
 
+#if MWCCPS2_B198
+int __stdcall OS_FreeFileHandle(OSFileHandle* hand) {
+    int err;
+
+    if (hand->writeable && hand->changed) {
+        err = OS_WriteFileHandle(hand);
+        if (err) {
+            return err;
+        }
+    }
+
+    if (!OS_ValidHandle(&hand->hand)) {
+        return ERROR_NOT_ENOUGH_MEMORY;
+    }
+
+    err = OS_FreeHandle(&hand->hand);
+    if (err) {
+        return err;
+    }
+
+    hand->loaded = FALSE;
+    return 0;
+}
+#else
 static int OS_LoadFileHandle(OSFileHandle* hand) {
     int err;
     int ref;
@@ -32,7 +56,21 @@ static int OS_LoadFileHandle(OSFileHandle* hand) {
 
     return err;
 }
+#endif
 
+#if MWCCPS2_B198
+int __stdcall OS_LockFileHandle(OSFileHandle* hand, void** ptr, UInt32* size) {
+    *size = 0;
+
+    if (!OS_ValidHandle(&hand->hand)) {
+        return ERROR_NOT_ENOUGH_MEMORY;
+    }
+
+    *ptr = OS_LockHandle(&hand->hand);
+    OS_GetHandleSize(&hand->hand, size);
+    return 0;
+}
+#else
 static int OS_WriteFileHandle(OSFileHandle* hand) {
     int err;
     int ref;
@@ -63,6 +101,7 @@ static int OS_WriteFileHandle(OSFileHandle* hand) {
 
     return err;
 }
+#endif
 
 int __stdcall OS_NewFileHandle(
     const OSSpec* spec, OSHandle* src, Boolean writeable, OSFileHandle* hand
@@ -94,6 +133,38 @@ int __stdcall OS_NewFileHandle(
     return err;
 }
 
+#if MWCCPS2_B198
+static int OS_WriteFileHandle(OSFileHandle* hand) {
+    int err;
+    int ref;
+    UInt32 sz;
+    void* buffer;
+
+    if (!hand->loaded && !hand->changed) {
+        return 0;
+    }
+
+    OS_Delete(&hand->spec);
+    err = OS_Create(&hand->spec, &OS_TEXTTYPE);
+    if (!err) {
+        err = OS_Open(&hand->spec, OSReadWrite, &ref);
+        if (!err) {
+            err = OS_GetHandleSize(&hand->hand, &sz);
+            if (!err) {
+                buffer = OS_LockHandle(&hand->hand);
+                err = OS_Write(ref, buffer, &sz);
+                if (!err) {
+                    hand->changed = FALSE;
+                }
+                OS_UnlockHandle(&hand->hand);
+                OS_Close(ref);
+            }
+        }
+    }
+
+    return err;
+}
+#else
 int __stdcall OS_LockFileHandle(OSFileHandle* hand, Ptr* ptr, UInt32* size) {
     *size = 0;
 
@@ -105,7 +176,37 @@ int __stdcall OS_LockFileHandle(OSFileHandle* hand, Ptr* ptr, UInt32* size) {
     OS_GetHandleSize(&hand->hand, size);
     return 0;
 }
+#endif
 
+#if MWCCPS2_B198
+static int OS_LoadFileHandle(OSFileHandle* hand) {
+    int err;
+    int ref;
+    UInt32 sz;
+    void* buffer;
+
+    hand->loaded = FALSE;
+
+    err = OS_Open(&hand->spec, OSReadOnly, &ref);
+    if (!err) {
+        if (!(err = OS_GetSize(ref, &sz))) {
+            err = OS_ResizeHandle(&hand->hand, sz);
+            if (!err) {
+                buffer = OS_LockHandle(&hand->hand);
+                err = OS_Read(ref, buffer, &sz);
+                if (!err) {
+                    hand->loaded = TRUE;
+                    hand->changed = FALSE;
+                }
+                OS_UnlockHandle(&hand->hand);
+            }
+        }
+        OS_Close(ref);
+    }
+
+    return err;
+}
+#else
 int __stdcall OS_UnlockFileHandle(OSFileHandle* hand) {
     if (!OS_ValidHandle(&hand->hand)) {
         return ERROR_NOT_ENOUGH_MEMORY;
@@ -141,3 +242,4 @@ int __stdcall OS_FreeFileHandle(OSFileHandle* hand) {
 void __stdcall OS_GetFileHandleSpec(const OSFileHandle* hand, OSSpec* spec) {
     *spec = hand->spec;
 }
+#endif

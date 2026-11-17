@@ -19,4 +19,10 @@ struct decimal {
 };
 typedef struct decimal decimal;
 
+#if MWCCPS2_B198
+extern long double __scalenum(long double value, int exponent, int divide);
+extern void __num2dec(const decform* format, double value, decimal* out);
+extern double __dec2num(const decimal* in);
+
+#endif
 #endif

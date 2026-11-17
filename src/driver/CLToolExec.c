@@ -1,3 +1,29 @@
+#if MWCCPS2_B198
+#include "driver/oslib.h"
+#include "driver/CLToolExec.h"
+#include "driver/CLErrors.h"
+#include "driver/CLFiles.h"
+#include "driver/CLTarg.h"
+#include "driver/CLIO.h"
+#include "driver/CLMain.h"
+#include "driver/CLPlugins.h"
+#include "driver/pref_structs.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/CWParserPluginsPrivate.h"
+#include "driver/Generic.h"
+#include "driver/MacSpecs.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include "driver/CLFileOps.h"
+#include "msl/string.h"
+#include "stdio.h"
+
+#else
 #include "driver/CLToolExec.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
@@ -17,6 +43,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#endif
 void AppendArgumentList(int* argc, char*** argv, const char* str) {
     *argv = xrealloc("command-line arguments", *argv, sizeof(char*) * (*argc + 2));
     (*argv)[(*argc)++] = xstrdup(str);
@@ -51,6 +78,90 @@ static int FreeArgumentList(char** argv) {
     return TRUE;
 }
 
+#if MWCCPS2_B198
+static int SetupLinkerCommandLine(SInt32 dropinflags, File* file, CWCommandLineArgs* args) {
+    CWCommandLineArgs* baseargs;
+    int x;
+    SInt32 idx;
+    OSSpec spec;
+
+    for (x = 0; x < numPlugins; x++) {
+        if (pluginInfo[x].plugintype == CWDROPINLINKERTYPE &&
+            ((dropinflags & (isPostLinker | isPreLinker)) ==
+             (pluginInfo[x].dropinflags & (isPostLinker | isPreLinker)))) {
+            break;
+        }
+    }
+
+    OS_ASSERT(89, x < numPlugins);
+
+    args->argc = 1;
+    args->argv = xmalloc("command-line arguments", 2 * sizeof(char*));
+    Main_PassSpecialArgs(&args->argc, &args->argv);
+
+    baseargs = &plugin_args[x];
+    CopyArgumentList(baseargs->argc - 1, baseargs->argv + 1, &args->argc, &args->argv);
+
+    x = 0;
+    if (baseargs->envp) {
+        while (baseargs->envp[x]) {
+            x++;
+        }
+    }
+    args->envp = NULL;
+    CopyArgumentList(x, baseargs->envp, NULL, &args->envp);
+
+    if (!file && !(dropinflags & isPostLinker)) {
+        for (idx = 0; idx < Files_Count(&gTarg->files); idx++) {
+            file = Files_GetFile(&gTarg->files, idx);
+            if (file->sourceUsage & CmdLineStageMask_Cg) {
+                AppendArgumentList(&args->argc, &args->argv, file->srcfilename);
+            }
+            if (file->objectUsage & CmdLineStageMask_Cg) {
+                if (GetOutputFile(file, CmdLineStageMask_Cg) != 0 && StoreObjectFile(file)) {
+                    AppendArgumentList(
+                        &args->argc,
+                        &args->argv,
+                        OS_SpecToString(&file->outfss, STSbuf, sizeof(STSbuf))
+                    );
+                } else {
+                    return FALSE;
+                }
+            }
+        }
+    } else if (file) {
+        args->argv =
+            xrealloc("command-line arguments", args->argv, sizeof(char*) * (args->argc + 1));
+        if (file->sourceUsage & CmdLineStageMask_Cg) {
+            AppendArgumentList(&args->argc, &args->argv, file->srcfilename);
+        }
+        if (file->objectUsage & CmdLineStageMask_Cg) {
+            if (GetOutputFile(file, CmdLineStageMask_Cg) != 0 && StoreObjectFile(file)) {
+                AppendArgumentList(
+                    &args->argc, &args->argv, OS_SpecToString(&file->outfss, STSbuf, sizeof(STSbuf))
+                );
+            }
+        }
+        if ((optsCmdLine.toDisk & CmdLineStageMask_Ds) &&
+            (file->objectUsage & CmdLineStageMask_Pp) &&
+            file->outfilename[0] &&
+            GetOutputFile(file, CmdLineStageMask_Ds)) {
+            AppendArgumentList(&args->argc, &args->argv, "-o");
+            AppendArgumentList(
+                &args->argc, &args->argv, OS_SpecToString(&file->outfss, STSbuf, sizeof(STSbuf))
+            );
+        }
+    } else if (dropinflags & isPostLinker) {
+        OS_FSSpec_To_OSSpec((FSSpec*)((char*)gTarg->targetinfo + 2), &spec);
+        AppendArgumentList(
+            &args->argc, &args->argv, OS_SpecToString(&spec, STSbuf, sizeof(STSbuf))
+        );
+    }
+
+    args->argv[args->argc] = NULL;
+    return TRUE;
+}
+#else
 static int SetupLinkerCommandLine(SInt32 dropinflags, File* file, CWCommandLineArgs* args) {
     CWCommandLineArgs* baseargs;
     int x;
@@ -137,6 +248,7 @@ static int SetupLinkerCommandLine(SInt32 dropinflags, File* file, CWCommandLineA
     args->argv[args->argc] = NULL;
     return TRUE;
 }
+#endif
 
 int SetupTemporaries(void) {
     SInt32 idx;
@@ -179,6 +291,7 @@ int DeleteTemporaries(void) {
 
     return TRUE;
 }
+#if !MWCCPS2_B198
 
 int ExecuteLinker(
     Plugin* plugin, SInt32 dropinflags, File* file, char* stdoutfile, char* stderrfile
@@ -289,3 +402,4 @@ int ExecuteLinker(
 
     return ret;
 }
+#endif

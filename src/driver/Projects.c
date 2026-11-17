@@ -1,3 +1,21 @@
+#if MWCCPS2_B198
+#include "driver/CLPluginAPI.h"
+#include "driver/CWPlugins.h"
+#include "driver/CWPluginsPrivate.h"
+#include "driver/CWSecretPluginCallbacks.h"
+#include "driver/Generic.h"
+#include "driver/MacSpecs.h"
+#include "driver/MsDos.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
+#include "driver/oslib.h"
+#include <setjmp.h>
+#include <string.h>
+#include "driver/CWParserPluginsContext.h"
+#include "driver/CWParserPluginsPrivate.h"
+#include "driver/Memory.h"
+
+#else
 #include "driver/Projects.h"
 #if MWCCPSP
 #include "driver/PluginSpecs.h"
@@ -17,6 +35,7 @@
 #include <setjmp.h>
 #include <string.h>
 
+#endif
 int GetFileCount(void) {
     SInt32 num;
     CWGetProjectFileCount(parseopts.context, &num);
@@ -34,12 +53,67 @@ void SetFileOutputName(SInt32 position, SInt16 which, char* outfilename) {
         }
     }
 }
+#if !MWCCPS2_B198
 #if MWCCPSP
 
 #endif
 #if MWCCPSP
 #endif
+#endif
 
+#if MWCCPS2_B198
+int AddFileToProject(
+    OSSpec* oss, SInt16 which, char* outfilename, Boolean exists, SInt32 position
+) {
+    CWWinFileSpec cws;
+    CWNewProjectEntryInfo pei;
+    CWResult result;
+    int err;
+    OSSpec spec = *oss;
+    OSSpec target;
+    int links = 0;
+
+    if (exists) {
+        while (links < 50 && !OS_ResolveLink(&spec, &target)) {
+            spec = target;
+            links++;
+        }
+        err = CL_OSSpecToCWFileSpec(2, &spec, &cws);
+        if (err) {
+            CLPOSAlert(CLPStr44, err, OS_SpecToStringRelative(&spec, 0, STSbuf, sizeof(STSbuf)));
+            return FALSE;
+        }
+    } else {
+        CL_OSSpecToCWFileSpec(2, &spec, &cws);
+    }
+
+    if (position == -2) {
+        pei.position = 0;
+    } else if (position == -1) {
+        CWGetProjectFileCount(parseopts.context, &pei.position);
+    } else if (position == 0) {
+        pei.position = -1;
+    } else {
+        pei.position = position;
+    }
+
+    pei.segment = parseopts.currentSegment;
+    pei.overlayGroup = parseopts.currentOverlayGroup;
+    pei.overlay = parseopts.currentOverlay;
+    pei.groupPath = NULL;
+    pei.mergeintooutput = parseopts.mergeIntoOutput;
+    pei.weakimport = parseopts.weakImport;
+    pei.initbefore = parseopts.initBefore;
+    result = CWAddProjectEntry(parseopts.context, &cws, !exists, &pei, &position);
+    if (result) {
+        failedCallback = "CWAddProjectEntry";
+        longjmp(exit_plugin, result);
+    }
+    parseopts.mergeIntoOutput = parseopts.weakImport = parseopts.initBefore = FALSE;
+    SetFileOutputName(position, which, outfilename);
+    return TRUE;
+}
+#else
 int AddFileToProject(
     OSSpec* oss, SInt16 which, char* outfilename, Boolean exists, SInt32 position
 ) {
@@ -107,7 +181,21 @@ int AddFileToProject(
     SetFileOutputName(position, which, outfilename);
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+Boolean GetFileInfo(SInt32 position, OSSpec* spec, char* plugin) {
+    CWProjectFileInfo pfi;
+    if (CWGetFileInfo(parseopts.context, position, TRUE, &pfi)) {
+        return FALSE;
+    }
+
+    CL_CWFileSpecToOSSpec(2, &pfi.filespec, spec);
+    strncpy(plugin, pfi.dropinname, 32);
+    plugin[31] = 0;
+    return TRUE;
+}
+#else
 Boolean GetFileInfo(SInt32 position, OSSpec* spec, char* plugin) {
     CWProjectFileInfo pfi;
     if (CWGetFileInfo(parseopts.context, position, TRUE, &pfi)) {
@@ -127,7 +215,54 @@ Boolean GetFileInfo(SInt32 position, OSSpec* spec, char* plugin) {
     plugin[31] = 0;
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+int AddAccessPath(OSPathSpec* oss, SInt16 type, SInt32 position, Boolean recursive) {
+    CWNewAccessPathInfo api;
+    CWResult result;
+    OSSpec spec;
+    int err;
+    CWAccessPathListInfo apli;
+
+    if ((err = OS_MakeSpecWithPath(oss, NULL, FALSE, &spec)) ||
+        (err = CL_OSSpecToCWFileSpec(2, &spec, &api.pathSpec))) {
+        CLPOSAlert(CLPStr45, err, OS_PathSpecToString(&spec.path, STSbuf, sizeof(STSbuf)));
+        return FALSE;
+    }
+
+    if (position == -2) {
+        api.position = 0;
+    } else if (position == -1 || position == 0) {
+        api.position = -1;
+    } else if (position == -1) {
+        result = CWGetAccessPathListInfo(parseopts.context, &apli);
+        if (result) {
+            failedCallback = "CWGetAccessPathListInfo";
+            longjmp(exit_plugin, result);
+        }
+        if ((type & 1) == 1) {
+            api.position = apli.systemPathCount;
+        } else {
+            api.position = apli.userPathCount;
+        }
+    } else {
+        api.position = position;
+    }
+
+    api.type = ((type & 1) == 0) ? cwUserPath : cwSystemPath;
+    api.type |= (type & 2) ? cwAccessPathFlagKeepSystem : 0;
+    api.recursive = recursive;
+
+    result = CWParserAddAccessPath(parseopts.context, &api);
+    if (result) {
+        failedCallback = "CWParserAddAccessPath";
+        longjmp(exit_plugin, result);
+    }
+
+    return TRUE;
+}
+#else
 int AddAccessPath(OSPathSpec* oss, SInt16 type, SInt32 position, Boolean recursive) {
     CWNewAccessPathInfo api;
     CWResult result;
@@ -180,6 +315,7 @@ int AddAccessPath(OSPathSpec* oss, SInt16 type, SInt32 position, Boolean recursi
 
     return TRUE;
 }
+#endif
 
 int MoveSystemPathsIntoUserList(void) {
     CWResult result = CWParserSwapAccessPaths(parseopts.context);
@@ -202,6 +338,22 @@ void AddVirtualFile(const char* filename, Handle* text) {
     }
 }
 
+#if MWCCPS2_B198
+void GetOutputFileDirectory(OSPathSpec* dir) {
+    CWResult result;
+    CWWinFileSpec idefss;
+    OSSpec spec;
+
+    result = CWGetOutputFileDirectory(parseopts.context, &idefss);
+    if (result) {
+        failedCallback = "CWGetOutputFileDirectory";
+        longjmp(exit_plugin, result);
+    }
+
+    CL_CWFileSpecToOSSpec(2, &idefss, &spec);
+    *dir = spec.path;
+}
+#else
 void GetOutputFileDirectory(OSPathSpec* dir) {
     CWResult result;
     CWFileSpec idefss;
@@ -224,7 +376,24 @@ void GetOutputFileDirectory(OSPathSpec* dir) {
 #endif
     *dir = spec.path;
 }
+#endif
 
+#if MWCCPS2_B198
+void SetOutputFileDirectory(OSPathSpec* dir) {
+    CWResult result;
+    CWWinFileSpec idefss;
+    OSSpec spec;
+
+    OS_MakeSpecWithPath(dir, NULL, FALSE, &spec);
+    CL_OSSpecToCWFileSpec(2, &spec, &idefss);
+
+    result = CWParserSetOutputFileDirectory(parseopts.context, &idefss);
+    if (result) {
+        failedCallback = "CWParserSetOutputFileDirectory";
+        longjmp(exit_plugin, result);
+    }
+}
+#else
 void SetOutputFileDirectory(OSPathSpec* dir) {
     CWResult result;
     CWFileSpec idefss;
@@ -247,6 +416,7 @@ void SetOutputFileDirectory(OSPathSpec* dir) {
         longjmp(exit_plugin, result);
     }
 }
+#endif
 
 void AddOverlayGroup(const char* name, CWAddr64* addr, SInt32* groupnum, SInt32* overlaynum) {
     CWResult result;

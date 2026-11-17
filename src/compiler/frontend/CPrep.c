@@ -1,3 +1,36 @@
+#if MWCCPS2_B198
+#include "compiler/CPrep.h"
+#include "compiler/CPreprocess.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/common.h"
+#include "compiler/tokens.h"
+#include "compiler/CParser.h"
+#include "compiler/CMangler.h"
+
+void CPrep_PushOption(SInt32 id, char value) {
+    struct COptPush* opt;
+    struct COptPush* newopt;
+
+    opt = coptpush;
+    do {
+        if (!opt || (opt->pushed && opt->id == id)) {
+            newopt = galloc(sizeof(struct COptPush));
+            newopt->next = coptpush;
+            coptpush = opt = newopt;
+            break;
+        }
+        if (!opt->pushed) {
+            break;
+        }
+        opt = opt->next;
+    } while (1);
+
+    opt->value = ((UInt8*)&copts)[id];
+    opt->id = id;
+    opt->pushed = TRUE;
+    ((UInt8*)&copts)[id] = value;
+}
+#else
 #include "compiler/CPrep.h"
 #include "compiler/IroPointerAnalysis.h"
 #include "compiler/IrOptimizer.h"
@@ -39,7 +72,17 @@
 extern void IRO_InitializeAllocators(void);
 extern void IRO_TerminateAllocators(void);
 #endif
+#endif
 
+#if MWCCPS2_B198
+TStreamElement* CPrep_CurStreamElement(void) {
+    if (ts_first < ts_current) {
+        return ts_current - 1;
+    } else {
+        return &dummyelement;
+    }
+}
+#else
 #if !MWCCPSP // 3.0.1: natural alignment (CPrep_PushOption allocates 12 bytes)
 #pragma pack(2)
 #endif
@@ -74,7 +117,17 @@ typedef struct CPrepFileInfoList {
     struct CPrepFileInfoList* next;
     struct CPrepFileInfo* fileinfo;
 } CPrepFileInfoList;
+#endif
 
+#if MWCCPS2_B198
+void CPrep_InsertSpecialMacro(Macro* macro, const char* name) {
+    macro->name = GetHashNameNodeExport(name);
+    macro->is_special = TRUE;
+    macro->next = macrohashtable[macro->name->hashval];
+    macrohashtable[macro->name->hashval] = macro;
+    macro->isExpanding = FALSE;
+}
+#else
 enum {
     IfState_Active = 0,
     IfState_Searching = 1,
@@ -880,6 +933,7 @@ void CPrep_InsertSpecialMacros(void) {
     CPrep_InsertSpecialMacro(&envM, "__env_var");
     CodeGen_InsertSpecialMacros();
 }
+#endif
 
 void CPrep_RemoveSpecialMacros(void) {
     Macro** scan;
@@ -896,6 +950,7 @@ void CPrep_RemoveSpecialMacros(void) {
         }
     }
 }
+#if !MWCCPS2_B198
 
 static void CPrep_Reconfig(void) {
     cprep_idarray['$'] = copts.dollar_identifiers != 0;
@@ -7652,4 +7707,5 @@ char* func_0043FFC0(void) {
     FreeGList(&gl);
     return result;
 }
+#endif
 #endif

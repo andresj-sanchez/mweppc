@@ -1,3 +1,14 @@
+#if MWCCPS2_B198
+#include "driver/ToolHelpers-cc.h"
+#include "driver/pref_structs.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/ParserFace.h"
+#include "driver/ParserErrors.h"
+#include <string.h>
+
+#else
 #include "driver/ToolHelpers-cc.h"
 #include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
@@ -7,16 +18,19 @@
 #include "driver/ToolHelpers.h"
 #include <string.h>
 
+#endif
 int Opt_DummyLinkerRoutine(const char* opt, void* var, const char* arg, int flags) {
     CLPFatalError("Calling linker option '%s'\n", opt);
     return FALSE;
 }
 
+#if !MWCCPS2_B198
 int Opt_DummyLinkerSettingRoutine(const char* name, const char* val) {
     CLPFatalError("Calling linker settings option '%s'='%s'\n", name, val ? val : "");
     return FALSE;
 }
 
+#endif
 void FinishCompilerTool(void) {
     SInt32 numfiles;
 

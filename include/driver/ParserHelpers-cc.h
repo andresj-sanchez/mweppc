@@ -1,9 +1,16 @@
 #ifndef DRIVER_PARSERHELPERS_CC_H
 #define DRIVER_PARSERHELPERS_CC_H
 
+#if MWCCPS2_B198
+#include "compiler/common.h"
+#include "driver/oslib.h"
+#include "driver/parser.h"
+
+#else
 #include "compiler/common.h"
 #include "driver/parser.h"
 
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

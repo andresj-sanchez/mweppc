@@ -3,6 +3,9 @@
 
 #include "compiler/common.h"
 
+#if MWCCPS2_B198
+extern Boolean CTempl_FuncIsAtLeastAsSpecialized(Object* object1, Object* object2);
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,6 +37,7 @@ extern Object* CTempl_TemplateFunctionCheck(DeclInfo* di, NameSpaceObjectList* n
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

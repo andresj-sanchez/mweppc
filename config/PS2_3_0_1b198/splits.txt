@@ -1,0 +1,1228 @@
+# One unit per original source file, in decomp-toolkit's format. Everything not listed stays in delink's
+# shared objects until it is assigned.
+# Main Windows CRT startup, call target of the PE entry point. The Wii CodeView
+# maincrt.obj precedes excrtl.obj. RET 0x4010D3 and NOP padding to 0x4010E0.
+# Exception registration table is the twelve-byte data record at 0x5C8020.
+src/runtime/ps2/maincrt.c:
+	.text start:0x00401000 end:0x004010E0
+	.data start:0x005C8020 end:0x005C802C
+
+# Windows SEH frame dispatcher, four original function starts with RET and NOP boundaries.
+# Wii CodeView has excrtl.obj between maincrt.obj and exchand.obj.
+src/runtime/excrtl.cpp:
+	.text start:0x004010E0 end:0x00401440
+	.bss start:0x005FC000 end:0x005FC004
+
+# The Windows runtime exception dispatcher: Wii 1.0RC1 exchand.obj has
+# _MWCHandler and _HandleUnexpectedSEHException in this order (pairing scores
+# 0.855 and 1.0). Original E8 and instruction boundaries are 0x401440 and
+# 0x401480; the apparent 0x401460 entry is an internal return block.
+src/runtime/ps2/exchand.cpp:
+	.text start:0x00401440 end:0x004014C0
+
+# C++ exception table registry and catcher, seven independent starts (0x401770
+# is referenced by both installed handlers, despite missing from Ghidra).
+# __dup_core at 0x401890 is MSL handle code, outside the exception runtime.
+src/runtime/ps2/ExceptionX86.cpp:
+	.text start:0x004014C0 end:0x00401890
+	.rdata start:0x005BB006 end:0x005BB0CC
+
+# Two Windows-MSL routines from the CodeWarrior 9.2 startup.win32 archive member.
+# Split separately to retain source linking of the four exact startup routines.
+src/msl/startup.win32_early.c:
+	.text start:0x00401890 end:0x00401AD0
+	.rdata start:0x005BB0CC end:0x005BB28C
+
+# Two C++ runtime default handler wrappers at 0x402910 and 0x402920.
+# Both are referenced by the exception-handler globals and exception table.
+src/runtime/NMWException_handlers.c:
+	.text start:0x00402910 end:0x00402930
+src/runtime/terminate.c:
+	.text start:0x00402930 end:0x00402960
+# The remaining NMWException std::unexpected handler wrapper,
+# Wii CodeView name and direct E8 call from exception machinery.
+src/runtime/NMWException.c:
+	.text start:0x00402960 end:0x00402970
+	.exc start:0x005BA0C8 end:0x005BA0D0
+	.rdata start:0x005BB298 end:0x005BB29C
+
+# The MIPS instruction selection. Its assertions name InstrSelection.c from 0x49C2A0 to 0x4A8E20 (run
+# tools/research/filemap.py). Both edges are provisional: the five functions before 0x49C2A0 and the eight
+# after 0x4A8E20 carry no assertion and may belong here or to the neighbours (PCodeInfo.c before, Exceptions.c after).
+# Original E8 calls and Ghidra extend the tail to three functions at
+# 0x4A8E20, 0x4A8EC0 and 0x4A8FF0. The next original E8-called
+# function at 0x4A90D0 calls exception action cleanup and owns the
+# Exceptions.c assertion at 0x4A923D, so belongs to the following unit.
+# PCodeInfo.c assertions 0x49B1BF–0x49C19D; get_label_operand starts at
+# 0x49B190 and InstrSelection.c starts 0x49C2A0.
+src/ps2/backend/PCodeInfo.c:
+	.text start:0x0049B190 end:0x0049C2A0
+	.rdata start:0x005BE3A8 end:0x005BE518
+	.data start:0x005E8908 end:0x005E8914
+
+src/ps2/backend/InstrSelection.c:
+	.text start:0x0049C2A0 end:0x004A90D0
+
+# The MIPS instruction builders. Their assertions name mips.c from 0x486099 to 0x48EF35; the first function
+# holding one starts at 0x485F00, and 0x48EF50 holds the first of PCodeUtilities.c.
+# Wii object pairing starts earlier at 0x485CF0; two PE E8-backed helpers
+# occupy 0x485CF0-0x485D90 and 0x485D90-0x485F00 (154 and 746 calls). The start is
+# provisional: the functions from the last assertion of PCode.c (0x47C385) to 0x485CF0 carry none.
+# E8 from CodeGen.c 0x435ABD reaches the original 0x47CC40 MIPS opcode
+# initializer; 900 registration calls occupy the gap through RET at 0x485CE2.
+# 0x485CF0 is a separate E8-backed mips.c function.
+src/ps2/backend/OpcodeInfo.c:
+	.text start:0x0047CC40 end:0x00485CF0
+	.data start:0x005E615C end:0x005E806E
+
+src/compiler/backend/mips.c:
+	.text start:0x00485CF0 end:0x0048EF50
+
+# The five PCodeUtilities.c assertions run from 0x48EF86 to 0x48FB10. The first
+# instruction at 0x48EF50 follows mips.c, and Alias.c begins at 0x48FBD0.
+# The edges are provisional until every unasserted function is assigned.
+src/ps2/backend/PCodeUtilities.c:
+	.text start:0x0048EF50 end:0x0048FBD0
+
+# The optimizer's algebraic transformations. Their assertions name IroTransform.c from 0x581F2D to
+# 0x58772F. The start is 0x5802C0, right after IroDependsKills.c's last function (0x57FFD0): every
+# function from there pairs with the Wii compiler's IroTransform.obj, whose first functions match ours
+# in size and order (0x8a, 0x114, 0xc3 to our 0x90, 0x120, 0xD0), and IRO_TransformLogicalSelections
+# (0x581E50), the Wii compiler's public of the same name, follows them. The end is provisional:
+# nothing names a file from 0x587920 to the first of IroExprs.c (0x58B0F5). The end is put after
+# simplify_diadic_nodes (0x58A630), which the GameCube compiler has early in IroTransform.c, and
+# before the two functions that walk the loops, at 0x58ADC0 and 0x58AE40.
+src/ps2/optimizer/IroTransform.c:
+	.text start:0x005802C0 end:0x0058ADC0
+
+# Operations on operands. Their assertions name Operands.c from 0x4B1657 to 0x4B2D9A, and 0x4B2DB0 holds the
+# first of FunctionCalls.c. The start is provisional: nothing names a file from COptimizer.c's last
+# assertion (0x4ADA48) to 0x4B1440. 0x4B1040 is Operands_ExtractBitfield, which the GameCube compiler has
+# in Operands.c late in the file, so below the functions with assertions; the functions further down may
+# belong here too.
+# Ghidra and E8: stack-local offset computation at 0x4AFC70 (calls from
+# 4A9AD3 etc), then 0x4AFCC0 operand-to-PCode helper (call from 0x45BAB2).
+# The preceding 0x4AFBD0 tests alignments in the expression preparation.
+src/ps2/backend/Operands.c:
+	.text start:0x004AFC70 end:0x004B2DB0
+# FunctionCalls.c assertions at 0x4B3466-0x4B4D59; starts at its public call lowering function
+# directly after Operands.c, and ends before CTemplateTools.c at 0x4B4DD0.
+src/ps2/backend/FunctionCalls.c:
+	.text start:0x004B2DB0 end:0x004B4DD0
+
+# The loop unroller. Its assertions name IroUnrollLoop.c from 0x56F5E9 to 0x572E84. Both edges are
+# provisional: nothing names a file from IroType.c's last assertion to 0x56F540, nor from 0x572E84 to the
+# first of IroLinearForm.c (0x574DE5). The functions up to 0x574830 are called only from the unroller; the
+# one at 0x574830 is called from the back end and the next ones from other parts of the optimizer.
+# Wii CodeView pairing + original E8 sites place IRO_UpdateInductionIncrement
+# at 0x56F300 and IRO_BuildUnrolledBodyEntryTest at 0x56F410; both
+# are called by the other functions of IroUnrollLoop.c. IroType ends
+# at 0x56F2F7, with 9 bytes of padding up to the first entry.
+# Wii pairing gives IRO_LoopUnroller entry 0x574830 (0.677), an
+# independently callable loop driver ending at 0x5748C7 and nine NOPs.
+src/ps2/optimizer/IroUnrollLoop.c:
+	.text start:0x0056F300 end:0x005748D0
+
+# Blocks, labels, instructions and the flow graph's edges. Its assertions name PCode.c at 0x47C24C (line 934)
+# and 0x47C385 (line 611). The functions from 0x47C460 to 0x47CB50 are, in reverse, the Mac Pro 8 compiler's
+# PCode.c from initpcode to computedepthfirstordering; 0x47CC40 starts another file. The start is
+# provisional: 0x47BED0 (the tail-call pass) has no assertion, but works on blocks, where the functions
+# below it are CFunc.c's (create_temp_object at 0x47B2B0, newlabel at 0x47B470).
+src/ps2/backend/PCode.c:
+	.text start:0x0047BED0 end:0x0047CC40
+
+# The block optimizer, the delay-slot filler and the nops that hazards need. Its assertions name BE_schedule.c at
+# 0x4C3C55 (line 573) and 0x4C3D65 (line 640). The start is the first function after BE_binary.c's last
+# assertion (0x4C34B5, in the instruction encoder that ends at 0x4C3525). The end is provisional: 0x4C4700
+# starts the loop analysis (LoopDetection.c in the GameCube compiler: dominators, loop headers, natural loops,
+# a walk over the loop tree), whose statics are the words at 0x61B8F0-0x61B900, where this file's are the
+# bytes at 0x61B8D8 and 0x61B8E8; that file runs on to 0x4C53B0, where CDecl.c begins (an assertion on line
+# 7057 of it is at 0x4C56FB, and 0x4C53B0 asserts on line 0x1B91 of the same file).
+# BE_binary.c: assertion sites 0x4C2966–0x4C34B5, beginning with the
+# offset-assigning pass at 0x4C2800 and ending just before BE_schedule.c.
+src/compiler/backend/BE_binary.c:
+	.text start:0x004C2800 end:0x004C3530
+
+src/compiler/backend/BE_schedule.c:
+	.text start:0x004C3530 end:0x004C4700
+
+# Units placed by pairing with the Wii 1.0RC1 compiler (tools/research/modules.py). Each
+# extent reaches from the unit's first paired function to just past its last; the edges
+# are provisional until the unit's own work settles them.
+# ClientGlue x10, the Wii compiler's module of the same name; the old range wrongly began at 0x4045F0,
+# a Win32 console-ctrl dispatcher of the C runtime that shares the C signal() state
+src/ps2/driver/ClientGlue.c:
+	.text start:0x00404670 end:0x0040489D
+	.data start:0x005C8678 end:0x005C86AC
+# Static parser glue begins immediately at 0x40489D, after CmdLine_Terminate;
+# RegisterStaticParserPlugins ends at 0x4048AD; RegisterStaticParserResources ends 0x4048C2.
+src/driver/StaticParserGlue.c:
+	.text start:0x0040489D end:0x004048C2
+	.data start:0x005C86AC end:0x005C95E0
+# Sysenv.win32 x7, the Wii compiler's module of the same name (__env_tstricmp, init_environ,
+# resize_environ, _SetupEnv, search_env, getenv, __msl_putenv; system is dead); the atexit walker at
+# 0x402740 belongs to the C++ runtime; _tenviron is at 0x635C1C, the length/max statics in .bss
+src/msl/sysenv.win32.c:
+	.bss start:0x005FC058 end:0x005FC060
+	.text start:0x00402370 end:0x00402740
+# Wii CodeView runinit: startup constructor walker and x86 CPUID flag detector;
+# both real E8-called functions, next startup function at 0x4027E0.
+src/msl/ps2/runinit.c:
+	.text start:0x00402740 end:0x004027E0
+
+# Wchar_io x1, the Wii compiler's module of the same name (fwide; the ungetwc/fgetwc machinery is
+# dead); fwide's switch table at 0x5BB72C, the next function at 0x410E19
+# MSL direct_io.c: synchronized fwrite wrapper and its buffered writer;
+# the Wii-paired 0x410B70 is a branch inside the writer, not a function start.
+src/msl/direct_io.c:
+	.text start:0x00410A20 end:0x00410DB0
+src/msl/ps2/wchar_io.c:
+	.text start:0x00410DB0 end:0x00410E19
+	.rdata start:0x005BB72C end:0x005BB738
+
+# Signal x1 + signal_win32 x3, the Wii compiler's modules of the same name (raise in the CRT
+# cluster at 0x4045F0; __handler, __check_console_handler and signal at 0x427260-0x427353);
+# signal_funcs, ctrlc, ctrlbreak and ConsoleCtrlHandler are COMMON
+src/msl/ps2/signal.c:
+	.text start:0x004045F0 end:0x00404670
+# signal.win32: __handler, __check_console_handler, signal
+src/msl/signal_win32.c:
+	.text start:0x00427260 end:0x00427354
+
+# CodeWarrior MSL __strtold scanner, called by strtod and scanf.
+src/msl/strtold_core.c:
+	.text start:0x0044E130 end:0x0044F1A0
+	.data start:0x005E4644 end:0x005E4660
+
+# Strtold x1, the Wii compiler's module of the same name (strtod; strtof and atof are dead);
+# __strtold is another unit's at 0x44E130; strtod's DBL_MIN/DBL_MAX constants at 0x5E4660
+src/msl/ps2/strtold.c:
+	.text start:0x0044F1A0 end:0x0044F25C
+	.data start:0x005E4660 end:0x005E4670
+
+# Scanf x3, the Wii compiler's module of the same name (__StringRead, vsscanf, sscanf; the scanf family's
+# __sformatter is another unit's at 0x426780; __StringRead's switch table at 0x5BBAD0)
+# Wii CodeView time.c and CW9.2 MSL time.c: extract_name through strftime.
+# The __sformatter routine begins at 0x426780 and belongs to scanf.c.
+src/msl/ps2/time.c:
+	.text start:0x00424F70 end:0x004262A0
+
+# CW9.2 scanf.c: format descriptor parser at 0x4262A0 and __sformatter at 0x426780.
+# Original caller of the latter is vsscanf at 0x4271F0.
+src/msl/ps2/scanf_core.c:
+	.text start:0x004262A0 end:0x004271A0
+	.data start:0x005DFD30 end:0x005DFD58
+	.rdata start:0x005BB968 end:0x005BBAD0
+
+src/msl/ps2/scanf.c:
+	.text start:0x004271A0 end:0x0042725C
+	.rdata start:0x005BBAD0 end:0x005BBADC
+
+# Two original x86 long-long arithmetic routines named by Wii CodeView.
+# E8 callers from longlong2str and strtoull and exception records at
+# .exc:0x5BA0E8/0x5BA0F0 identify distinct starts; numeric MSL follows at 0x410600.
+src/runtime/ps2/LongLongx86.c:
+	.text start:0x00410510 end:0x00410600
+	.rdata start:0x005BB714 end:0x005BB716
+
+# ansifp_x86.obj: x87 decimal conversion functions, identified by Wii CodeView pairing.
+# The first begins at 0x410600 after LongLongx86 and returns at 0x410664.
+# __num2dec begins at 0x410670 (prologue: 55 89 E5); old 0x4106F0 was
+# only an internal branch target. __num2dec ends at 0x4107F4.
+# __dec2num starts 0x410800 and ends 0x4108EB; mbstring begins 0x4108F0.
+src/msl/ansifp_x86.c:
+	.text start:0x00410600 end:0x004108F0
+# Mbstring x3, the Wii compiler's module of the same name (mbtowc, wctomb, wcstombs; the UTF-8
+# converters and the mbr* forms are dead); wcstombs' cold !s/!pwcs return is at 0x410A10
+src/msl/ps2/mbstring.c:
+	.text start:0x004108F0 end:0x00410A20
+# Ctype x3, the Wii compiler's module of the same name (isalpha, tolower, toupper through the thread-local
+# C locale's maps); the rest of ctype.c is inlined by the headers; the next function is at 0x414B00
+src/msl/ps2/ctype.c:
+	.text start:0x00414A70 end:0x00414B00
+
+# Strtoul x1, the Wii compiler's module of the same name (__strtoul, the scanner the wchar
+# conversions and the wrappers call; strtol/atoi and the small strtoul wrapper are dead in the exe)
+src/msl/ps2/strtoul.c:
+	.text start:0x00414B00 end:0x00414F20
+	.rdata start:0x005BB750 end:0x005BB790
+
+# Companion CW9.2 strtoul.c __strtoull, 64-bit FSM called by the scanf formatter.
+src/msl/ps2/strtoull.c:
+	.text start:0x00414F20 end:0x004153B0
+	.rdata start:0x005BB790 end:0x005BB7D0
+
+# File_io.win32 x6, the Wii compiler's module of the same name (__open_file, __read_file, __write_file,
+# __position_file, __close_file, __delete_file; the temp-file, wide and rename machinery is dead —
+# __close_file calls file_io.c's find_temp_info at 0x406EB0); buffer_io.c starts at 0x407600
+src/msl/file_io.win32.c:
+	.text start:0x00406EB0 end:0x00407600
+
+# Buffer_io x4, the Wii compiler's module of the same name (the Win32 no-op __convert_from_newlines,
+# __prep_buffer, __flush_buffer, setvbuf; the original source's __convert_to_newlines, __load_buffer and
+# setbuf were dead in the original's link); ansi_files.c's fclose starts at 0x407850
+src/msl/buffer_io.c:
+	.text start:0x00407600 end:0x00407850
+
+# Ansi_files (the four remaining CW9.2 file-table accessors): find_unopened_file, init_file,
+# close_all and flush_all, ahead of the CRT global chain at 0x404550.
+src/msl/ps2/ansi_files.c:
+	.text start:0x00404370 end:0x00404550
+
+# Wii CodeView globdest sequence and Ghidra: __register_global_object (0x404550),
+# __destroy_global_chain (0x404580), __register_atexit (0x4045B0).
+# The previous ansi_files.c ends at 0x404550; signal.c begins at 0x4045F0.
+src/runtime/ps2/globdest.c:
+	.text start:0x00404550 end:0x004045F0
+
+# Wii CodeView string.c run: strcpy through strstr, ten functions at 0x402CE0
+# through 0x402F40. The following strerror belongs to the errno/string-error code.
+src/msl/ps2/string.c:
+	.text start:0x00402CE0 end:0x00402FD0
+
+# Wii CodeView strerror.c: strerror wrapper at 0x402FD0 and __strerror switch
+# at 0x402FF0; memmove begins at 0x403300. Ghidra confirms the 100-entry
+# jump table at 0x5BB29C and original MSL error messages at 0x5C816C.
+# __strerror ends at 0x4032FA; a six-byte imported RtlUnwind thunk follows.
+src/msl/strerror.c:
+	.text start:0x00402FD0 end:0x004032FA
+	.data start:0x005C816C end:0x005C850F
+	.rdata start:0x005BB29C end:0x005BB42C
+
+# CodeWarrior MSL x86 mem.c, four functions confirmed by Ghidra and Wii CodeView.
+# Following 0x403450 is setjmp_x86.c.
+src/msl/ps2/mem.c:
+	.text start:0x00403300 end:0x00403450
+
+# MSL x86 setjmp module: two independent E8-called starts at 0x403450 and
+# 0x403470, each padded to 32 bytes. The register/stack context ABI is native
+# to x86; functions are the MSL _Setjmp and longjmp from Wii CodeView pairing.
+src/msl/ps2/setjmp_x86.c:
+	.text start:0x00403450 end:0x00403490
+
+# CW9.2 MSL C allocator after x86 setjmp and before ansi_files, 0x403490–0x404370.
+src/msl/ps2/alloc.c:
+	.text start:0x00403490 end:0x00404370
+
+# File_io x5, the Wii compiler's module of the same name (fclose, fflush, fopen, freopen,
+# __get_file_modes; the wide and handle variants are dead); this is ansi_files.c's part of
+# the CRT cluster (fn_00407850 pairing); the cold blocks at 0x407980/0x407990 and 0x407AC0/
+# 0x407AD0 are inside fflush's and freopen's extents
+src/msl/ps2/file_io.c:
+	.text start:0x00407850 end:0x00407C20
+# Pool_alloc.win32 x2, the Wii compiler's module of the same name (__sys_alloc, __sys_free; the original
+# source's __sys_pointer_size was dead in the original's link); alloc.c's first function starts at 0x406EB0
+src/msl/pool_alloc.win32.c:
+	.text start:0x00406E50 end:0x00406EB0
+# Abort_exit_win32 x4, the Wii compiler's module of the same name (abort, atexit, exit, __exit; _Exit is
+# dead); _CleanUpMSL at 0x401C90 belongs to startup.win32.c above; the C++ runtime's first function
+# follows at 0x401DB0
+src/msl/abort_exit_win32.c:
+	.text start:0x00401D10 end:0x00401DA9
+# MSL setup of startup command-line arguments (Wii CodeView setupargs):
+# cleanup, init, capacity grow, wildcard expansion and _SetupArgs.
+# The seven NOPs before the first function at 0x401DB0 are boundary padding.
+src/msl/ps2/setupargs.c:
+	.text start:0x00401DA9 end:0x00402370
+	.data start:0x005C802C end:0x005C8038
+	.bss start:0x005FC048 end:0x005FC054
+
+# Time.win32 x4, the Wii compiler's module of the same name (__systemtime_to_time_t, __get_time,
+# __to_gm_time and __isdst; __get_clock and tzset were dead in the original's link); its MonthDays static
+# is at 0x5E4614 and the two switch tables at 0x5BC304; the next unit starts at 0x44E130
+src/msl/time.win32.c:
+	.text start:0x0044DF60 end:0x0044E130
+	.data start:0x005E4614 end:0x005E4644
+	.rdata start:0x005BC304 end:0x005BC31C
+# CLMain x26
+src/driver/CLMain.c:
+	.text start:0x00407DC0 end:0x00409050
+# MsDos x59; the Wii compiler lists the same functions in the same order (OS_GetErrText to
+# OS_LoadMacResourceFork), and OS_LoadMacResourceFork ends in shared error tails up to 0x40B3FD;
+# Resources.c starts at 0x40B400 with OS_UsingMacResourceForkInfo
+src/ps2/driver/MsDos.c:
+	.text start:0x00409050 end:0x0040B400
+# Resources: 29 original E8-supported starts, 24 conditional branch-only
+# labels folded into their owner functions. OS_SetMacResourceForkCreatorAndType
+# begins at 0x40D330, not the 0x40D380 internal jump target.
+src/driver/Resources.c:
+	.text start:0x0040B400 end:0x0040D8DF
+# CLErrors x10
+src/driver/CLErrors.c:
+	.text start:0x0040D8E0 end:0x0040DF00
+# CLPlugins: 40 independently E8-called starts and 48 internal conditional-branch pieces.
+# The original exported names at 0x40E560, 0x40F610, 0x40F730, 0x40F7C0,
+# 0x40F860, 0x40F9A0 and 0x40FAF0 were branch-only delink labels; the
+# corrected starts are the preceding E8-called function prologues.
+src/driver/CLPlugins.c:
+	.text start:0x0040DF00 end:0x0040FCBC
+# ParserFace x14
+src/driver/ParserFace.c:
+	.text start:0x0040FCBC end:0x004102B0
+	.data start:0x005D8F24 end:0x005D8FC4
+# Driver build literals and their pointers at the start of original .data.
+src/ps2/driver/CmdLineBuildDate.c:
+	.data start:0x005C8000 end:0x005C8020
+# Static driver main from original disassembly, 0x004027E0–0x00402904
+src/ps2/driver/CLStaticMain.c:
+	.text start:0x004027E0 end:0x00402904
+	.data start:0x005C8038 end:0x005C811C
+# Static target/plugin registration wrappers from 0x4048D0 through 0x40495F
+src/compiler/driver/cc-eabi-ppc-mw.c:
+	.text start:0x004048D0 end:0x00404960
+# Static compiler and linker plugin wrappers observed from 0x004102B0 through 0x004104AF.
+src/compiler/driver/cc-eabi-ppc.c:
+	.text start:0x004102B0 end:0x004104B0
+# Five ELF importer callback/registration routines recovered from the callback arrays
+# at 0x5DD318 and 0x5DD33C. The next runtime function is __rt_divu64.
+src/ps2/driver/libimp-eabi-ppc.c:
+	.text start:0x004104B0 end:0x00410510
+	.data start:0x005DD318 end:0x005DD354
+# ParserHelpers x14
+src/ps2/driver/ParserHelpers.c:
+	.text start:0x00410E19 end:0x004115B1
+	.data start:0x005DD5CC end:0x005DD5F0
+	.bss start:0x005FD760 end:0x005FD864
+# ToolHelpers x3
+src/driver/ToolHelpers.c:
+	.text start:0x004115B1 end:0x00411A88
+# ParserHelpers-cc x9, our own assertions name ParserHelpers-cc.c
+src/ps2/driver/ParserHelpers-cc.c:
+	.text start:0x00411A88 end:0x00411EBE
+# ToolHelpers-cc x2
+src/compiler/driver/ToolHelpers-cc.c:
+	.text start:0x00411EBE end:0x00411F63
+	.data start:0x005DD7EC end:0x005DD808
+# WarningHelpers: SetWarningFlags and DisplayWarningOptions, original 0x411F70–0x412168
+src/driver/WarningHelpers.c:
+	.text start:0x00411F70 end:0x00412168
+	.data start:0x005DD808 end:0x005DD8D4
+# Two original overlay option callbacks and their string initializers.
+# Source filename is provisional: adjacent driver units are independently Matching.
+src/driver/OverlayOptions.c:
+	.text start:0x00412168 end:0x004121F0
+	.data start:0x005DD8D4 end:0x005DD900
+# OptimizerHelpers: PS2 optimization flags and display, 0x4121F0–0x412770
+src/compiler/driver/OptimizerHelpers.c:
+	.text start:0x004121F0 end:0x00412770
+	.data start:0x005DD900 end:0x005DDBAC
+	.bss start:0x005FD870 end:0x005FD877
+# Provisional compiler and linker option setup; four original entries.
+src/driver/CompilerSetupOptions.c:
+    .text start:0x00412770 end:0x00412BA0
+    .data start:0x005DDBAC end:0x005DDC90
+# Shared C warning option flags and display, 0x412BA0–0x413046 from original functions
+src/ps2/driver/StdTargetWarningHelpers-cc.c:
+	.text start:0x00412BA0 end:0x00413046
+	.data start:0x005DDC90 end:0x005DDFEC
+# ResourceStrings: Res_AddResource 0x407C20–0x407CB0, Res_GetResource 0x407CB0–0x407DC0
+src/driver/ResourceStrings.c:
+	.text start:0x00407C20 end:0x00407DC0
+	.data start:0x005D6E28 end:0x005D6EA8
+	.bss start:0x005FCAF8 end:0x005FCCB8
+# IO.c: ShowTextHandle 0x413046–0x41308A and ShowVersion 0x41308A–0x41324F;
+# GameCube 2.6 and Wii module pairing, original entry boundaries and the next GetFileCount.
+src/ps2/driver/IO.c:
+	.text start:0x00413046 end:0x0041324F
+	.data start:0x005DDFEC end:0x005DE0F8
+# Projects.c starts at its paired GetFileCount, after ShowVersion.
+src/driver/Projects.c:
+	.text start:0x0041324F end:0x00413780
+	.data start:0x005DE0F8 end:0x005DE1C4
+# StringUtils x8
+src/ps2/driver/StringUtils.c:
+	.text start:0x00413780 end:0x00413A5E
+	.data start:0x005DE1C4 end:0x005DE1F4
+	.bss start:0x005FD878 end:0x005FD978
+# Arguments x27
+src/driver/Arguments.c:
+	.text start:0x00413A5E end:0x00414840
+	.data start:0x005DE1F4 end:0x005DE378
+# Provisional case-insensitive MSL comparator island; true original filename
+# uncertain (weak Wii CToLowercase pair does not fit the two-argument behavior).
+src/msl/CaseFoldCompare.c:
+	.text start:0x00414840 end:0x00414900
+# Targets x4, the Wii compiler's module of the same name (0x38, 0x9C, 0x6A, 0x32); the old range
+# also held MSL's _isalpha (0x414A70) and _tolower (0x414AA0)
+src/driver/Targets.c:
+	.text start:0x00414900 end:0x00414A70
+	.data start:0x005DE378 end:0x005DE3E8
+# Startup.win32 x3, the Wii compiler's module of the same name (__get_MSL_init_count, _InitStdHandles,
+# _CRTStartup; the 2005 MSL took _InitStdHandles in from crtl.c; __set_errno and __dup_core are dead);
+# the exit path's first function starts at 0x401C90
+src/msl/startup.win32.c:
+	.text start:0x00401AD0 end:0x00401D10
+	.bss start:0x005FC040 end:0x005FC044
+
+# ThreadLocalData x5, the Wii compiler's module of the same name (_InitializeThreadDataIndex,
+# _DisposeThreadDataIndex, _InitializeThreadData, _InitializeMainThreadData, _GetThreadLocalData; the
+# original source's release_thread_data, _DisposeThreadData and _DisposeAllThreadData are dead);
+# _gThreadDataIndex (-1) with the unit's strings follow in .data, the static firstTLD in .bss
+src/msl/ps2/ThreadLocalData.c:
+	.text start:0x00402970 end:0x00402CD1
+	.data start:0x005C8124 end:0x005C816C
+	.bss start:0x005FC060 end:0x005FC064
+
+# Misc_io x2, the Wii compiler's module of the same name (clearerr, __stdio_atexit; its feof and ferror are
+# inlined by the headers and perror was stripped in the original's link, so only the two remain)
+src/msl/ps2/misc_io.c:
+	.text start:0x004153B0 end:0x004153D0
+# File_pos x4, the Wii compiler's module of the same name (_ftell, ftell, _fseek, fseek; fgetpos,
+# fsetpos and rewind are dead); the shipped library's _fseek has no < 0 clamp on SEEK_CUR's _ftell
+src/msl/file_pos.c:
+	.text start:0x004153D0 end:0x00415648
+
+# CWPluginsPrivate x38
+src/ps2/driver/CWPluginsPrivate.cpp:
+	.text start:0x00415650 end:0x004163DF
+# Five template specializations for IDE <-> native CW plugin file/message records.
+# Called by CWReportMessage/CWFindAndLoadFile and recovered from Wii-side templates.
+src/driver/CWPluginConversions.cpp:
+	.text start:0x004163E0 end:0x00416730
+# CLIO x36
+# Final CLStyledMessageDispatch at 0x4181D0, directly called by UCBReportMessage
+# and other callback entrypoints (original E8 xrefs), with its final return
+# at 0x4184FA, followed by CLLicenses at 0x418500.
+src/driver/CLIO.c:
+	.text start:0x00416730 end:0x00418500
+# CLLicenses x11, our own assertions name CLLicenses.c
+src/driver/CLLicenses.c:
+	.text start:0x00418500 end:0x00418B90
+# CLToolExec x9, our own assertions name CLToolExec.c
+src/driver/CLToolExec.c:
+	.text start:0x00418B90 end:0x00419640
+# MemUtils x5, the driver's checked allocations (the Wii's publics _xmalloc@8, _xcalloc@8,
+# _xrealloc@12, _xstrdup@4, _xfree@4); CLToolExec's range reached into xmalloc and StringExtras'
+# started on xfree
+src/ps2/driver/MemUtils.c:
+	.text start:0x00419640 end:0x004197A0
+	.data start:0x005DF258 end:0x005DF2CC
+# StringExtras x4, the Wii compiler's module of the same name (sizes 0x4B, 0x41, 0x47, 0x69); the old
+# range started on MemUtils' xfree and cut ustrncmp's tail off
+src/driver/StringExtras.c:
+	.text start:0x004197A0 end:0x004198F9
+# Generic x14
+src/driver/Generic.c:
+	.text start:0x00419900 end:0x0041A64F
+# CLPrefs x8, the Wii compiler's module of the same name (its sizes 0x8a, 0x24, 0xb, 0x2a are ours
+# exactly; its PutHandle, Terminate, AddPanel and SetContentsByName are the later builds); the
+# unit's .data is the out-of-memory text, the pluginDebug message and the empty name
+src/ps2/driver/CLPrefs.c:
+	.text start:0x0041A650 end:0x0041A869
+	.data start:0x005DF2F0 end:0x005DF32C
+	.bss start:0x005FF300 end:0x005FF304
+# CLPluginRequests x19
+# CLPrefs owns the exact 0x0041A840 function as currently attributed; port CLProj termination from 0x0041A870.
+src/driver/CLProj.c:
+	.text start:0x0041A870 end:0x0041A8A0
+	.data start:0x005DF32C end:0x005DF348
+# CLPluginRequests C++ source preserved; 17 original E8 called entries, unconfigured
+src/ps2/driver/CLPluginRequests.cpp:
+	.text start:0x0041A8A0 end:0x0041B920
+# CLParserCallbacks_v1: twelve original entries; source is C++ and remains unconfigured
+src/ps2/driver/CLParserCallbacks_v1.cpp:
+	.text start:0x0041B920 end:0x0041C010
+# Wii DateTimeUtils TickCount, 0x0041C010-0x0041C027 (next file starts 0x0041C030)
+src/driver/DateTimeUtils.c:
+	.text start:0x0041C010 end:0x0041C027
+# CLFileOps: 20 original direct E8-called starts, with the 61 shorter conditional-branch
+# labels merged into their owning functions. LinkProject begins at 0x41E290, not
+# internal branch label 0x41E370. Next independent CLTarg start is 0x41E7D0.
+src/ps2/driver/CLFileOps.c:
+	.text start:0x0041C030 end:0x0041E7D0
+# CLTarg x4, the Wii compiler's module of the same name (Target_New, Target_Free, Targets_Term,
+# Target_Add); its first range had started at Target_Free and swallowed MSL's assertion reporter
+# (0x41E940-0x41EA00, the Wii's assert.win32.obj: the "Assertion (%s) failed" dialog), which the
+# MacSpecs range then started with
+src/ps2/driver/CLTarg.c:
+	.text start:0x0041E7D0 end:0x0041E940
+	.data start:0x005DF6A0 end:0x005DF6B4
+# MSL assert.win32: dialog helper, assertion reporter and original three strings,
+# Wii CodeView pairing and direct calls (including >100 to __msl_assertion_failed).
+src/msl/assert.win32.c:
+	.text start:0x0041E940 end:0x0041EA00
+	.data start:0x005DF6B4 end:0x005DF7C8
+# MacSpecs x13, the Wii compiler's module of the same name (its sizes 0xc7, 0x48, 0xd0, 0x155,
+# 0x77, 0x41, 0x11a, 0x58, 0x71, 0xad, 0x44, 0x11a are ours exactly; its AddDirMapEntry is the
+# later, larger build, and its OS_ShortenSpec, OS_VolDir_To_OSNameSpec and OS_CanonNameCase the
+# linker dropped here as there); the old range cut OS_GetRsrcOSSpec's tail off and started at a
+# false start mislabeled MacSpecs_Terminate (the retry loop of AddDirMapEntry)
+src/ps2/driver/MacSpecs.c:
+	.text start:0x0041EA00 end:0x0041F2CA
+	.data start:0x005DF7C8 end:0x005DF84A
+	.bss start:0x005FF310 end:0x005FFA60
+# Memory x15, including HandAndHand at 0x41F670–0x41F6E4; 12-byte alignment to Files.
+src/ps2/driver/Memory.c:
+	.text start:0x0041F2D0 end:0x0041F6F0
+# Files starts with OS_GetFileParamInfo at 0x41F6F0 (the old split entered its body).
+src/driver/Files.c:
+	.text start:0x0041F6F0 end:0x00420630
+# TextUtils x3, the Wii compiler's module of the same name (c2pstr 0x3C, p2cstr 0x22,
+# GetIndString 0x1A7); the old range started at GetIndString and held the compiler's stack-probe
+# helpers, which are the runtime's, not a unit's
+src/ps2/driver/TextUtils.c:
+	.text start:0x00420630 end:0x00420848
+	.data start:0x005DF86D end:0x005DF899
+# stackall: MSL x86 stack probe/stack allocation helpers, from Wii pairing.
+# __chkstk starts at 0x420850, returns at 0x420883, aligned to 0x420890;
+# __stack_alloc starts at 0x420890, jumps to __chkstk at 0x420850,
+# ends at 0x42089B. VERSION.DLL import jump thunks follow at 0x42089C.
+src/runtime/stackall.c:
+	.text start:0x00420850 end:0x0042089C
+
+# MacFileTypes x6, the file-type mapping lists (the old range started on an import thunk); the
+# assert's strings and the fmList pointer are its .data, defaultList its .bss (the extended
+# hook is another unit's global, as the Wii module list also has it)
+src/ps2/driver/MacFileTypes.c:
+	.text start:0x004208B0 end:0x00420C30
+	.data start:0x005DF89C end:0x005DF8C0
+	.bss start:0x005FFA68 end:0x005FFA6C
+# CWSecretPluginCallbacks x4, the Wii compiler's module of the same name (ValidateContext 0x19,
+# CWSecretAttachHandle 0x36, CWSecretDetachHandle 0x36, CWSecretGetNamedPreferences 0x4D); the old
+# range started at CWSecretAttachHandle and cut GetNamedPreferences in half
+src/driver/CWSecretPluginCallbacks.c:
+	.text start:0x00420C30 end:0x00420D20
+# CWParserPluginsPrivate x15
+src/ps2/driver/CWParserPluginsPrivate.cpp:
+	.text start:0x00420D20 end:0x0042130A
+# Option x38, our own assertions name Option.c
+src/driver/Option.c:
+	.text start:0x0042130A end:0x0042310E
+	.data start:0x005DF8C0 end:0x005DF9DE
+	.bss start:0x005FFA70 end:0x005FFB08
+# ParserErrors x12
+src/ps2/driver/ParserErrors.c:
+	.text start:0x0042310E end:0x004233A0
+	.data start:0x005DF9DE end:0x005DF9F6
+	.bss start:0x005FFB08 end:0x005FFF08
+# PS2 compiler drop-in: Wii CCompilerSaveBrowserData symbol and MWC request dispatcher.
+src/driver/CCompilerPS2.c:
+	.text start:0x004233A0 end:0x00423E90
+	.data start:0x005DF9F6 end:0x005DFA5E
+	.bss start:0x005FFF08 end:0x006001C8
+# ELF Importer reporter and file-to-CW-memory reader; original calls
+# and ELF context at 0x6001FC establish these two real starts.
+src/driver/ELFImportFileIO.c:
+	.text start:0x00423E90 end:0x00423FC0
+# Utils x8
+# Provisional ELF/archive reader immediately before the ELFImport plugin descriptors.
+# Real E8-called starts 0x423FC0–0x424400 and end at descriptor 0x424540.
+src/driver/ELFImportReader.c:
+	.text start:0x00423FC0 end:0x00424540
+	.data start:0x005DFA5E end:0x005DFA72
+	.bss start:0x006001C8 end:0x00600200
+# PS2 ELF library-importer plugin descriptor wrappers at 0x424540-0x4245CC.
+# Link-time callback table references name all six as ELFImport_Get*; the
+# following 0x4245D0 is an independent request dispatcher.
+src/driver/libimp-ps2.c:
+    .text start:0x00424540 end:0x004245D0
+    .data start:0x005DFA72 end:0x005DFBB2
+# ELF importer entry point: original exported E8-called dispatcher.
+src/ps2/driver/ELF_Lib_Import.c:
+    .text start:0x004245D0 end:0x00424690
+    .rdata start:0x005BB7E0 end:0x005BB7EC
+# CLPluginAPI: five consecutive plugin filesystem/time adapters paired with
+# GameCube CLPluginAPI, 0x424690-0x424833. The next Utils.c entry is 0x424834.
+src/driver/CLPluginAPI.c:
+    .text start:0x00424690 end:0x00424834
+    .rdata start:0x005BB7EC end:0x005BB80C
+    .data start:0x005DFBB2 end:0x005DFBDE
+src/driver/Utils.c:
+	.text start:0x00424834 end:0x00424C10
+	.data start:0x005DFBDE end:0x005DFBE6
+src/driver/TargetOptimizerHelpers-mips.c:
+	.text start:0x00424C10 end:0x00424C71
+	.rdata start:0x005BB80C end:0x005BB810
+	.data start:0x005DFBE6 end:0x005DFC0A
+# FileHandles x5, the Wii compiler's module of the same name (its five functions, sizes included);
+# the old range started inside OS_LoadFileHandle and cut OS_FreeFileHandle's tail off
+src/driver/FileHandles.c:
+	.text start:0x00424C80 end:0x00424F70
+# CLFiles x12, our own assertions name CLFiles.c
+src/driver/CLFiles.c:
+	.text start:0x00427360 end:0x0042775B
+# CLOverlays x17, our own assertions name CLOverlays.c
+src/driver/CLOverlays.c:
+	.text start:0x00427760 end:0x00427EBC
+# CLDropinCallbacks_V10 x46, our own assertions name CLDropinCallbacks_V10.cpp
+src/ps2/driver/CLDropinCallbacks_V10.cpp:
+	.text start:0x00427EC0 end:0x0042B383
+# CLCompilerLinkerDropin_V10 x25, our own assertions name CLCompilerLinkerDropin_V10.cpp
+src/ps2/driver/CLCompilerLinkerDropin_V10.cpp:
+	.text start:0x0042B390 end:0x0042CD8B
+# CLAccessPaths x20, our own assertions name CLAccessPaths.c
+src/driver/CLAccessPaths.c:
+	.text start:0x0042CD90 end:0x0042D56E
+# CLSegs x8, our own assertions name CLSegs.c
+src/ps2/driver/CLSegs.c:
+	.text start:0x0042D570 end:0x0042D83B
+	.data start:0x005E0D34 end:0x005E0D80
+# CLDependencies x20, our own assertions name CLDependencies.c
+src/driver/CLDependencies.c:
+	.text start:0x0042D840 end:0x0042E610
+# Object and browse output functions, PS2 0x0042E610–0x0042E800
+src/driver/CLWriteObjectFile.c:
+	.text start:0x0042E610 end:0x0042E800
+	.data start:0x005E0E44 end:0x005E0E8C
+# CLBrowser x9, our own assertions name CLBrowser.c
+src/driver/CLBrowser.c:
+	.text start:0x0042E800 end:0x0042ED66
+# CLIncludeFileCache x8, the Wii compiler's module of the same name (the statics and Free match its
+# sizes instruction for instruction; its Cleanup and Cached are the later, larger builds); the old
+# range cut FreeIncludeFile's tail off into Parameter
+src/ps2/driver/CLIncludeFileCache.c:
+	.text start:0x0042ED70 end:0x0042F0BD
+	.data start:0x005E0F14 end:0x005E0F28
+	.bss start:0x00600630 end:0x0060063C
+# Parameter x55
+src/driver/Parameter.c:
+	.text start:0x0042F0BD end:0x00430B02
+# Help x19
+src/driver/Help.c:
+	.text start:0x00430B02 end:0x00432426
+# CodeGen x6, our own assertions name CodeGen.c; the license checkout at 0x438DC0
+# shares cookie and guard with CodeGen's release helper at 0x438D80.
+src/ps2/backend/CodeGen.c:
+	.text start:0x00432430 end:0x00438E20
+# COSToolsCLT: handle-table code 0x438E20 and COS_Term ending at 0x439BF0
+src/driver/COSToolsCLT.c:
+	.text start:0x00438E20 end:0x00439BF0
+# FEInterface.c assertion at 0x439D19; two leading callback/initializer routines
+# are provisionally associated with the FEInterface callback at 0x439CA0.
+src/compiler/frontend/FEInterface.c:
+	.text start:0x00439BF0 end:0x00439D90
+	.rdata start:0x005BBCA8 end:0x005BBCC4
+# CPrep: assertions and CPrep source identify the preprocessor through 0x446110.
+# The 0x4451BA boundary was inside the function begun at 0x444840; its code continues
+# to RET at 0x4458B1 and padding through 0x4458BF. Original direct E8 calls identify
+# cleanupprep (0x4458C0), setupprep (0x445970), CPrep_RemoveSpecialMacros
+# (0x445C00), CPrep_InsertSpecialMacros (0x445C40), and CPrep_InsertSpecialMacro
+# (0x4460D0). The latter ends with RET at 0x44610D and two padding NOPs;
+# the next E8-called DropInCompilerLinkerPrivate function begins at 0x446110.
+# Original conditional/E9 branch targets remain inside their parent functions.
+src/compiler/frontend/CPrep.c:
+	.text start:0x00439D90 end:0x00446110
+# DropInCompilerLinkerPrivate x19
+src/ps2/driver/DropInCompilerLinkerPrivate.cpp:
+	.text start:0x00446110 end:0x00446AB6
+# CompilerTools x37
+src/frontend/CompilerTools.c:
+	.text start:0x00446AC0 end:0x00447DEC
+# CParser: the preceding 0x447DEC-0x449BC0 source-owned namespace/CMid code
+# has 16 independent Ghidra starts (original 4 leading NOPs), then its mapped later parser functions.
+# Original E8/disassembly: 0x44A580 owns the PE-pointer switch cases
+# 0x44A600/0x44A680 and six conditional labels; 0x44AEF0 includes
+# E9/conditional blocks through 0x44B200. Five named branch-only
+# heuristics are interior to their already bounded E8-called functions.
+src/ps2/frontend/CParser.c:
+	.text start:0x00447DEC end:0x0044DD40
+# Wii CodeView arith module: direct E8 called __msl_add/ladd/lmul/div/mod
+# and the original 0x44DF60 next start in time.win32.
+src/msl/ps2/arith.c:
+	.text start:0x0044DD40 end:0x0044DF60
+# CLLoadAndCache x3, the Wii compiler's module of the same name (FixTextHandle, LoadAndCacheFile,
+# CopyFileText and the out-of-memory string); the old edge cut FixTextHandle off and started inside
+# LoadAndCacheFile
+src/ps2/driver/CLLoadAndCache.c:
+	.text start:0x0044F260 end:0x0044F451
+	.data start:0x005E4678 end:0x005E468C
+# ErrMgr: error-string dispatcher 0x44F460 and GetSysErrText 0x44F6C0;
+# the latter ends before the first CError function at 0x44F710.
+src/driver/ErrMgr.c:
+	.text start:0x0044F460 end:0x0044F710
+	.data start:0x005E468C end:0x005E4AA8
+# CError x38, our own assertions name CError.c
+src/compiler/frontend/CError.c:
+	.text start:0x0044F710 end:0x00455C76
+# CInt64: first PE-called word-to-byte serializer at 0x455C80 (CError's
+# final ret is 0x455C75; ten NOPs precede this independent entry).
+src/ps2/frontend/CInt64.c:
+	.text start:0x00455C80 end:0x00459681
+# Registers x10
+# Intrinsics.c: E8 from CodeGen/InstrSelection identifies 0x459690
+# and 0x4596E0, with the target-specific generator ending at 0x4662F0.
+# Further E8 calls validate 19 entries through type setup at 0x467F90.
+# Front-end tokenizer begins at 0x4680B0; its start is not Intrinsics.c.
+src/ps2/backend/Intrinsics.c:
+	.text start:0x00459690 end:0x004680B0
+
+# CPrepTokenizer: PA_plex and lexer helpers start at 0x4680B0. Original E8
+# calls from the front end cover this gap before the tokenizer extension at
+# 0x46C3E0, provisionally assigned to Registers.c.
+src/ps2/frontend/CPrepTokenizer.c:
+	.text start:0x004680B0 end:0x0046C3E0
+
+src/ps2/backend/Registers.c:
+	.text start:0x0046C3E0 end:0x0046EA30
+# ObjGen.c assertions at 0x46DC0A and 0x46EF0B, and the self-contained
+# object-generation helpers 0x46EA30-0x470080. The first supported
+# function boundary after 0x46E7A0's shared tail is 0x46EA30.
+# An earlier portion of ObjGen.c is still included in Registers.c and needs
+# a later evidence-backed extraction.
+src/compiler/backend/ObjGen.c:
+	.text start:0x0046EA30 end:0x00470080
+# CMachine ends before RegisterInfo.c object-location helper at 0x472730
+src/ps2/backend/CMachine.c:
+	.text start:0x00470080 end:0x00472730
+# RegisterInfo contains the register-location helpers, register initialization, and class names.
+src/ps2/backend/RegisterInfo.c:
+	.text start:0x00472730 end:0x00473700
+	.rdata start:0x005BD5C8 end:0x005BD5E4
+	.data start:0x005E6069 end:0x005E60DE
+# CFunc x52, its first real function starts 0x473700
+src/ps2/frontend/CFunc.c:
+	.text start:0x00473700 end:0x0047BED0
+# Alias x19, our own assertions name Alias.c
+src/ps2/optimizer/Alias.c:
+	.text start:0x0048FBD0 end:0x00490FA0
+# First confirmed MIPS inline-assembly entry: GetMnemonic 0x490FA0–0x490FB3;
+# the thirteen trailing NOPs pad to the next function at 0x490FC0.
+# The remainder of InlineAsmMIPS.c is still unassigned and needs its own boundaries.
+# Partial original-backed MIPS macro code at 0x496520–0x49B184; BE_macro assertions at 0x496AF9–0x499337.
+# The original 0x496520 macro dispatcher has a partially reconstructed C switch; later functions start with PCodeInfo at 0x49B190.
+src/compiler/backend/BE_macro.c:
+	.text start:0x00495D60 end:0x0049B190
+	.data start:0x005E888C end:0x005E88A7
+
+src/compiler/backend/InlineAsmMIPS.c:
+	.text start:0x00490FA0 end:0x00495D60
+	.data start:0x005E80DC end:0x005E888C
+# Exceptions x4
+# E8-called exception serializer 0x4A90D0 follows InstrSelection, and helper
+# calls/Exceptions.c assertions extend through 0x4AAA80 (next is CMangler).
+# Other E8 starts: 0x4A98E0, 0x4A9A30, 0x4A9A50, 0x4AA820, 0x4AA850,
+# 0x4AA910, 0x4AA9C0. All are supported by Ghidra prologues/call graph.
+src/ps2/backend/Exceptions.c:
+	.text start:0x004A90D0 end:0x004AAA80
+# CMangler x20, our own assertions name CMangler.c
+# CMangler_Setup ends 0x4ACDD1; the following E8-called empty
+# callbacks at 0x4ACDE0, 0x4ACDF0 and 0x4ACE00 (RET + 15 NOPs each)
+# precede COptimizer at 0x4ACE10. Kept in the preceding source unit.
+src/ps2/frontend/CMangler.c:
+	.text start:0x004AAA80 end:0x004ACE10
+	.rdata start:0x005BE7F0 end:0x005BE998
+	.data start:0x005E8B9E end:0x005E8F13
+# COptimizer x9, our own assertions name COptimizer.c
+# COptimizer optimizeswitch is E8-called at 0x4ADAB0 from optimizebranches at 0x4ACF9F;
+# it ends with RET at 0x4ADD1D and has two NOPs before next object at 0x4ADD20.
+src/compiler/optimizer/COptimizer.c:
+	.text start:0x004ACE10 end:0x004ADD20
+# E8 from CodeGen at 0x43476A enters expression preparation at 0x4ADD20;
+# its recursive ENode walker starts at 0x4ADF20 and the tail contains
+# node copies, constant-object registration, float and frame helpers.
+# 14 E8-backed function starts end before the separate Operands.c
+# stack-offset function at 0x4AFC70. No assertion reveals the original
+# file name; ExprPreparation.c is a provisional backend unit name.
+src/compiler/backend/ExprPreparation.c:
+	.text start:0x004ADD20 end:0x004AFC70
+# CTemplateTools x56, our own assertions name CTemplateTools.c
+# E8/Ghidra-backed owners now absorb relocated switch cases 0x4B53F0,
+# 0x4B5DD0, 0x4B7710, 0x4B8AD0/0x4B8CB0, 0x4B9BD0 and 0x4BA980.
+# Original Ghidra identifies no independent callable body at those case labels.
+src/compiler/frontend/CTemplateTools.c:
+	.text start:0x004B4DD0 end:0x004BB05B
+# E8-called Peephole diagnostics at 0x4BB060/70 and debug hooks through
+# 0x4BB0D0, followed by the PCode optimization pipeline and its helper calls
+# 0x4BB0E0, 0x4BB180, 0x4BB2A0, 0x4BB370 and 0x4BB420; padded source
+# boundary 0x4BB05B-60 follows CTemplateTools and ends at 0x4BB600.
+src/ps2/backend/Peephole.c:
+	.text start:0x004BB060 end:0x004BBA30
+# Value numbering and alias tracking; provisional gap between Peephole and coalescing.
+src/ps2/backend/ValueNumbering.c:
+	.text start:0x004BBA30 end:0x004BE010
+# Wii CodeView DeadCodeElimination: exact x86 dead-PCode sweep 0x4BE010
+# through 0x4BE081, followed by 15 bytes of alignment before InterferenceGraph.
+src/compiler/backend/DeadCodeElimination.c:
+	.text start:0x004BE010 end:0x004BE090
+# InterferenceGraph x7, our own assertions name InterferenceGraph.c
+# A separately E8-called register-coalescing orchestration function at 0x4BE090
+# calls the interference graph routines and immediately precedes buildinterferencegraph.
+src/ps2/backend/InterferenceGraph.c:
+	.text start:0x004BE090 end:0x004BF3E0
+# MIPSSimulation.c assertions span 0x4BF4F5–0x4BFA45. The opcode classifier
+# starts at 0x4BF3E0; the final analysis walk ends at 0x4C050F. Scheduler
+# begins at 0x4C0510. Extent provisional for functions without assertions.
+src/compiler/backend/MIPSSimulation.c:
+	.text start:0x004BF3E0 end:0x004C0510
+
+# Scheduler x7, our own assertions name Scheduler.c
+src/ps2/backend/Scheduler.c:
+	.text start:0x004C0510 end:0x004C1660
+# Coloring.c assertion is 0x4C1734, in colorinstructions at 0x4C1660.
+# Functions then begin at 0x4C17D0, 0x4C1960, 0x4C1B20; next unit at 0x4C1EC0.
+src/ps2/backend/Coloring.c:
+	.text start:0x004C1660 end:0x004C1EC0
+
+# ConditionalMoveOptimization.c assertions at 0x4C22B5 in the 0x4C2030
+# rewrite routine. The unit begins after Coloring.c at 0x4C1EC0 and its last
+# helper ends at 0x4C27F5, before BE_binary.c begins at 0x4C2800.
+src/compiler/backend/ConditionalMoveOptimization.c:
+	.text start:0x004C1EC0 end:0x004C2800
+# LoopDetection: E8-called register-pressure driver at 0x4C4700 has a PE-relocated callback
+# at 0x4C4720, before the natural-loop finder at 0x4C47E0. Original code and
+# these calls place the previously unmapped 0x4C4700–0x4C47E0 in this unit.
+src/ps2/optimizer/LoopDetection.c:
+	.text start:0x004C4700 end:0x004C53AB
+# CDecl x15. The unit's assertions name CDecl.c from 0x4C56FB to 0x4CCA85, and its
+# functions (in reverse source order, like the GameCube compiler's CDecl.c) run from
+# LoopDetection's end to VReg.c's start: the type constructors NewStructType,
+# NewArrayType, NewPointerType, NewRefPointerType and NewTemplDepType are at 0x4CF520
+# down to 0x4CF430, CDecl_AddArgument at 0x4CEF50, CDecl_MakeDefaultDtorType at 0x4C6380.
+# Original PE calls/relocations and Ghidra confirm 13 previously split function bodies;
+# explicit start-to-next-callable-entry extents prevent treating internal jumps as functions.
+# Jump-table pointers in .rdata around 0x5BFA00 target internal cases at 0x4C9FF0,
+# 0x4CBDF0, 0x4CBFF0 and 0x4CDC50; distinct E8-called helpers remain split.
+src/compiler/frontend/CDecl.c:
+	.text start:0x004C53B0 end:0x004CF430
+# Wii CTypeTools: five independently E8-called, exact type constructors,
+# contiguous from 0x4CF430 to the LiveRegisters module at 0x4CF550.
+src/compiler/frontend/CTypeTools.c:
+	.text start:0x004CF430 end:0x004CF550
+# Wii CodeView LiveRegisters object: nine real functions from 0x4CF550 through
+# initialize_live_registers at 0x4CFEC0 (ten-byte function).
+src/compiler/backend/LiveRegisters.c:
+	.text start:0x004CF550 end:0x004CFED0
+# The VReg.c operand wrappers begin at 0x4CFED0 (Ghidra assertion at +0x75).
+src/compiler/backend/VReg.c:
+	.text start:0x004CFED0 end:0x004D0530
+# IroSubable reference initializer; preceding VReg has an exact 3-byte callback at 0x4D0520.
+src/ps2/optimizer/IroSubable.c:
+	.text start:0x004D0530 end:0x004D0800
+# IroLoopVector: PE base relocations establish two callback starts; E8 calls establish three helpers.
+# Wii 0x4D0900/0x4D0A30 are interior branches. Optimizer flag setup starts at 0x4D0C80.
+src/compiler/optimizer/IroLoopVector.c:
+	.text start:0x004D0800 end:0x004D0C80
+# IrOptimizer: original E8 entries at 0x4D0C80, 0x4D0ED0, 0x4D0EF0, 0x4D1030.
+# IrOptimizer.c assertion at 0x4D104A; 0x4D1D10 starts independently called register-list code.
+src/ps2/optimizer/IrOptimizer.c:
+	.text start:0x004D0C80 end:0x004D1D10
+# Provisional unit name: four E8-called register-list and recursive side-effect
+# predicates 0x4D1D10, 0x4D1D40, 0x4D1D80, 0x4D1DB0, bounded by
+# independently named MIPSError_Warning at 0x4D1E20. No assertion names
+# this short unit; Wii's CFunc findlabel pairing does not fit its lists.
+src/compiler/backend/RegListQueries.c:
+	.text start:0x004D1D10 end:0x004D1E20
+# The back end's error reporting, this compiler's counterpart of the GameCube compiler's PPCError.c. Both
+# its functions assert with MIPSError.c (line 45: the range check of the error code, inlined into each) and
+# pair with the Wii compiler's PPCError_Warning and PPCError_Error. The pairing's first extent (to
+# 0x4D1EBB) was cut short: the function it paired as PPCError_Abort is a jump-table tail of the IrOptimizer
+# driver above, and the four predicates from 0x4D1D10 to 0x4D1DB0 (the first pairs with CFunc's findlabel)
+# are not error reporting; 0x4D1F90 is CBrowse.c's first (it asserts CBrowse.c line 1047).
+src/compiler/backend/MIPSError.c:
+	.text start:0x004D1E20 end:0x004D1F90
+	.data start:0x005E95DD end:0x005E95E9
+# CBrowse x23, our own assertions name CBrowse.c
+src/ps2/frontend/CBrowse.c:
+	.text start:0x004D1F90 end:0x004D4D70
+	.data start:0x005E95E9 end:0x005E9985
+	.rdata start:0x005BFC5C end:0x005C0310
+	.bss start:0x0061B998 end:0x0061B9CC
+# CPreprocess.c: original Ghidra body at 0x4D4D70 is
+# CPrep_PreprocessDumpFileInfo; separate E8-backed newline function at
+# 0x4D4FC0 corresponds to mweppc's CPrep_PreprocessDumpNewLine.
+# 0x4D4D70 body includes internal branch continuations 0x4D4DF0 and
+# 0x4D4F6A; neither is another callable entry. 15 NOPs to 0x4D5000.
+src/ps2/frontend/CPreprocess.c:
+	.text start:0x004D4D70 end:0x004D5000
+# IroPointerAnalysis x174, our own assertions name IroPointerAnalysisADTs.c
+src/ps2/optimizer/IroPointerAnalysisADTs.c:
+	.text start:0x004D5000 end:0x004EC8AB
+# CException x37, our own assertions name CException.c
+# E8-called exception-transform wrapper 0x4EC8B0 (0x4EC8B0-0x4EC925),
+# aligned from pointer-analysis tail (last instructions through 0x4EC8AA).
+# Calls its two internal exception helpers 0x4ECC50 / 0x4EC930 and
+# exception-spec insertion 0x4ECA00. Ten padding NOPs to 0x4EC930.
+src/compiler/frontend/CException.c:
+	.text start:0x004EC8B0 end:0x004F0010
+# CSOM.c: own assertion calls at 0x4F02D7–0x4F2686 and original E8
+# function starts begin 0x4F0010. The preceding 0x4F0003–0x4F0010
+# bytes are final CException alignment NOPs; CTemplateNew starts 0x4F2C60.
+src/compiler/frontend/CSOM.c:
+	.text start:0x004F0010 end:0x004F2C60
+# CTemplateNew x17, our own assertions name CTemplateNew.c
+src/compiler/frontend/CTemplateNew.c:
+	.text start:0x004F2C60 end:0x004F63E9
+# CScope x58, our own assertions name CScope.c
+# E8-backed helpers at 0x4F6960/0x4FB7A0 bracket .rdata switch-table cases at
+# 0x4F6A30/0x4FB890; they are interior code, not separately called functions.
+src/compiler/frontend/CScope.c:
+	.text start:0x004F63F0 end:0x004FC7BE
+# CPrec x60, our own assertions name CPrec.c
+# Precompiled-header teardown/setup callbacks 0x506460/0x506470 are
+# separately E8-called RET-only functions, each padded to 16 bytes.
+# The following FuncLevelAsm routine independently starts at 0x506480.
+src/ps2/frontend/CPrec.c:
+	.text start:0x004FC7C0 end:0x00506480
+# FuncLevelAsm.c asserted at 0x5065E5: single 0x19D-byte original
+# E8-called function 0x506480, followed by three NOPs to IroMalloc.
+# Recovers function-level assembly statement to PCode translation.
+src/compiler/backend/FuncLevelAsm.c:
+	.text start:0x00506480 end:0x00506620
+	.data start:0x005E9C99 end:0x005E9CA8
+# IroMalloc x18
+# Ghidra's independently E8-called 0x506DC0 CInline_Finish and 0x506FB0
+# CInline_GenerateDeferredFuncs are source-level CInline (same bodies as
+# GameCube), as are the helper starts at 0x506F10, 0x507100 and 0x507130.
+# The 0x507386 E9 branch returns to 0x50721D inside CInline_GenerateInlineFunc.
+src/ps2/optimizer/IroMalloc.c:
+	.text start:0x00506620 end:0x00506DC0
+# CInline starts at 0x506DC0; its assertions, names and Ghidra calls
+# corroborate the boundary, even though its first original assertion lies later.
+src/ps2/frontend/CInline.c:
+	.text start:0x00506DC0 end:0x0050E8D0
+# CClass x61, our own assertions name CClass.c
+# E8/Ghidra: 0x50F370/0x50F380/0x50F3B0 are in 0x50F1D0;
+# 0x5110B0 and 0x5122B0 are branches within established owners.
+# Leave 0x511FE0 MemberObject size unchanged to preserve its near match.
+src/ps2/frontend/CClass.c:
+	.text start:0x0050E8D0 end:0x00512B15
+# CInit x24, our own assertions name CInit.c
+# Ghidra and E8 calls: 0x512B40, 0x512E20, 0x512F80, 0x513080,
+# and 0x517AF0 each own the intermediate branch-only heuristic labels.
+src/ps2/frontend/CInit.c:
+	.text start:0x00512B20 end:0x00519660
+# CTemplateFuncInst x15, our own assertions name CTemplateFuncInst.c
+src/compiler/frontend/CTemplateFuncInst.c:
+	.text start:0x00519660 end:0x0051AFE0
+# CExpr x15 in the paired suffix and CExpr.c assertion sites across 0x51B3B0-0x527752.
+# The previous start 0x522AA0 left 30,448 bytes of the same source unassigned.
+# CExpr_ParseAsmExpr at 0x51AFE0 and CExpr_CheckUnwantedAssignment at
+# 0x51B2E0 precede the named CExpr_IntegralConstOrDepExpr at 0x51B3B0.
+# Wii CExprGen/CExprTools helpers are linked within this
+# PS2 CExpr.c source object, as supported by its own assertion references.
+# E8-backed function starts 0x526070/0x526740/0x526A40 own PE-relocated
+# switch cases, and Ghidra confirms interior branch labels in the other owners.
+src/compiler/frontend/CExpr.c:
+	.text start:0x0051AFE0 end:0x00528BB0
+# Last CExpr.c assertions run through 0x528B6D; CABI.c assertions start at
+# 0x528BE9. The named CExpr_RewriteConst ends at 0x528BB0 and original
+# CABI_DestroyObject begins there, correcting the old 0x5286B0 cut.
+# CABI x36, our own assertions name CABI.c
+# Original branches and Ghidra: 0x52A110/0x52A150/0x52A3D0 continue
+# the 0x52A0E0 body; 0x52D800/0x52D9F0 continue 0x52D720.
+# 0x52CFD0 (previously AddVTable) has no independent E8 entry and lies
+# inside the already E8-called 0x52CDA0 body.
+src/ps2/frontend/CABI.c:
+	.text start:0x00528BB0 end:0x0052DEC1
+# CExpr2 x15, our own assertions name CExpr2.c
+# Ghidra: E8-backed 0x534F00/0x535030/0x538000/0x539A30 own adjacent
+# PE-relocated switch cases; extend their whole original function extents.
+# E8 starts at 0x5322A0/0x535D20 bound switch-case targets 0x532370/0x5323A0
+# and 0x536050; Ghidra resolves these PE-pointer labels inside their owners.
+# Likewise the PE case at 0x52EFC0 and cold cases 0x52EFE0/0x52F150
+# belong to 0x52EBC0; 0x536600 is an interior E9 case of 0x536400.
+src/compiler/frontend/CExpr2.c:
+	.text start:0x0052DED0 end:0x00539DA0
+# InlineAsm x13 (its file is also named where CExpr2.c is)
+src/ps2/backend/InlineAsm.c:
+	.text start:0x00539DA0 end:0x0053B510
+# Unmangle x9
+src/frontend/Unmangle.c:
+	.text start:0x0053B510 end:0x0053CC40
+# BE_elf x12, our own assertions name ELFgen.c
+# StructMoves: original x86 E8 starts and eleven StructMoves.c assertions within the range
+src/ps2/backend/StructMoves.c:
+	.text start:0x0053CC40 end:0x0053F810
+src/compiler/backend/ELFgen.c:
+	.text start:0x0053F810 end:0x005427B0
+# EPPC_DWARF2 x10, our own assertions name DWARF.c
+src/ps2/backend/DWARF.c:
+	.text start:0x005427B0 end:0x00544910
+# Wii CodeView ScanFloatX86 object and original E8 entry at 0x544910.
+src/ps2/backend/ScanFloatX86.c:
+	.text start:0x00544910 end:0x00544960
+# CExprConvMatch x18, our own assertions name CExprConvMatch.c
+# Ghidra confirms 0x549D00/0x549D10/0x549D80 are .rdata switch-case entries
+# within 0x549490, not independent functions; E8-backed entry 0x549F10 follows.
+src/ps2/frontend/CExprConvMatch.c:
+	.text start:0x00544960 end:0x0054AC50
+# BitVectors x14, our own assertions name AliasPropagation.c
+# Original E8 from 0x54AAE4 enters the alias rewrite at 0x54AC50;
+# its AliasPropagation.c assertion at 0x54ADA5 precedes the next
+# independently called alias pass at 0x54ADC0. Prior CExprConvMatch
+# ends at 0x54AC43, followed by 13 bytes of alignment padding.
+src/compiler/backend/AliasPropagation.c:
+	.text start:0x0054AC50 end:0x0054B440
+# The Wii BitVectors module owns the separate E8-backed 0x54B440–0x54B940 block.
+src/ps2/backend/BitVectors.c:
+	.text start:0x0054B440 end:0x0054B940
+	.data start:0x005EA21A end:0x005EA31A
+# Wii UseDefChains pairs its candidate_reaches_use with original PS2 entry 0x54B940
+# (paired score 0.679); the branch at the end ends at 0x54BA47 plus 9 pad bytes.
+src/ps2/optimizer/UseDefChains.c:
+	.text start:0x0054B940 end:0x0054D190
+# The GCCInlineAsm.c assertion at 0x54D2C5 lies in gcc_copy_expr, whose
+# 0x54D190 E8-backed entry follows addobjectusedef's 0x54D120-0x54D190 range.
+# The final GCC helper ends at 0x54EC68, followed by alignment before DIVbyCnst.
+src/ps2/backend/GCCInlineAsm.c:
+	.text start:0x0054D190 end:0x0054EC70
+# DIVbyCnst.c original assertions at 0x54ED94 and 0x54EE85.
+# Its unsigned magic helper starts at 0x54EC70, the signed twin at
+# 0x54EDC0, and multiply-by-constant begins at 0x54EEA0. The last
+# independently called helper ends at 0x550820, where E8 calls and
+# CTemplateClass.c assertions identify the next object.
+src/compiler/backend/DIVbyCnst.c:
+	.text start:0x0054EC70 end:0x00550820
+# CTemplateClass x30, our own assertions name CTemplateClass.c
+# Ghidra and E8 evidence: 0x550820, 0x552CB0, 0x5534A0, 0x553650,
+# 0x5536D0 and 0x553760 own their interior conditional-label blocks.
+# The first CTemplateClass function is the E8-called 0x550820 (assertion at 0x550855).
+src/ps2/frontend/CTemplateClass.c:
+	.text start:0x00550820 end:0x00553A00
+# CRTTI: original RTTI routines begin with the wrapper at 0x00553A00
+src/compiler/frontend/CRTTI.c:
+	.text start:0x00553A00 end:0x005551B0
+# CopyPropagation x5
+src/optimizer/CopyPropagation.c:
+	.text start:0x005551B0 end:0x00555800
+# VectorArraysToRegs pairing and original function prologue at 0x555800, another at 0x555B90.
+# The code following 0x555D5B is branch-only continuation of the genuine
+# 0x555B90 routine (conditional backward jumps into 0x555C70 and 0x555D4D).
+# Its last jump ends 0x555DC6. E8 from 0x5553E2 enters a separate setup
+# function at 0x555DD0; its RET at 0x555E67 precedes 24 bytes of padding.
+src/compiler/optimizer/VectorArraysToRegs.c:
+	.text start:0x00555800 end:0x00555E80
+# LoopOptimization x5
+src/optimizer/LoopOptimization.c:
+	.text start:0x00555E80 end:0x0055717B
+# The x86 MIPS instruction peephole pass asserts MIPS_Peephole.c at 0x55CAA6.
+# Its end is bounded by SpillCode at 0x55D9A0; the start is provisional,
+# conservatively after earlier unasserted optimizer helpers. Revise via call evidence.
+src/compiler/backend/MIPS_Peephole.c:
+	.text start:0x00557180 end:0x0055D9A0
+
+# Spill.c: insertspillcode starts at 0x55D9A0 and calls the allocator helper at 0x55DB40; assign_spill_locations starts at 0x55DB40 and continues through apparent entries 0x55DC00–0x55DCD0; a whole operand-spilling routine starts at 0x55E000 and extends through the apparent 0x55E130 cold block; 0x55E250 estimatespillcosts ends at 0x55E3C5. The next function asserts CTemplateFunc.c.
+src/compiler/backend/Spill.c:
+	.text start:0x0055D9A0 end:0x0055E3D0
+# CTemplateFunc x11, our own assertions name CTemplateFunc.c
+src/compiler/frontend/CTemplateFunc.c:
+	.text start:0x0055E3D0 end:0x005613E0
+# IroUtil x104, our own assertions name IroUtil.c
+src/ps2/optimizer/IroUtil.c:
+	.text start:0x005613E0 end:0x005695F2
+# IroDump x7
+src/ps2/optimizer/IroDump.c:
+	.text start:0x00569600 end:0x005698A0
+# IroVars x20, our own assertions name IroVars.c
+src/ps2/optimizer/IroVars.c:
+	.text start:0x005698B0 end:0x0056C701
+# IroType x21, our own assertions name IroType.c
+src/compiler/optimizer/IroType.c:
+	.text start:0x0056C710 end:0x0056F2F7
+# IroLinearForm x36, our own assertions name IroLinearForm.c
+src/ps2/optimizer/IroLinearForm.c:
+	.text start:0x005748D0 end:0x00579A78
+# IroPropagate x18, our own assertions name IroPropagate.c
+# IroPropagate final E8-called 0x57E290 has branch-only continuations
+# 0x57E330-0x57E430, then 15 NOPs to a distinct 0x57E440 prologue.
+src/ps2/optimizer/IroPropagate.c:
+	.text start:0x00579A80 end:0x0057E440
+# IroDependsKills: 12 original E8/relocation-backed callable entries
+# Bitvector kill-set selector at 0x57E440 is E8-called from four
+# IroDependsKills routines 0x57FAC7/57FE3A/580110/580285. The first
+# previously identified IRO_SetFuncKills starts at 0x57E4C0.
+src/compiler/optimizer/IroDependsKills.c:
+	.text start:0x0057E440 end:0x005802C0
+# IroExprs x8, our own assertions name IroExprs.c
+src/compiler/optimizer/IroExprs.c:
+	.text start:0x0058ADC0 end:0x0058B9CC
+# IroFlowgraph x19, our own assertions name IroFlowgraph.c
+src/ps2/optimizer/IroFlowgraph.c:
+	.text start:0x0058B9D0 end:0x0058D5B0
+# IROUseDef x18
+# Dead-assignment cleanup begins with E8-backed 0x58D5B0 (callers at
+# 0x4D1976, 0x4D1BD3 and 0x4D1C9C), calls the next UseDef helper at
+# 0x58D6E0, and ends in a ret at 0x58D6D6. The preceding Flowgraph
+# routine ends at 0x58D5AF, followed by one padding byte.
+# 0x590E30 called from IRO_Optimizer owns its branch-only continuations
+# 0x590F70, 0x590FA0 and 0x590FA7; its last short JMP ends at 0x590FB0.
+# Remove the false fn_00590F70 independent start and extend the unit.
+src/ps2/optimizer/IROUseDef.c:
+	.text start:0x0058D5B0 end:0x00590FB0
+# IroLibrary: Wii object pairing; original relocated callback stubs and errno routines
+src/compiler/optimizer/IroLibrary.c:
+	.text start:0x00590FB0 end:0x005911A0
+# IroAggregateAssignment: 28 PE-called or relocated entries, preceding IroScalarization
+src/ps2/optimizer/IroAggregateAssignment.c:
+	.text start:0x005911A0 end:0x00595430
+# IroScalarization: 14 original E8/relocation-backed entries, Wii optimizer module, our own assertions name IroScalarization.c
+src/compiler/optimizer/IroScalarization.c:
+	.text start:0x00595430 end:0x00596F7E
+# IroCodePositioning: 20 independent E8 or relocation-backed callable entries; internal x596FB0/x599850 excluded
+src/compiler/optimizer/IroCodePositioning.c:
+	.text start:0x00596F80 end:0x005999B0
+# IroLoop: direct-call/callback entries; 0x599850 is preceding code-positioning interior, 0x5A1F80 starts serialization
+src/ps2/optimizer/IroLoop.c:
+	.text start:0x005999B0 end:0x005A1F80
+# IroSerializeAssignments: callable starts at 0x5A1F80, 0x5A20A0 and 0x5A21B0
+src/compiler/optimizer/IroSerializeAssignments.c:
+	.text start:0x005A1F80 end:0x005A2210
+# IroEval genuine original E8-called starts, inner switch arms not callable
+src/compiler/optimizer/IroEval.c:
+	.text start:0x005A2210 end:0x005A4140
+# IroJump includes IRO_RemoveLabels at 0x5A4140 before the prior split start
+# IroJump's last routine ends with its final E8-backed function at
+# 0x5A4490 and the preceding 0x5A45E0 belongs to IroEmptyLoop, as
+# Wii object pairing and the sole E8 from 0x5A4690 prove.
+src/ps2/optimizer/IroJump.c:
+	.text start:0x005A4140 end:0x005A45E0
+# IroEmptyLoop x4
+# 0x5A45E0 is the IroEmptyLoop side-effect test called only from the
+# 0x5A4690 loop scanner. Its independent original branch continuations
+# 0x5A4650 etc conclude with ret at 0x5A4683 and 12 NOPs to 0x5A4690.
+src/compiler/optimizer/IroEmptyLoop.c:
+	.text start:0x005A45E0 end:0x005A4D4A
+# IroCSE x11
+src/ps2/optimizer/IroCSE.c:
+	.text start:0x005A4D50 end:0x005A5AC0
+# IroRangePropagation: Wii pairing places IRO_RangePropagateInFNodes at
+# 0x5A5AC0 (called from 0x4D1910) and the address-clearing helper at
+# 0x5A5BA0 before the E8-backed 0x5A5BD0. Its huge body includes the
+# 0x5A7A00 continuation jumping back to 0x5A704B, then padding to
+# 0x5A7CA0; later entries remain those previously paired to IroLoopInvariants.
+src/compiler/optimizer/IroRangePropagation.c:
+	.text start:0x005A5AC0 end:0x005ABEAB
+# IroLoopReversal: seven PE-called starts; Wii CodeView pairing to separate loop reversal object
+src/compiler/optimizer/IroLoopReversal.c:
+	.text start:0x005ABEB0 end:0x005AC5F0
+# IroLifetime: seven PE-called starts; Wii pairing assigns 0x5AC5F0 and trailing code through 0x5AE2C8
+src/compiler/optimizer/IroLifetime.c:
+	.text start:0x005AC5F0 end:0x005AE2D0
+# IroExprRegeneration x21, our own assertions name IroExprRegeneration.c
+src/compiler/optimizer/IroExprRegeneration.c:
+	.text start:0x005AE2D0 end:0x005B2FD0
+# IroBitVect x16 (the Wii object's sixteen Bv_ functions, its .bss the 0x101-byte popcount table);
+# the binary-search helper at 0x5B3830 is not one of them (nothing of this file calls it) and the
+# range ran into it. Our own assertions name IrObitvect.c.
+src/ps2/optimizer/IrObitvect.c:
+	.text start:0x005B2FD0 end:0x005B3830
+	.data start:0x005F02B6 end:0x005F02D3
+	.bss start:0x00620530 end:0x00620631
+# MSL bsearch: original PE-called standard library function, Wii-paired before qsort
+src/msl/bsearch.c:
+	.text start:0x005B3830 end:0x005B3910
+# MSL qsort: Wii-paired PE-called heapsort
+src/msl/qsort.c:
+	.text start:0x005B3910 end:0x005B3AB0
+# IroCounterLoop: five original PE-call entries corroborated by Wii CodeView object pairing
+src/compiler/optimizer/IroCounterLoop.c:
+	.text start:0x005B3AB0 end:0x005B4370
+# IroLoopRotation: Wii-paired IRO_RotateLoop function, one direct-call start
+src/compiler/optimizer/IroLoopRotation.c:
+	.text start:0x005B4370 end:0x005B4520
+# IroNonRegLoopAccesses: Wii CodeView paired optimizer gap, seven PE-called entry points
+src/ps2/optimizer/IroNonRegLoopAccesses.c:
+	.text start:0x005B4520 end:0x005B4FE0
+# IroStrengthReduction nine PE calls or relocation-backed entries; 0x5B4EA0 is interior to the preceding object
+src/ps2/optimizer/IroStrengthReduction.c:
+	.text start:0x005B4FE0 end:0x005B6A60
+# IroDependenceAnalysis: thirteen PE-call or pointer-backed entries; 0x5B6BAA is interior
+src/compiler/optimizer/IroDependenceAnalysis.c:
+	.text start:0x005B6A60 end:0x005B87BC
+
+# CW 9.2 MSL printf formatter: parse_format through sprintf, original call-backed entries.
+src/msl/ps2/printf_g.c:
+	.text start:0x00404960 end:0x00406A90
+# MIPS/PlayStation 2 parser preference callbacks and registration.
+src/driver/ParserGlue-ps2-cc.c:
+	.text start:0x00406A90 end:0x00406E50

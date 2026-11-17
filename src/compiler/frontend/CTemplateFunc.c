@@ -1,3 +1,16 @@
+#if MWCCPS2_B198
+#include "compiler/CError.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/common.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+#include "compiler/templates.h"
+#include "compiler/types.h"
+#include "compiler/CTemplateFunc.h"
+
+#else
 #include "compiler/CTemplateFunc.h"
 #include "compiler/CABI.h"
 #include "compiler/CDecl.h"
@@ -473,6 +486,7 @@ static Boolean CTempl_FuncIsAtLeastAsSpecialized(Object* func1, Object* func2) {
 #define CError_B69_SHIFT 0
 #endif
 
+#endif
 Boolean CTempl_FuncIsMoreSpecialized(Object* object1, Object* object2) {
     return CTempl_FuncIsAtLeastAsSpecialized(object1, object2) &&
         !CTempl_FuncIsAtLeastAsSpecialized(object2, object1);
@@ -533,6 +547,18 @@ Object* CTempl_PartialOrdering(Object* object, ObjectList* list, int argcount) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (19)
 #endif
+#if MWCCPS2_B198
+int CTempl_GetTemplateArgumentExpressionIndex(TemplArg* arg) {
+    CError_ASSERT(548, arg->data.paramdecl.expr);
+
+    if (ENODE_IS(arg->data.paramdecl.expr, ETEMPLDEP) &&
+        arg->data.paramdecl.expr->data.templdep.subtype == TDE_PARAM) {
+        return arg->data.paramdecl.expr->data.templdep.u0.pid.index;
+    }
+
+    return -1;
+}
+#else
 int CTempl_GetTemplateArgumentExpressionIndex(TemplArg* arg) {
 #if MWCCPSP
     CError_ASSERT(548, arg->data.paramdecl.expr);
@@ -2106,3 +2132,4 @@ Object* CTempl_TemplateFunctionCheck(DeclInfo* di, NameSpaceObjectList* nsol) {
 #endif
 
 #pragma pack(2)
+#endif

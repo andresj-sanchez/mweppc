@@ -1,3 +1,24 @@
+#if MWCCPS2_B198
+#include "driver/CLAccessPaths.h"
+#include "driver/Generic.h"
+#include "driver/Files.h"
+#include "driver/CLIO.h"
+#include "driver/cmdline.h"
+#include "driver/MacSpecs.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include <stdlib.h>
+#include <string.h>
+
+Path* Path_Init(const OSPathSpec* dir, Path* path) {
+    path->spec = xmalloc(NULL, sizeof(OSPathSpec));
+    *path->spec = *dir;
+    path->recursive = NULL;
+    path->flags = 0;
+    return path;
+}
+#else
 #include "driver/CLAccessPaths.h"
 #include "driver/CLIO.h"
 #include "driver/cmdline.h"
@@ -20,6 +41,7 @@ Path* Path_Init(const OSPathSpec* dir, Path* path) {
     path->flags = 0;
     return path;
 }
+#endif
 
 Path* Path_New(const OSPathSpec* dir) {
     Path* path;
@@ -44,6 +66,23 @@ void Path_Free(Path* path) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (2)
 #endif
+#if MWCCPS2_B198
+Boolean Paths_Terminate(Paths* paths) {
+    UInt16 index;
+
+    OS_ASSERT(63, paths != NULL);
+
+    if (paths->pathsArray) {
+        for (index = 0; index < paths->pathsCount; index++) {
+            Path_Free(paths->pathsArray[index]);
+        }
+        xfree(paths->pathsArray);
+    }
+
+    paths->pathsArray = NULL;
+    return TRUE;
+}
+#else
 Boolean Paths_Initialize(Paths* paths) {
 #if MWCCPSP
     OS_ASSERT(54, paths != NULL);
@@ -55,6 +94,7 @@ Boolean Paths_Initialize(Paths* paths) {
     paths->pathsArray = NULL;
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -64,6 +104,22 @@ Boolean Paths_Initialize(Paths* paths) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (2)
 #endif
+#if MWCCPS2_B198
+static Boolean Paths_GrowPaths(Paths* paths, UInt16* index) {
+    Path** newArray;
+
+    OS_ASSERT(84, paths != NULL);
+
+    if (paths->pathsCount >= paths->arraySize) {
+        paths->arraySize += 20;
+        newArray = xrealloc("access paths", paths->pathsArray, sizeof(Path*) * paths->arraySize);
+        paths->pathsArray = newArray;
+    }
+
+    *index = paths->pathsCount++;
+    return TRUE;
+}
+#else
 Boolean Paths_Terminate(Paths* paths) {
     UInt16 index;
 
@@ -110,6 +166,7 @@ static Boolean Paths_GrowPaths(Paths* paths, UInt16* index) {
     *index = paths->pathsCount++;
     return TRUE;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -172,6 +229,17 @@ Boolean Paths_DeletePath(Paths* paths, UInt16 index) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (2)
 #endif
+#if MWCCPS2_B198
+Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
+    OS_ASSERT(151, paths != NULL);
+
+    if (pathnum < paths->pathsCount) {
+        return paths->pathsArray[pathnum];
+    } else {
+        return NULL;
+    }
+}
+#else
 Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
 #if MWCCPSP
     OS_ASSERT(153, paths != NULL);
@@ -185,6 +253,7 @@ Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
         return NULL;
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -194,6 +263,13 @@ Path* Paths_GetPath(Paths* paths, UInt16 pathnum) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (2)
 #endif
+#if MWCCPS2_B198
+UInt16 Paths_Count(const Paths* paths) {
+    OS_ASSERT(161, paths != NULL);
+
+    return paths->pathsCount;
+}
+#else
 UInt16 Paths_Count(const Paths* paths) {
 #if MWCCPSP
     OS_ASSERT(163, paths != NULL);
@@ -245,6 +321,7 @@ Path* Paths_FindPathSpec(const Paths* paths, const OSPathSpec* dir) {
 
     return NULL;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
@@ -310,6 +387,25 @@ Boolean Paths_GatherRecurse(Path* path) {
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT (42)
 #endif
+#if MWCCPS2_B198
+int Paths_CountRecurse(Paths* paths) {
+    UInt16 idx;
+    int mine;
+    Path* path;
+
+    mine = Paths_Count(paths);
+    for (idx = 0; idx < mine; idx++) {
+        path = Paths_GetPath(paths, idx);
+        OS_ASSERT(336, path);
+
+        if (path->recursive) {
+            mine += Paths_CountRecurse(path->recursive);
+        }
+    }
+
+    return mine;
+}
+#else
 int Paths_CountRecurse(Paths* paths) {
     UInt16 idx;
     int mine;
@@ -331,11 +427,29 @@ int Paths_CountRecurse(Paths* paths) {
 
     return mine;
 }
+#endif
 #if MWCCPS2_B52
 #undef OS_B52_SHIFT
 #define OS_B52_SHIFT 0
 #endif
 
+#if MWCCPS2_B198
+static void CopyRecurseFSS(OSSpec** list, Paths* paths, UInt16* count) {
+    UInt16 idx;
+    Path* path;
+
+    for (idx = 0; idx < Paths_Count(paths); idx++) {
+        path = Paths_GetPath(paths, idx);
+        OS_ASSERT(394, path && *count > 0);
+        OS_MakeSpecWithPath(path->spec, NULL, FALSE, *list);
+        (*list)++;
+        (*count)--;
+        if (path->recursive) {
+            CopyRecurseFSS(list, path->recursive, count);
+        }
+    }
+}
+#else
 #if MWCCPSP
 #if CW_SHELL_OSSPEC
 // 3.0.1: the shell's specs are OSSpecs, copied as they are (the first
@@ -409,4 +523,5 @@ void Paths_CopyRecurseFSS(FSSpec* list, Paths* paths, UInt16 count) {
     CopyRecurseFSS(&list, paths, &count);
     OS_ASSERT(367, count == 0);
 }
+#endif
 #endif

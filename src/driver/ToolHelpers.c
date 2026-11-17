@@ -1,3 +1,24 @@
+#if MWCCPS2_B198
+#include "driver/pref_structs.h"
+#include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
+#include "driver/ToolHelpers.h"
+#include "driver/ParserFace.h"
+#include "driver/ParserErrors.h"
+#include "driver/Targets.h"
+#include "driver/MacSpecs.h"
+#include "driver/MsDos.h"
+#include "driver/Generic.h"
+#include "driver/option_system.h"
+#include "driver/IO.h"
+#include "driver/CLPluginAPI.h"
+#include "driver/CWParserPluginsPrivate.h"
+#include <errno.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <string.h>
+
+#else
 #include "driver/ToolHelpers.h"
 #if MWCCPSP
 #include "driver/PluginSpecs.h"
@@ -23,12 +44,115 @@
 #include <stdio.h>
 #include <string.h>
 
+#endif
 static Boolean setStage;
 char linkerOutputFilename[264];
 Boolean setLinkerOutputFilename;
 Boolean setOutputDirectory;
 SInt16 outputOrdering;
 
+#if MWCCPS2_B198
+int Opt_HandleOutputName(const char* opt, void* var, const char* filename, int flags) {
+    OSSpec spec;
+    int err;
+    SInt32 result;
+    Boolean isfile;
+
+    if (!filename) {
+        filename = opt;
+    }
+
+    if ((pCmdLine.state == OptsCmdLineState_CompileAndLink ||
+         (pCmdLine.state == OptsCmdLineState_Unset && pTool->TYPE == CWDROPINLINKERTYPE)) &&
+        pCmdLine.toDisk != 4) {
+        if (setLinkerOutputFilename) {
+            CLPReportError(CLPStr41, filename);
+            return FALSE;
+        }
+        setLinkerOutputFilename = TRUE;
+        if (pTool->TYPE == CWDROPINCOMPILERTYPE) {
+            strncpy(linkerOutputFilename, filename, 256);
+        } else {
+            OSSpec spec;
+            int err;
+            Boolean isfile;
+            err = OS_MakeSpec(filename, &spec, &isfile);
+            if (err) {
+                CLPOSAlert(CLPStr64, err, filename);
+                return FALSE;
+            }
+            if (isfile) {
+                OS_NameSpecToString(&spec.name, linkerOutputFilename, 260);
+            }
+            SetOutputFileDirectory(&spec.path);
+        }
+        return TRUE;
+    } else {
+        err = OS_MakeSpec(filename, &spec, &isfile);
+        if (err) {
+            CLPOSAlert(CLPStr64, err, filename);
+            return FALSE;
+        }
+
+        if (!err && !isfile) {
+            CWFileSpec ofd;
+            if (setOutputDirectory) {
+                CLPReportError(CLPStr59, filename);
+                return FALSE;
+            }
+            setOutputDirectory = TRUE;
+
+            CL_OSSpecToCWFileSpec(2, &spec, &ofd);
+            result = CWParserSetOutputFileDirectory(parseopts.context, &ofd);
+            if (result) {
+                failedCallback = "CWParserSetOutputFileDirectory";
+                longjmp(exit_plugin, result);
+            }
+            return TRUE;
+        } else {
+            SInt32 index;
+            CWProjectFileInfo pfi;
+            if (parseopts.lastoutputname[0]) {
+                CLPReportError(CLPStr41, filename);
+                return FALSE;
+            }
+            strncpy(parseopts.lastoutputname, filename, 256);
+            if (pCmdLine.stages == CmdLineStageMask_Dp) {
+                return TRUE;
+            }
+
+            if (outputOrdering == OutputOrdering_None || outputOrdering == OutputOrdering_After) {
+                CWGetProjectFileCount(parseopts.context, &index);
+                while (index-- > 0) {
+                    if (!CWGetFileInfo(parseopts.context, index, FALSE, &pfi) &&
+                        pfi.filetype == 'TEXT') {
+                        outputOrdering = OutputOrdering_After;
+                        break;
+                    }
+                }
+
+                if (index <= 0) {
+                    CWGetProjectFileCount(parseopts.context, &index);
+                    if (index > 0) {
+                        outputOrdering = OutputOrdering_After;
+                    }
+                    --index;
+                }
+
+                if (outputOrdering == OutputOrdering_None) {
+                    outputOrdering = OutputOrdering_Before;
+                    return TRUE;
+                }
+
+                SetFileOutputName(index, lastStage, parseopts.lastoutputname);
+                parseopts.lastoutputname[0] = 0;
+            }
+
+            return TRUE;
+        }
+    }
+}
+#else
 int Opt_HandleOutputName(const char* opt, void* var, const char* filename, int flags) {
     OSSpec spec;
     int err;
@@ -145,6 +269,7 @@ int Opt_HandleOutputName(const char* opt, void* var, const char* filename, int f
         }
     }
 }
+#endif
 
 int ValidateToolState(Boolean mustHaveFiles) {
     if (parseopts.noOptions) {
@@ -272,6 +397,7 @@ int Opt_SetStage(const char* opt, void* str, const char* arg, int flags) {
 
     return TRUE;
 }
+#if !MWCCPS2_B198
 
 int Opt_RedirectStream(const char* opt, void* file, const char* filename) {
     OSSpec spec;
@@ -292,3 +418,4 @@ int Opt_RedirectStream(const char* opt, void* file, const char* filename) {
 
     return TRUE;
 }
+#endif

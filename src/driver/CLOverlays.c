@@ -1,9 +1,19 @@
+#if MWCCPS2_B198
+#include "driver/CLOverlays.h"
+#include "driver/CLErrors.h"
+#include "compiler/common.h"
+#include "driver/MemUtils.h"
+#include "driver/oslib.h"
+#include <string.h>
+
+#else
 #include "driver/CLOverlays.h"
 #include "driver/CLErrors.h"
 #include "driver/MemUtils.h"
 #include "driver/oslib.h"
 #include <string.h>
 
+#endif
 void OvlGroup_Delete(OvlGroup* grp);
 void Overlay_Delete(Overlay* oly);
 SInt32 Overlay_GetFile(Overlay* oly, SInt32 filnum);
@@ -56,6 +66,26 @@ Boolean Overlays_Terminate(Overlays* this) {
     return TRUE;
 }
 
+#if MWCCPS2_B198
+Boolean Overlays_AddOvlGroup(Overlays* this, OvlGroup* grp, SInt32* grpnum) {
+    OS_ASSERT(70, this);
+    OS_ASSERT(71, grp);
+
+    if (this->groups == NULL) {
+        this->groups = grp;
+    } else {
+        this->lastgrp->next = grp;
+    }
+    this->lastgrp = grp;
+
+    if (grpnum) {
+        *grpnum = this->grpcnt;
+    }
+    this->grpcnt++;
+
+    return TRUE;
+}
+#else
 Boolean Overlays_AddOvlGroup(Overlays* this, OvlGroup* grp, SInt32* grpnum) {
     OS_ASSERT(70, this);
     OS_ASSERT(71, grp);
@@ -82,6 +112,7 @@ Boolean Overlays_AddOvlGroup(Overlays* this, OvlGroup* grp, SInt32* grpnum) {
 
     return TRUE;
 }
+#endif
 
 OvlGroup* Overlays_GetOvlGroup(Overlays* this, SInt32 grpnum) {
     OvlGroup* grp;
@@ -117,6 +148,7 @@ SInt32 Overlays_CountGroups(Overlays* this) {
     return num;
 }
 
+#if !MWCCPS2_B198
 Boolean Overlays_AddFileToOverlay(Overlays* this, SInt32 grpnum, SInt32 ovlnum, SInt32 filenum) {
     Overlay* oly;
 
@@ -130,6 +162,7 @@ Boolean Overlays_AddFileToOverlay(Overlays* this, SInt32 grpnum, SInt32 ovlnum, 
     }
 }
 
+#endif
 Overlay* Overlays_GetOverlayInGroup(Overlays* this, SInt32 grpnum, SInt32 ovlnum) {
     OvlGroup* grp;
 
@@ -156,6 +189,26 @@ SInt32 Overlays_GetFileInOverlay(Overlays* this, SInt32 grpnum, SInt32 ovlnum, S
     }
 }
 
+#if MWCCPS2_B198
+OvlGroup* OvlGroup_New(const char* name, OvlAddr addr) {
+    OvlGroup* grp;
+
+    OS_ASSERT(175, name);
+
+    grp = xmalloc(NULL, sizeof(OvlGroup));
+    if (grp) {
+        strncpy(grp->name, name, sizeof(grp->name));
+        grp->name[sizeof(grp->name) - 1] = 0;
+        grp->addr = addr;
+        grp->olys = grp->lastoly = NULL;
+        grp->olycnt = 0;
+        grp->next = NULL;
+    } else {
+        CLInternalError("CLOverlays.c", 188, "Could not allocate %s", "overlay group");
+    }
+    return grp;
+}
+#else
 OvlGroup* OvlGroup_New(const char* name, OvlAddr addr) {
     OvlGroup* grp;
 
@@ -174,6 +227,7 @@ OvlGroup* OvlGroup_New(const char* name, OvlAddr addr) {
     }
     return grp;
 }
+#endif
 
 void OvlGroup_Delete(OvlGroup* grp) {
     Overlay* scan;
@@ -243,6 +297,23 @@ SInt32 OvlGroup_CountOverlays(OvlGroup* this) {
     return num;
 }
 
+#if MWCCPS2_B198
+Overlay* Overlay_New(const char* name) {
+    Overlay* oly;
+
+    oly = xmalloc(NULL, sizeof(Overlay));
+    if (oly) {
+        strncpy(oly->name, name, sizeof(oly->name));
+        oly->name[sizeof(oly->name) - 1] = 0;
+        oly->list = NULL;
+        oly->cnt = oly->max = 0;
+        oly->next = NULL;
+    } else {
+        CLInternalError("CLOverlays.c", 281, "Could not allocate %s", "overlay");
+    }
+    return oly;
+}
+#else
 Overlay* Overlay_New(const char* name) {
     Overlay* oly;
 
@@ -258,6 +329,7 @@ Overlay* Overlay_New(const char* name) {
     }
     return oly;
 }
+#endif
 
 void Overlay_Delete(Overlay* oly) {
     OS_ASSERT(288, oly);

@@ -28,6 +28,11 @@ typedef struct ERange {
     CInt64 lower;
 } ERange;
 
+#if MWCCPS2_B198
+#define EVR(n) (*(ERange**)&(n)->unk18)
+#define ER_POINTSTO(n) (((UInt8*)(n))[0x2B])
+
+#endif
 typedef struct ERecord {
     Object* object;
     ERange* range;
@@ -37,6 +42,7 @@ typedef struct ERecord {
 
 static ERecord* ERangeFirst;
 static ERecord* ERangeLast;
+#if !MWCCPS2_B198
 
 static ERange* ERnewERange(ERangeType type) {
     ERange* range;
@@ -879,3 +885,4 @@ Boolean IRO_RangePropagateInFNode(void) {
     IRO_CheckForUserBreak();
     return result;
 }
+#endif

@@ -1,0 +1,40 @@
+# strtoull.c: from the MSL's MSL_C/MSL_Common/Src/strtoul.c, CodeWarrior 9.2
++ #include "compiler/common.h"
++ #include <stdint.h>
+= 75-75
++ #include "msl/ctype_api.h"
++ #include "msl/stdio_api.h"
++ #include "msl/strtoul.h"
+= 7-7
++ #define ULLONG_MAX (~(unsigned long long)0)
++ #define final_state(scan_state) ((scan_state) & (finished | failure))
++ #define success(scan_state) ((scan_state) & (leading_zero | digit_loop | finished))
++ #define fetch() (count++, (*ReadProc)(ReadProcArg, 0, __GetAChar))
++ #define unfetch(c) (*ReadProc)(ReadProcArg, c, __UngetAChar)
+= 73-73
++ enum scan_states {
++     start = 1,
++     check_for_zero = 2,
++     leading_zero = 4,
++     need_digit = 8,
++     digit_loop = 16,
++     finished = 32,
++     failure = 64
+= 92-93
++ static inline int isspace(int c) {
++     return ((c < 0) || (c >= __msl_cmap_size)) ? 0 : (int)(_MSL_CMAP_ACCESS[c] & __msl_space);
+= 260-260
++ static inline int isdigit(int c) {
++     return ((c < 0) || (c >= __msl_cmap_size)) ? 0 : (int)(_MSL_CMAP_ACCESS[c] & __msl_digit);
+= 260-260
++ static inline int isalpha(int c) {
++     return ((c < 0) || (c >= __msl_cmap_size)) ? 0 : (int)(_MSL_CMAP_ACCESS[c] & __msl_alpha);
+= 260-260
++ static inline int toupper(int c) {
++     return ((c < 0) || (c >= 256)) ? c : (int)(_MSL_CUPPER_ACCESS[c]);
+= 260-261
++ unsigned long long __strtoull(int		  base, 
+= 266-266
++ 								int (*ReadProc)(void *, int, int),
+= 268-425
+= 427-427

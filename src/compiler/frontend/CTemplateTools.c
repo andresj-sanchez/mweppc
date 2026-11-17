@@ -1,3 +1,25 @@
+#if MWCCPS2_B198
+#include "compiler/CDecl.h"
+#include "compiler/CError.h"
+#include "compiler/CInline.h"
+#include "compiler/CScope.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CParser.h"
+#include "compiler/CTemplateTools.h"
+#include "compiler/CRTTI.h"
+#include "compiler/common.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/templates.h"
+#include "compiler/types.h"
+
+void CTemplTool_PopInstance(TemplStack* stack) {
+    ctempl_curinstance = stack;
+    if (--ctempl_instdepth < 0) {
+        ctempl_instdepth = 0;
+    }
+}
+#else
 #include "compiler/CTemplateTools.h"
 #include "compiler/CABI.h"
 #include "compiler/CDecl.h"
@@ -831,6 +853,7 @@ NameSpace* CTemplTool_InsertTemplateArgumentNameSpace(
 
     return nspace;
 }
+#endif
 
 void CTemplTool_RemoveOuterTemplateArgumentNameSpace(NameSpace* nspace) {
     while (nspace->parent) {
@@ -843,6 +866,26 @@ void CTemplTool_RemoveOuterTemplateArgumentNameSpace(NameSpace* nspace) {
     }
 }
 
+#if MWCCPS2_B198
+void CTemplTool_SetupOuterTemplateArgumentNameSpace(NameSpace* nspace) {
+    NameSpace* newns;
+
+    while (nspace) {
+        if (nspace->theclass && (nspace->theclass->flags & CLASS_IS_TEMPL_INST)) {
+            newns = CTemplTool_SetupTemplateArgumentNameSpace(
+                TEMPL_CLASS_INST(nspace->theclass)->templ->templ__params,
+                TEMPL_CLASS_INST(nspace->theclass)->inst_args,
+                FALSE
+            );
+            newns->parent = nspace->parent;
+            nspace->parent = newns;
+        }
+
+        nspace = nspace->parent;
+    }
+}
+
+#endif
 void CTemplTool_RemoveTemplateArgumentNameSpace(
     NameSpace* nspace, TemplClassInst* inst, CScopeSave* save
 ) {
@@ -854,6 +897,44 @@ void CTemplTool_RemoveTemplateArgumentNameSpace(
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (301)
 #endif
+#if MWCCPS2_B198
+Boolean CTemplTool_EqualParams(TemplParam* a, TemplParam* b, Boolean copyNames) {
+    while (1) {
+        if (!a) {
+            return b == NULL;
+        }
+        if (!b) {
+            return FALSE;
+        }
+
+        if (a->pid.type != b->pid.type) {
+            return FALSE;
+        }
+
+        if (copyNames) {
+            a->name = b->name;
+        }
+
+        switch (a->pid.type) {
+            case TPT_TYPE:
+                break;
+            case TPT_NONTYPE:
+                if (!is_typesame(a->data.paramdecl.type, b->data.paramdecl.type) ||
+                    a->data.paramdecl.qual != b->data.paramdecl.qual) {
+                    return FALSE;
+                }
+                break;
+            case TPT_TEMPLATE:
+                break;
+            default:
+                CError_FATAL(909);
+        }
+
+        a = a->next;
+        b = b->next;
+    }
+}
+#else
 Boolean CTemplTool_IsTemplateArgumentDependentType(Type* type) {
     FuncArg* arg;
 
@@ -1256,6 +1337,7 @@ Boolean CTemplTool_EqualArgs(TemplArg* a, TemplArg* b) {
 
     return TRUE;
 }
+#endif
 
 TemplArg* CTemplTool_MakeGlobalTemplArgCopy(TemplArg* args) {
     TemplArg* firstCopy;
@@ -1283,6 +1365,31 @@ TemplArg* CTemplTool_MakeGlobalTemplArgCopy(TemplArg* args) {
     return firstCopy;
 }
 
+#if MWCCPS2_B198
+TemplArg* CTemplTool_MakeTemplArgList(DeduceInfo* info) {
+    TemplArg* args;
+    TemplArg* last;
+    int i;
+
+    for (i = 0; i < info->maxCount; i++) {
+        if (i) {
+            last->next = galloc(sizeof(TemplArg));
+            last = last->next;
+        } else {
+            args = last = galloc(sizeof(TemplArg));
+        }
+
+        *last = info->args[i];
+        if (last->pid.type == TPT_NONTYPE && last->data.paramdecl.expr) {
+            last->data.paramdecl.expr =
+                CInline_CopyExpression(last->data.paramdecl.expr, CopyModeGlobal);
+        }
+    }
+
+    last->next = NULL;
+    return args;
+}
+#else
 Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep* a, TypeTemplDep* b) {
     if (a == b) {
         return TRUE;
@@ -1314,6 +1421,7 @@ Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep* a, TypeTemplDep* b) {
             return FALSE;
     }
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B69_SHIFT
@@ -1321,6 +1429,64 @@ Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep* a, TypeTemplDep* b) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (1426)
 #endif
+#if MWCCPS2_B198
+Type* CTemplTool_IsDependentTemplate(TemplClass* tmclass, TemplArg* args) {
+    TemplParam* param;
+    TemplArg* arg;
+    Type* type;
+    TemplClass* conv;
+
+    conv = CRTTI_Class2TemplClass(tmclass);
+    if (!tmclass->tail.templ_parent || tmclass->tail.inst_parent) {
+        arg = args;
+        param = conv->tail.templ__params;
+        while (1) {
+            if (!arg) {
+                return NULL;
+            }
+
+            if (!param || arg->pid.type != param->pid.type) {
+                CError_FATAL(1703);
+            }
+
+            switch (arg->pid.type) {
+                case TPT_TYPE:
+                    if (CTemplTool_IsTypeDepType(arg->data.typeparam.type)) {
+                        goto done;
+                    }
+                    break;
+                case TPT_NONTYPE:
+                    if (CTemplTool_IsValueDepExpr(arg->data.paramdecl.expr)) {
+                        goto done;
+                    }
+                    break;
+                case TPT_TEMPLATE:
+                    if (!IS_TYPE_CLASS(arg->data.typeparam.type) &&
+                        CTemplTool_IsTypeDepType(arg->data.typeparam.type)) {
+                        goto done;
+                    }
+                    break;
+                default:
+                    CError_FATAL(1720);
+                    goto done;
+            }
+
+            arg = arg->next;
+            param = param->next;
+        }
+    }
+done:
+    if (cscope_current->theclass == TYPE_CLASS(conv) &&
+        CTemplTool_IsSameTemplate(conv->tail.templ__params, args)) {
+        return TYPE(conv);
+    }
+
+    type = TYPE(CDecl_NewTemplDepType(TEMPLDEP_TEMPLATE));
+    TYPE_TEMPLATE(type)->u.templ.templ = tmclass;
+    TYPE_TEMPLATE(type)->u.templ.args = args;
+    return type;
+}
+#else
 Type* CTemplTool_DeduceArgDepType(TemplArg* args, Type* type, UInt32 qual, UInt32* resultQual) {
     TemplArg* arg;
 
@@ -2725,4 +2891,5 @@ TemplClass* func_004AF260(void) {
     }
     return NULL;
 }
+#endif
 #endif

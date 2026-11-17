@@ -1,3 +1,11 @@
+#if MWCCPS2_B198
+#include "compiler/CompilerTools.h"
+#include "compiler/common.h"
+#include "compiler/cos.h"
+#include <string.h>
+#include "driver/CCompiler.h"
+
+#else
 #include "compiler/CompilerTools.h"
 #if MWCCPSP
 #include "compiler/IroMalloc.h"
@@ -25,6 +33,7 @@ UInt32 bit_masks[32] = {
 };
 // clang-format on
 
+#endif
 typedef struct HeapBlock {
     struct HeapBlock* next;
     Handle blockhandle;
@@ -47,10 +56,15 @@ static HeapMem oheap;
 static HeapMem bheap;
 static heaperror_t heaperror;
 static short lheaplockcount;
+#if !MWCCPS2_B198
 long hash_name_id;
 HashNameNode** name_hash_nodes;
 void (*GListErrorProc)(void);
+#endif
 
+#if MWCCPS2_B198
+void (*GListErrorProc)(void);
+#else
 void CompilerGetCString(short index, char* string) {
 #if MWCCPSP
     COS_GetString(string, 10100, (SInt16)(int)index);
@@ -77,6 +91,7 @@ unsigned char* CTool_CtoPstr(char* cstr) {
     cstr[0] = length;
     return (unsigned char*)cstr;
 }
+#endif
 
 static void GListError(void) {
     if (GListErrorProc) {
@@ -84,6 +99,140 @@ static void GListError(void) {
     }
 }
 
+#if MWCCPS2_B198
+static void MoreHeapSpace(HeapMem* heapp, SInt32 size);
+
+heaperror_t getheaperror(void) {
+    return heaperror;
+}
+
+void setheaperror(heaperror_t heaperrorproc) {
+    heaperror = heaperrorproc;
+}
+
+static void MoreHeapSpace(HeapMem* heapp, SInt32 size) {
+    HeapBlock* blockp;
+    Handle hndl;
+
+    blockp = heapp->blocks;
+    if (blockp) {
+        heapp->curblock->blockfree = heapp->curfree;
+        while (blockp) {
+            if (blockp->blockfree >= size) {
+                goto gotBlock;
+            }
+            blockp = blockp->next;
+        }
+    }
+
+    size += heapp->allocsize;
+    if (systemHandles) {
+        hndl = COS_NewOSHandle(size << 1);
+        if (hndl != 0) {
+            goto createdTempDoubleBlock;
+        }
+        hndl = COS_NewOSHandle(size);
+        if (hndl != 0) {
+            goto createdBlock;
+        }
+    }
+    hndl = COS_NewHandle(size);
+    if (hndl != 0) {
+        goto createdBlock;
+    }
+
+    if (heaperror) {
+        heaperror();
+    }
+    return;
+
+createdTempDoubleBlock:
+    size <<= 1;
+    goto createdBlock;
+createdBlock:
+    COS_LockHandleHi(hndl);
+    blockp = (HeapBlock*)*hndl;
+    blockp->next = heapp->blocks;
+    heapp->blocks = blockp;
+    blockp->blockhandle = hndl;
+    blockp->blocksize = size;
+    blockp->blockfree = size - sizeof(HeapBlock);
+gotBlock:
+    heapp->curblock = blockp;
+    heapp->curfree = blockp->blockfree;
+    heapp->curfreep = ((char*)blockp) + blockp->blocksize - blockp->blockfree;
+}
+
+void* galloc(UInt32 size) {
+    char* cp;
+
+    size = (size + 7) & ~7;
+    if (gheap.curfree < (int)size) {
+        MoreHeapSpace(&gheap, size);
+    }
+
+    gheap.curfree -= size;
+    cp = gheap.curfreep;
+    gheap.curfreep += size;
+    return cp;
+}
+
+void* lalloc(UInt32 size) {
+    char* cp;
+
+    size = (size + 7) & ~7;
+    if (lheap.curfree < (int)size) {
+        MoreHeapSpace(&lheap, size);
+    }
+
+    lheap.curfree -= size;
+    cp = lheap.curfreep;
+    lheap.curfreep += size;
+    return cp;
+}
+
+void* aalloc(UInt32 size) {
+    char* cp;
+
+    size = (size + 7) & ~7;
+    if (aheap.curfree < (int)size) {
+        MoreHeapSpace(&aheap, size);
+    }
+
+    aheap.curfree -= size;
+    cp = aheap.curfreep;
+    aheap.curfreep += size;
+    return cp;
+}
+
+void* oalloc(UInt32 size) {
+    char* cp;
+
+    size = (size + 7) & ~7;
+    if (oheap.curfree < (int)size) {
+        MoreHeapSpace(&oheap, size);
+    }
+
+    oheap.curfree -= size;
+    cp = oheap.curfreep;
+    oheap.curfreep += size;
+    return cp;
+}
+
+void locklheap(void) {
+    lheaplockcount++;
+}
+
+void unlocklheap(void) {
+    if (lheaplockcount > 0) {
+        --lheaplockcount;
+    }
+}
+
+void memclrw(void* ptr, UInt32 size) {
+    memset(ptr, 0, size);
+}
+#else
 short InitGList(GList* gl, SInt32 size) {
     if ((gl->data = COS_NewOSHandle(size)) == 0) {
         if ((gl->data = COS_NewHandle(size)) == 0) {
@@ -95,6 +244,7 @@ short InitGList(GList* gl, SInt32 size) {
     gl->hndlsize = size;
     return 0;
 }
+#endif
 
 void FreeGList(GList* gl) {
     if (gl->data != 0) {
@@ -162,6 +312,7 @@ void AppendGListWord(GList* gl, SInt16 theword) {
     *(ptr++) = ((char*)&theword)[1];
 }
 
+#if !MWCCPS2_B198
 void AppendGListTargetEndianWord(GList* gl, UInt16 theword) {
     char* ptr;
 
@@ -213,6 +364,7 @@ void AppendGListTargetEndianLong(GList* gl, UInt32 theword) {
     *(ptr++) = ((char*)&theword)[3];
 }
 
+#endif
 void AppendGListID(GList* gl, const char* name) {
     size_t n = strlen(name) + 1;
     if ((gl->size + n) > gl->hndlsize) {
@@ -236,6 +388,7 @@ void AppendGListName(GList* gl, const char* name) {
     memcpy(*gl->data + gl->size, name, n);
     gl->size += n;
 }
+#if !MWCCPS2_B198
 
 void RemoveGListData(GList* gl, SInt32 size) {
     gl->size -= size;
@@ -1478,3 +1631,4 @@ int strcat_safe(char* dest, const char* src, SInt32 len) {
 }
 
 #pragma pack(2)
+#endif

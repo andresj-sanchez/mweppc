@@ -791,6 +791,96 @@ static const char* Unmangle_Vector(
 }
 
 #endif
+#if MWCCPS2_B198
+
+static const char* Unmangle_Type(jmp_buf errorbuf, UnmangleBuffer* ub, const char* p) {
+    const char* modifiers;
+    const char* what;
+
+    modifiers = p;
+    p = Unmangle_Modifiers(NULL, p);
+    if (modifiers == p) {
+        modifiers = NULL;
+    }
+
+    switch (*p) {
+        case 'b':
+            what = "bool";
+            break;
+        case 'v':
+            what = "void";
+            break;
+        case 'c':
+            what = "char";
+            break;
+        case 'w':
+            what = "wchar_t";
+            break;
+        case 's':
+            what = "short";
+            break;
+        case 'i':
+            what = "int";
+            break;
+        case 'l':
+            what = "long";
+            break;
+        case 'x':
+            what = "long long";
+            break;
+        case 'f':
+            what = "float";
+            break;
+        case 'D':
+            what = "short double";
+            break;
+        case 'd':
+            what = "double";
+            break;
+        case 'r':
+            what = "long double";
+            break;
+        case 'X':
+            return Unmangle_Vector(errorbuf, ub, p, modifiers);
+        case 'P':
+            return Unmangle_Pointer(errorbuf, ub, p, modifiers, '*');
+        case 'R':
+            return Unmangle_Pointer(errorbuf, ub, p, modifiers, '&');
+        case 'M':
+            return Unmangle_Pointer(errorbuf, ub, p, modifiers, 'M');
+        case 'A':
+            return Unmangle_ArrayType(errorbuf, ub, p, NULL);
+        case 'F':
+            return Unmangle_FunctionType(errorbuf, ub, p, NULL);
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case 'Q':
+            if (modifiers) {
+                Unmangle_Modifiers(ub, modifiers);
+                Unmangle_BufferAppendChar(ub, ' ');
+            }
+            return Unmangle_QClassName(errorbuf, ub, p, FALSE, FALSE);
+        default:
+            Unmangle_Error(errorbuf);
+    }
+
+    if (modifiers) {
+        Unmangle_Modifiers(ub, modifiers);
+        Unmangle_BufferAppendChar(ub, ' ');
+    }
+    Unmangle_BufferAppendString(ub, what);
+
+    return p + 1;
+}
+#else
 static const char* Unmangle_Type(jmp_buf errorbuf, UnmangleBuffer* ub, const char* p) {
 #if !MWCCPS2_B52
     const char* modifiers;
@@ -887,6 +977,7 @@ static const char* Unmangle_Type(jmp_buf errorbuf, UnmangleBuffer* ub, const cha
 
     return p + 1;
 }
+#endif
 
 static void Unmangle_FuncArgList(jmp_buf errorbuf, UnmangleBuffer* ub, const char* p) {
     Boolean is_volatile;
@@ -950,6 +1041,108 @@ static void Unmangle_FuncArgList(jmp_buf errorbuf, UnmangleBuffer* ub, const cha
     Unmangle_BufferTerminate(ub);
 }
 
+#if MWCCPS2_B198
+void MWUnmangle(const char* input, char* output, size_t maxLen) {
+    jmp_buf errorbuf;
+    UnmangleBuffer ub_internal;
+    UnmangleBuffer ub;
+    char mybuf[256];
+    const char* p;
+    Boolean hasSeparator;
+    char ch;
+
+    switch (*input) {
+        case '.':
+            if (UnmanglePrefix_005E9E7D == '.') {
+                input++;
+            }
+            break;
+        case '_':
+            if (UnmanglePrefix_005E9E7D == '_') {
+                input++;
+            }
+            switch (input[1]) {
+                case '%':
+                case '#':
+                case '@':
+                    input += 2;
+                    break;
+            }
+            break;
+    }
+
+    if (setjmp(errorbuf) == 0) {
+        Unmangle_BufferInit(&ub_internal, mybuf, sizeof(mybuf));
+        Unmangle_BufferInit(&ub, output, maxLen);
+
+        if (!(input[0] == '_' &&
+              input[1] == '_' &&
+              (p = Unmangle_SpecialName(errorbuf, &ub_internal, input + 2)))) {
+            hasSeparator = FALSE;
+            Unmangle_BufferInit(&ub_internal, mybuf, sizeof(mybuf));
+            for (p = input; *p == '_'; p++) {
+                Unmangle_BufferAppendChar(&ub_internal, '_');
+            }
+
+            while ((ch = *(p++))) {
+                if (ch == '_' && *p == '_') {
+                    while (*(++p) == '_') {
+                        Unmangle_BufferAppendChar(&ub_internal, '_');
+                    }
+                    hasSeparator = TRUE;
+                    break;
+                }
+                Unmangle_BufferAppendChar(&ub_internal, ch);
+            }
+
+            Unmangle_BufferTerminate(&ub_internal);
+
+            if (!hasSeparator) {
+                Unmangle_BufferAppendString(&ub, mybuf);
+                Unmangle_BufferTerminate(&ub);
+                return;
+            }
+        }
+
+        switch (*p) {
+            case 'F':
+                if (mybuf[1] != 0 || (mybuf[0] != '!' && mybuf[0] != '~')) {
+                    Unmangle_BufferAppendString(&ub, mybuf);
+                    Unmangle_FuncArgList(errorbuf, &ub, p);
+                    return;
+                }
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case 'Q':
+                if (mybuf[1] == 0 && (mybuf[0] == '!' || mybuf[0] == '~')) {
+                    p = Unmangle_QClassName(errorbuf, &ub, p, TRUE, mybuf[0] == '~');
+                } else {
+                    p = Unmangle_QClassName(errorbuf, &ub, p, FALSE, FALSE);
+                    Unmangle_BufferAppendString(&ub, "::");
+                    Unmangle_BufferAppendString(&ub, mybuf);
+                    if (*p == 0) {
+                        Unmangle_BufferTerminate(&ub);
+                        return;
+                    }
+                }
+                Unmangle_FuncArgList(errorbuf, &ub, p);
+                return;
+        }
+    }
+
+    strncpy(output, input, maxLen);
+    output[maxLen - 1] = 0;
+}
+#else
 void MWUnmangleClassName(const char* input, char* output, size_t maxLen) {
     UnmangleBuffer ub;
     jmp_buf errorbuf;
@@ -1096,3 +1289,4 @@ void MWUnmangle(const char* input, char* output, size_t maxLen) {
     strncpy(output, input, maxLen);
     output[maxLen - 1] = 0;
 }
+#endif

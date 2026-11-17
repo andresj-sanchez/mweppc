@@ -11,6 +11,35 @@
 #include "compiler/CParser.h"
 #include "compiler/enode.h"
 
+#if MWCCPS2_B198
+Boolean fn_005A45E0(IROLoop* loop) {
+    IRONode* entry;
+    IROLinear* node;
+
+    for (entry = IRO_FirstNode; entry; entry = entry->nextnode) {
+        if (Bv_IsBitSet(entry->index, loop->bitset)) {
+            node = entry->first;
+            if (node) {
+                for (;;) {
+                    if (!IRO_IsLinearNodeInInductionUpdate(loop, node) &&
+                        !IRO_IsLinearNodeInLoopTest(loop, node) &&
+                        node->type != IROLinearNop &&
+                        node->type != IROLinearLabel &&
+                        !(node->flags & IROLF_Reffed)) {
+                        IRO_Dump("Found top level node in the loop\n");
+                        return FALSE;
+                    }
+                    if (node == entry->last) {
+                        break;
+                    }
+                    node = node->next;
+                }
+            }
+        }
+    }
+    return TRUE;
+}
+#else
 static int EmptyLoop(IRONode* fnode);
 static int CanRemoveRedundantLoop(IROLoop* loop);
 static int CanRemoveRedundantLoop1(IROLoop* loop);
@@ -643,3 +672,4 @@ static int CheckStepOverFlow2_EmptyLoop(IROLoop* loop, CInt64* iterCount, CInt64
 
     return FALSE;
 }
+#endif

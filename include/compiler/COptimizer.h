@@ -15,4 +15,8 @@ extern Statement* COpt_Optimizer(Object* obj, Statement* stmt);
 }
 #endif
 
+#if MWCCPS2_B198
+extern void optimizeif(Statement* stmt);
+
+#endif
 #endif

@@ -1,3 +1,9 @@
+#if MWCCPS2_B198
+#include "compiler/common.h"
+#include "compiler/types.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/enode.h"
 #include "compiler/CSOM.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -25,6 +31,35 @@
 #include <stdio.h>
 #include <string.h>
 
+#else
+#include "compiler/CSOM.h"
+#include "compiler/CClass.h"
+#include "compiler/CDecl.h"
+#include "compiler/CError.h"
+#include "compiler/CException.h"
+#include "compiler/CExpr.h"
+#include "compiler/CFunc.h"
+#include "compiler/CInit.h"
+#include "compiler/CInt64.h"
+#include "compiler/CMachine.h"
+#include "compiler/CMangler.h"
+#include "compiler/CodeGen.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CParser.h"
+#include "compiler/CPrep.h"
+#include "compiler/CPrepTokenizer.h"
+#include "compiler/CScope.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/som.h"
+#include "compiler/tokens.h"
+#include "compiler/types.h"
+#include "driver/COSToolsCLT.h"
+#include <stdio.h>
+#include <string.h>
+
+#endif
 typedef struct {
     SInt32 zero;
     UInt32 sci;
@@ -153,6 +188,44 @@ void CSOM_Setup(Boolean isPrecompiler) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (41)
 #endif
+#if MWCCPS2_B198
+void CSOM_Cleanup(void) {
+    CSOMStub* stub;
+
+    if (cparamblkptr->precompile != 1) {
+        for (stub = csom_stubs; stub; stub = stub->next) {
+            switch (stub->kind) {
+                case 0:
+                    CodeGen_SOMStub(
+                        stub->object,
+                        rt_som_glue1,
+                        stub->tclass->sominfo->classdataobject,
+                        stub->offset
+                    );
+                    break;
+                case 1:
+                    CodeGen_SOMStub(
+                        stub->object,
+                        rt_som_glue2,
+                        stub->tclass->sominfo->classdataobject,
+                        stub->offset
+                    );
+                    break;
+                case 2:
+                    CodeGen_SOMStub(
+                        stub->object,
+                        rt_som_glue3,
+                        stub->tclass->sominfo->classdataobject,
+                        stub->offset
+                    );
+                    break;
+                default:
+                    CError_FATAL(132);
+            }
+        }
+    }
+}
+#else
 #if MWCCPSP
 void CSOM_Cleanup(void) {} // 3.0.1: no SOM
 #else
@@ -195,6 +268,7 @@ void CSOM_Cleanup(void) {
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
+#endif
 #endif
 #endif
 
@@ -587,6 +661,14 @@ void CSOM_ClassComplete(TypeClass* tclass) {
     }
 }
 
+#if MWCCPS2_B198
+#pragma pack(push, 2)
+typedef struct SOMOverride {
+    struct SOMOverride* next;
+    Object* overrider;
+    Object* overridden;
+} SOMOverride;
+#else
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(push, 2)
 #endif
@@ -595,6 +677,7 @@ typedef struct SOMOverride {
     Object* overrider;
     Object* overridden;
 } SOMOverride;
+#endif
 
 typedef struct SOMAncestor {
     struct SOMAncestor* next;
@@ -630,10 +713,15 @@ typedef struct SOMGenerator {
     Boolean hasNew;
     Boolean hasDelete;
 } SOMGenerator;
+#if MWCCPS2_B198
+#pragma pack(pop)
+
+#else
 #if !MWCCPSP // 3.0.1: natural alignment
 #pragma pack(pop)
 #endif
 
+#endif
 static SOMAncestor* CSOM_FindAddAncestor(
     SOMGenerator* gen, TypeClass* tclass, TypeClass* ancestorClass, UInt16* resultIndex
 ) {
@@ -675,6 +763,155 @@ static SOMAncestor* CSOM_FindAddAncestor(
     return ancestor;
 }
 
+#if MWCCPS2_B198
+static void CSOM_GenerateOverrideIntroLists(SOMGenerator* gen, TypeClass* tclass) {
+    Object* object;
+    VClassList* vbase;
+    ClassList* base;
+    SOMMethod* method;
+    SOMMethod** ptr;
+    CScopeObjectIterator iter;
+    Object* object2;
+    CScopeObjectIterator iter2;
+    SOMOverride* override;
+    SOMReleaseOrder* order;
+    SOMReleaseOrder* order2;
+    SOMAncestor* ancestor;
+    SInt32 index;
+    UInt16 index2;
+    Object** array;
+    int arrayCount;
+    SInt32 i;
+
+    for (base = tclass->bases; base; base = base->next) {
+        SOMAncestor* ancestor = CSOM_FindAddAncestor(gen, tclass, base->base, NULL);
+        ancestor->isDirectParent = TRUE;
+        gen->counts.numDirectParents++;
+    }
+
+    if (tclass->sominfo->metaclass && tclass->sominfo->metaclass->sominfo) {
+        SOMAncestor* ancestor = CSOM_FindAddAncestor(gen, tclass, tclass->sominfo->metaclass, NULL);
+        ancestor->isMetaClass = TRUE;
+        gen->counts.numMetaClasses++;
+    }
+
+    CScope_InitObjectIterator(&iter, tclass->nspace);
+    while (1) {
+        if (!(object = OBJECT(CScope_NextObjectIteratorObject(&iter)))) {
+            break;
+        }
+
+        if (IS_TYPE_FUNC(object->type) && (TYPE_FUNC(object->type)->flags & FUNC_OVERRIDE)) {
+            for (vbase = tclass->vbases; vbase; vbase = vbase->next) {
+                CScope_InitObjectIterator(&iter2, vbase->base->nspace);
+                while (1) {
+                    if (!(object2 = OBJECT(CScope_NextObjectIteratorObject(&iter2)))) {
+                        break;
+                    }
+
+                    if (IS_TYPE_FUNC(object2->type) &&
+                        object->name == object2->name &&
+                        object2->datatype == DVFUNC &&
+                        !(TYPE_FUNC(object2->type)->flags & FUNC_OVERRIDE) &&
+                        CClass_GetOverrideKind(
+                            TYPE_FUNC(object->type), TYPE_FUNC(object2->type), FALSE
+                        ) != 0) {
+                        ancestor = CSOM_FindAddAncestor(gen, tclass, vbase->base, NULL);
+                        if ((override = ancestor->overrides)) {
+                            override = lalloc(sizeof(SOMOverride));
+                            memclrw(override, sizeof(SOMOverride));
+                            override->next = ancestor->overrides;
+                            ancestor->overrides = override;
+                        } else {
+                            override = lalloc(sizeof(SOMOverride));
+                            memclrw(override, sizeof(SOMOverride));
+                            ancestor->overrides = override;
+                            gen->counts.numOverriddenAncestors++;
+                        }
+                        override->overrider = object;
+                        override->overridden = object2;
+                        break;
+                    }
+                }
+            }
+            gen->overrideProcsCount++;
+        }
+    }
+
+    ptr = &gen->methods;
+    if (tclass->sominfo->order) {
+        for (order = tclass->sominfo->order, index = 0; order; order = order->next, index++) {
+            method = lalloc(sizeof(SOMMethod));
+            memclrw(method, sizeof(SOMMethod));
+            *ptr = method;
+            ptr = &method->next;
+
+            method->name = order->name;
+            method->state = order->state;
+            switch (order->state) {
+                case SOMMS_Migrated:
+                    for (vbase = tclass->vbases; vbase; vbase = vbase->next) {
+                        for (order2 = vbase->base->sominfo->order, index2 = 0; order2;
+                             order2 = order2->next, index2++) {
+                            if (order->name == order2->name && order2->state == SOMMS_Method) {
+                                CSOM_FindAddAncestor(
+                                    gen, tclass, vbase->base, &method->u.pair.ancestorIndex
+                                );
+                                method->u.pair.methodIndex = index2;
+                                break;
+                            }
+                        }
+
+                        if (order2) {
+                            break;
+                        }
+                    }
+                    gen->counts.numMigratedMethods++;
+                    break;
+
+                case SOMMS_Method:
+                    CScope_InitObjectIterator(&iter, tclass->nspace);
+                    while (1) {
+                        if (!(object = OBJECT(CScope_NextObjectIteratorObject(&iter)))) {
+                            break;
+                        }
+
+                        if (IS_TYPE_FUNC(object->type) &&
+                            CSOM_NameTranslate(object->name) == order->name) {
+                            CError_ASSERT(733, TYPE_METHOD(object->type)->vtbl_index == index);
+                            method->u.object = object;
+                            break;
+                        }
+                    }
+
+                    CError_ASSERT(737, object != NULL);
+                    break;
+
+                default:
+                    break;
+            }
+
+            gen->counts.classTokenCount++;
+        }
+    } else {
+        array = CSOM_GetLexicalOrderMethodArray(tclass, &arrayCount);
+        for (i = 0; arrayCount > i; i++) {
+            object = array[i];
+            if (object) {
+                method = lalloc(sizeof(SOMMethod));
+                memclrw(method, sizeof(SOMMethod));
+                *ptr = method;
+                ptr = &method->next;
+
+                method->u.object = object;
+                method->name = object->name;
+                method->state = SOMMS_Method;
+                gen->counts.classTokenCount++;
+            }
+        }
+    }
+}
+#else
 static void CSOM_GenerateOverrideIntroLists(SOMGenerator* gen, TypeClass* tclass) {
     Object* object;
     VClassList* vbase;
@@ -834,6 +1071,7 @@ static void CSOM_GenerateOverrideIntroLists(SOMGenerator* gen, TypeClass* tclass
         }
     }
 }
+#endif
 
 static void CSOM_GenerateClassAncestors(SOMGenerator* gen, TypeClass* tclass) {
     SOMAncestor* ancestor;
@@ -1745,6 +1983,23 @@ ENode* CSOM_Delete(TypeClass* tclass, ENode* objExpr) {
     return nullnode();
 }
 
+#if MWCCPS2_B198
+void CSOM_InitAutoClass(Object* object) {
+    Type* type;
+    Statement* stmt;
+    Object* func;
+
+    if ((func = CSOM_FindRTFunc("somReleaseObjectReference", "pp"))) {
+        type = object->type;
+        object->type = CDecl_NewPointerType(type);
+        TPTR_QUAL(object->type) = Q_REFERENCE;
+
+        stmt = CFunc_AppendStatement(ST_EXPRESSION);
+        stmt->expr = makediadicnode(create_objectnode2(object), CSOM_New(TYPE_CLASS(type)), EASS);
+        CExcept_RegisterDeleteObject(stmt, object, func);
+    }
+}
+#else
 void CSOM_InitAutoClass(Object* object) {
     Type* type;
     Statement* stmt;
@@ -1764,11 +2019,76 @@ void CSOM_InitAutoClass(Object* object) {
         CExcept_RegisterDeleteObject(stmt, object, func);
     }
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (-11)
 #endif
+#if MWCCPS2_B198
+static void CSOM_FindIntroClassOffset(
+    TypeClass* tclass, Object* func, TypeClass** resultClass, SInt32* resultOffset
+) {
+    Object* scan;
+    VClassList* vbase;
+    CScopeObjectIterator iter;
+
+    if (!(TYPE_FUNC(func->type)->flags & FUNC_OVERRIDE)) {
+        CScope_InitObjectIterator(&iter, tclass->nspace);
+        while (1) {
+            if (!(scan = OBJECT(CScope_NextObjectIteratorObject(&iter)))) {
+                break;
+            }
+
+            if (scan == func) {
+                *resultClass = tclass;
+                *resultOffset = CSOM_GetTokenOffset(scan);
+                return;
+            }
+        }
+
+        for (vbase = tclass->vbases; vbase; vbase = vbase->next) {
+            CScope_InitObjectIterator(&iter, vbase->base->nspace);
+            while (1) {
+                if (!(scan = OBJECT(CScope_NextObjectIteratorObject(&iter)))) {
+                    break;
+                }
+
+                if (scan == func) {
+                    *resultClass = vbase->base;
+                    *resultOffset = CSOM_GetTokenOffset(scan);
+                    return;
+                }
+            }
+        }
+    } else {
+        for (vbase = tclass->vbases; vbase; vbase = vbase->next) {
+            CScope_InitObjectIterator(&iter, vbase->base->nspace);
+            while (1) {
+                if (!(scan = OBJECT(CScope_NextObjectIteratorObject(&iter)))) {
+                    break;
+                }
+
+                if (scan->name == func->name) {
+                    if (IS_TYPE_FUNC(scan->type) &&
+                        scan->datatype == DVFUNC &&
+                        !(TYPE_FUNC(scan->type)->flags & FUNC_OVERRIDE) &&
+                        CClass_GetOverrideKind(
+                            TYPE_FUNC(func->type), TYPE_FUNC(scan->type), FALSE
+                        )) {
+                        *resultClass = vbase->base;
+                        *resultOffset = CSOM_GetTokenOffset(scan);
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    CError_FATAL(1731);
+}
+#else
 static void CSOM_FindIntroClassOffset(
     TypeClass* tclass, Object* func, TypeClass** resultClass, SInt32* resultOffset
 ) {
@@ -1835,11 +2155,36 @@ static void CSOM_FindIntroClassOffset(
 
     CError_FATAL(1731);
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
 #endif
 
+#if MWCCPS2_B198
+static ENode* CSOM_ComputeSOMSelf(TypeClass* tclass, ENode* selfExpr) {
+    ENode* expr;
+    Object obj;
+
+    expr = create_objectrefnode(tclass->sominfo->classdataobject);
+    expr = makediadicnode(expr, intconstnode(TYPE(&stsignedlong), 8), EADD);
+    expr->rtype = CDecl_NewPointerType(TYPE(&SOMIDT_type));
+    expr = makemonadicnode(expr, EINDIRECT);
+
+    memclrw(&obj, sizeof(Object));
+    obj.otype = OT_OBJECT;
+    obj.type = TYPE(&SOMIDT_type);
+    obj.name = no_name_node;
+    obj.datatype = DFUNC;
+    selfExpr = funccallexpr(&obj, selfExpr, NULL, NULL, NULL);
+
+    CError_ASSERT(1761, ENODE_IS(selfExpr, EFUNCCALL));
+
+    selfExpr->data.funccall.funcref = expr;
+
+    return selfExpr;
+}
+#else
 static ENode* CSOM_ComputeSOMSelf(TypeClass* tclass, ENode* selfExpr) {
     ENode* expr;
     Object obj;
@@ -1866,6 +2211,7 @@ static ENode* CSOM_ComputeSOMSelf(TypeClass* tclass, ENode* selfExpr) {
 
     return selfExpr;
 }
+#endif
 
 ENode* CSOM_SOMSelfObjectExpr(TypeClass* tclass) {
     ObjectList* list;
@@ -1888,6 +2234,28 @@ ENode* CSOM_SOMSelfObjectExpr(TypeClass* tclass) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (-11)
 #endif
+#if MWCCPS2_B198
+void CSOM_InitSOMSelf(TypeClass* tclass, Statement* stmt) {
+    ObjectList* list;
+    HashNameNode* name;
+    ENode* selfExpr;
+    Statement* newStmt;
+
+    name = GetHashNameNodeExport("__somself");
+    for (list = locals; list; list = list->next) {
+        if (list->object->name == name) {
+            selfExpr = CClass_CreateThisSelfExpr();
+            CError_ASSERT(1811, selfExpr);
+
+            selfExpr = CSOM_ComputeSOMSelf(tclass, selfExpr);
+
+            newStmt = CFunc_InsertStatement(ST_EXPRESSION, stmt);
+            newStmt->expr = makediadicnode(create_objectnode(list->object), selfExpr, EASS);
+            break;
+        }
+    }
+}
+#else
 void CSOM_InitSOMSelf(TypeClass* tclass, Statement* stmt) {
     ObjectList* list;
     HashNameNode* name;
@@ -1917,11 +2285,91 @@ void CSOM_InitSOMSelf(TypeClass* tclass, Statement* stmt) {
         }
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT 0
 #endif
 
+#if MWCCPS2_B198
+ENode* CSOM_EnvCheck(ENode* funccall, ENodeList* checkArg) {
+    ENodeList* arg;
+    ENodeList* arg2;
+    ENode* resultTemp;
+    ENode* objTemp;
+    ENode* checkExpr;
+    Type* returnType;
+
+    returnType = funccall->rtype;
+    CError_ASSERT(1842, arg = funccall->data.funccall.args);
+
+    if (arg == checkArg) {
+        CError_ASSERT(1845, arg = arg->next);
+    }
+
+    CError_ASSERT(1847, arg2 = arg->next);
+
+    if (arg2 == checkArg) {
+        CError_ASSERT(1850, arg2 = arg2->next);
+    }
+
+    CError_ASSERT(1852, IS_TYPE_POINTER_ONLY(arg2->node->rtype));
+
+    if (!IS_TYPE_VOID(funccall->data.funccall.functype->functype)) {
+        if (checkArg) {
+            if (ENODE_IS(checkArg->node, ETEMP)) {
+                if (checkArg->node->data.temp.uniqueid == 0) {
+                    checkArg->node->data.temp.uniqueid = CParser_GetUniqueID();
+                }
+
+                resultTemp = lalloc(sizeof(ENode));
+                *resultTemp = *checkArg->node;
+                resultTemp->data.temp.needs_dtor = FALSE;
+            } else {
+                resultTemp = CExpr_GetETEMPCopy(checkArg->node);
+            }
+        } else {
+            resultTemp = CExpr_GetETEMPCopy(funccall);
+        }
+    } else {
+        resultTemp = NULL;
+    }
+
+    if (!ENODE_IS(arg2->node, EOBJREF)) {
+        if (ENODE_IS_INDIRECT_TO(arg2->node, EOBJREF) &&
+            arg2->node->data.monadic->data.objref->datatype == DLOCAL) {
+            objTemp = lalloc(sizeof(ENode));
+            *objTemp = *arg2->node;
+        } else {
+            objTemp = CExpr_GetETEMPCopy(arg2->node);
+        }
+    } else {
+        objTemp = lalloc(sizeof(ENode));
+        *objTemp = *arg2->node;
+    }
+
+    if (copts.som_call_optimize) {
+        ENode* checkCall;
+        checkCall = funccallexpr(rt_som_check, objTemp, NULL, NULL, NULL);
+        funccall = makediadicnode(funccall, checkCall, ECOMMA);
+        if (resultTemp) {
+            funccall = makediadicnode(funccall, resultTemp, ECOMMA);
+        }
+    } else {
+        checkExpr = lalloc(sizeof(ENode));
+        *checkExpr = *objTemp;
+        checkExpr = makemonadicnode(checkExpr, EINDIRECT);
+        checkExpr->rtype = TYPE(&stsignedlong);
+
+        funccall = CSOM_MakeTempCondition(
+            funccall, checkExpr, funccallexpr(rt_som_check, objTemp, NULL, NULL, NULL), resultTemp
+        );
+    }
+
+    funccall->rtype = returnType;
+    return funccall;
+}
+#else
 ENode* CSOM_EnvCheck(ENode* funccall, ENodeList* checkArg) {
     ENodeList* arg;
     ENodeList* arg2;
@@ -2031,6 +2479,7 @@ ENode* CSOM_EnvCheck(ENode* funccall, ENodeList* checkArg) {
     funccall->rtype = returnType;
     return funccall;
 }
+#endif
 
 static Boolean CSOM_CanUseGlueCall(TypeFunc* tfunc) {
     int gprCounter;

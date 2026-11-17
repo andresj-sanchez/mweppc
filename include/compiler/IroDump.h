@@ -5,7 +5,14 @@
 #if MWCCPS2_B52
 #pragma pack(push, 2)
 #endif
+#if MWCCPS2_B198
+extern void IRO_Dump(const char* format, ...);
+extern void IRO_CleanupDump(void); //! @reconstructed
+#endif
 
+#if MWCCPS2_B198
+extern Boolean IRO_Dumping(void);
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,6 +38,7 @@ extern void IRO_SpellType(Type* type, char* buf);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #if MWCCPS2_B52

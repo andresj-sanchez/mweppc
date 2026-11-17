@@ -1,3 +1,15 @@
+#if MWCCPS2_B198
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/CLBrowser.h"
+#include "driver/CLErrors.h"
+#include "driver/MemUtils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#else
 #include "driver/CLBrowser.h"
 #include "driver/CLErrors.h"
 #include "driver/Memory.h"
@@ -8,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 typedef struct {
     UInt16 fileID;
     char* filepath;
@@ -49,6 +62,7 @@ static void GetBrowseTableInfoAndLock(
     }
 }
 
+#if !MWCCPS2_B198
 int Browser_Initialize(OSHandle* browsetableptr) {
     int err = OS_NewHandle(0, browsetableptr);
     if (err) {
@@ -59,6 +73,7 @@ int Browser_Initialize(OSHandle* browsetableptr) {
     }
 }
 
+#endif
 static int Destroy(OSHandle* browsetable) {
     BrowseTableEntry* scan;
     SInt32 num;
@@ -71,6 +86,7 @@ static int Destroy(OSHandle* browsetable) {
     OS_UnlockHandle(browsetable);
     return TRUE;
 }
+#if !MWCCPS2_B198
 
 int Browser_Terminate(OSHandle* browsetableptr) {
     if (!Destroy(browsetableptr)) {
@@ -80,6 +96,7 @@ int Browser_Terminate(OSHandle* browsetableptr) {
         return TRUE;
     }
 }
+#endif
 
 int Browser_SearchFile(OSHandle* browsetable, const char* fullpath, SInt16* ID) {
     BrowseTableEntry* scan;
@@ -146,6 +163,26 @@ static SInt32 CalcDiskSpaceRequirements(BrowseTableEntry* mem, int num) {
     return space;
 }
 
+#if MWCCPS2_B198
+static int ConvertMemToDisk(BrowseTableEntry* mem, BrowseFileRecord* disk, int num) {
+    int slen;
+    int blen;
+
+    while (num--) {
+        disk->fileID = mem->fileID;
+        memset(disk->unused, 0, sizeof(disk->unused));
+        slen = strlen(mem->filepath);
+        blen = (slen + 7) & ~7;
+        disk->filename_length = slen;
+        memset(disk->filepath, 0, blen);
+        strncpy(disk->filepath, mem->filepath, slen);
+        mem++;
+        disk = (BrowseFileRecord*)(((unsigned char*)disk) + 0x10 + blen);
+    }
+
+    return TRUE;
+}
+#else
 static int ConvertMemToDisk(BrowseTableEntry* mem, BrowseFileRecord* disk, int num) {
     int slen;
     int blen;
@@ -168,7 +205,67 @@ static int ConvertMemToDisk(BrowseTableEntry* mem, BrowseFileRecord* disk, int n
 
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+int Browser_PackBrowseFile(OSHandle* browsedata, OSHandle* browsetable, OSHandle* browsefileptr) {
+    OSHandle h;
+    char* ptr;
+    BrowseFileHeader header;
+    BrowseTableEntry* scan;
+    SInt32 entries;
+    UInt32 datasize;
+    UInt32 tableoffs;
+    UInt32 tablesize;
+    UInt32 totalsize;
+    SInt32 a_long = 1;
+    int err;
+    void* bptr;
+
+    OS_ASSERT(253, browsedata!=NULL);
+    OS_ASSERT(254, browsetable!=NULL);
+
+    OS_GetHandleSize(browsedata, &datasize);
+    tableoffs = (datasize + sizeof(header) + 7) & ~7;
+
+    GetBrowseTableInfoAndLock(browsetable, &scan, &entries, NULL);
+    tablesize = CalcDiskSpaceRequirements(scan, entries);
+    OS_UnlockHandle(browsetable);
+
+    totalsize = tablesize + tableoffs;
+
+    memcpy(header.magic_word, "DubL", 4);
+    header.version = 1;
+    header.big_endian = *((char*)&a_long) == 0;
+    memset(header.padding, 0, sizeof(header.padding));
+
+    header.browse_data_offset = sizeof(header);
+    header.browse_data_length = datasize;
+    header.file_data_offset = tableoffs;
+    header.file_data_length = tablesize;
+    header.file_data_count = entries;
+
+    if ((err = OS_NewHandle(totalsize, &h)), *browsefileptr = h, err) {
+        fprintf(stderr, "\n*** Out of memory\n");
+        exit(-23);
+    }
+
+    ptr = OS_LockHandle(&h);
+    memcpy(ptr, &header, sizeof(header));
+
+    bptr = OS_LockHandle(browsedata);
+    memcpy(&ptr[sizeof(header)], bptr, datasize);
+    memset((char*)((int)ptr + sizeof(header) + datasize), 0, tableoffs - sizeof(header) - datasize);
+    OS_UnlockHandle(browsedata);
+
+    GetBrowseTableInfoAndLock(browsetable, &scan, &entries, NULL);
+    ConvertMemToDisk(scan, bptr = ptr + tableoffs, entries);
+    memset((char*)bptr + tablesize, 0, totalsize - tableoffs - tablesize);
+    OS_UnlockHandle(browsetable);
+    OS_UnlockHandle(&h);
+    return TRUE;
+}
+#else
 #if MWCCPSP
 int Browser_PackBrowseFile(
     DriverHandle browsedata, OSHandle* browsetable, OSHandle* browsefileptr
@@ -242,3 +339,4 @@ int Browser_PackBrowseFile(Handle browsedata, OSHandle* browsetable, OSHandle* b
     OS_UnlockHandle(&h);
     return TRUE;
 }
+#endif

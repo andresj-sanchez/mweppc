@@ -1,0 +1,3134 @@
+[
+ {
+  "source": "src/backend/AliasPropagation.c",
+  "file": "src/compiler/backend/AliasPropagation.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/BE_binary.c",
+  "file": "src/compiler/backend/BE_binary.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/BE_macro.c",
+  "file": "src/compiler/backend/BE_macro.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/BE_schedule.c",
+  "file": "src/compiler/backend/BE_schedule.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/BitVectors.c",
+  "file": "src/ps2/backend/BitVectors.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/CMachine.c",
+  "file": "src/ps2/backend/CMachine.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/CodeGen.c",
+  "file": "src/ps2/backend/CodeGen.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Coloring.c",
+  "file": "src/ps2/backend/Coloring.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ConditionalMoveOptimization.c",
+  "file": "src/compiler/backend/ConditionalMoveOptimization.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/DIVbyCnst.c",
+  "file": "src/compiler/backend/DIVbyCnst.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/DWARF.c",
+  "file": "src/ps2/backend/DWARF.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/DeadCodeElimination.c",
+  "file": "src/compiler/backend/DeadCodeElimination.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ELFgen.c",
+  "file": "src/compiler/backend/ELFgen.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Exceptions.c",
+  "file": "src/ps2/backend/Exceptions.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ExprPreparation.c",
+  "file": "src/compiler/backend/ExprPreparation.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/FuncLevelAsm.c",
+  "file": "src/compiler/backend/FuncLevelAsm.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/FunctionCalls.c",
+  "file": "src/ps2/backend/FunctionCalls.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/GCCInlineAsm.c",
+  "file": "src/ps2/backend/GCCInlineAsm.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/InlineAsm.c",
+  "file": "src/ps2/backend/InlineAsm.c",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "src/backend/InlineAsmMIPS.c",
+  "file": "src/compiler/backend/InlineAsmMIPS.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/InstrSelection.c",
+  "file": "src/ps2/backend/InstrSelection.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/InterferenceGraph.c",
+  "file": "src/ps2/backend/InterferenceGraph.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Intrinsics.c",
+  "file": "src/ps2/backend/Intrinsics.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/LiveRegisters.c",
+  "file": "src/compiler/backend/LiveRegisters.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/MIPSError.c",
+  "file": "src/compiler/backend/MIPSError.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/MIPSSimulation.c",
+  "file": "src/compiler/backend/MIPSSimulation.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/MIPS_Peephole.c",
+  "file": "src/compiler/backend/MIPS_Peephole.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ObjGen.c",
+  "file": "src/compiler/backend/ObjGen.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/OpcodeInfo.c",
+  "file": "src/ps2/backend/OpcodeInfo.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Operands.c",
+  "file": "src/ps2/backend/Operands.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/PCode.c",
+  "file": "src/ps2/backend/PCode.c",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "src/backend/PCodeInfo.c",
+  "file": "src/ps2/backend/PCodeInfo.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/PCodeUtilities.c",
+  "file": "src/ps2/backend/PCodeUtilities.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Peephole.c",
+  "file": "src/ps2/backend/Peephole.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/RegListQueries.c",
+  "file": "src/compiler/backend/RegListQueries.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/RegisterInfo.c",
+  "file": "src/ps2/backend/RegisterInfo.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Registers.c",
+  "file": "src/ps2/backend/Registers.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ScanFloatX86.c",
+  "file": "src/ps2/backend/ScanFloatX86.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Scheduler.c",
+  "file": "src/ps2/backend/Scheduler.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/Spill.c",
+  "file": "src/compiler/backend/Spill.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/StructMoves.c",
+  "file": "src/ps2/backend/StructMoves.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/VReg.c",
+  "file": "src/compiler/backend/VReg.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/ValueNumbering.c",
+  "file": "src/ps2/backend/ValueNumbering.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/backend/mips.c",
+  "file": "src/compiler/backend/mips.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/Arguments.c",
+  "file": "src/driver/Arguments.c",
+  "how": "merged",
+  "shared": 0.52
+ },
+ {
+  "source": "src/driver/CCompilerPS2.c",
+  "file": "src/driver/CCompilerPS2.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CLAccessPaths.c",
+  "file": "src/driver/CLAccessPaths.c",
+  "how": "merged",
+  "shared": 0.58
+ },
+ {
+  "source": "src/driver/CLBrowser.c",
+  "file": "src/driver/CLBrowser.c",
+  "how": "merged",
+  "shared": 0.59
+ },
+ {
+  "source": "src/driver/CLCompilerLinkerDropin_V10.cpp",
+  "file": "src/ps2/driver/CLCompilerLinkerDropin_V10.cpp",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "src/driver/CLDependencies.c",
+  "file": "src/driver/CLDependencies.c",
+  "how": "merged",
+  "shared": 0.48
+ },
+ {
+  "source": "src/driver/CLDropinCallbacks_V10.cpp",
+  "file": "src/ps2/driver/CLDropinCallbacks_V10.cpp",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "src/driver/CLErrors.c",
+  "file": "src/driver/CLErrors.c",
+  "how": "merged",
+  "shared": 0.95
+ },
+ {
+  "source": "src/driver/CLFileOps.c",
+  "file": "src/ps2/driver/CLFileOps.c",
+  "how": "separate",
+  "shared": 0.08
+ },
+ {
+  "source": "src/driver/CLFiles.c",
+  "file": "src/driver/CLFiles.c",
+  "how": "merged",
+  "shared": 0.23
+ },
+ {
+  "source": "src/driver/CLIO.c",
+  "file": "src/driver/CLIO.c",
+  "how": "merged",
+  "shared": 0.44
+ },
+ {
+  "source": "src/driver/CLIncludeFileCache.c",
+  "file": "src/ps2/driver/CLIncludeFileCache.c",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "src/driver/CLLicenses.c",
+  "file": "src/driver/CLLicenses.c",
+  "how": "merged",
+  "shared": 0.28
+ },
+ {
+  "source": "src/driver/CLLoadAndCache.c",
+  "file": "src/ps2/driver/CLLoadAndCache.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CLMain.c",
+  "file": "src/driver/CLMain.c",
+  "how": "merged",
+  "shared": 0.57
+ },
+ {
+  "source": "src/driver/CLOverlays.c",
+  "file": "src/driver/CLOverlays.c",
+  "how": "merged",
+  "shared": 0.77
+ },
+ {
+  "source": "src/driver/CLParserCallbacks_v1.cpp",
+  "file": "src/ps2/driver/CLParserCallbacks_v1.cpp",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CLPluginAPI.c",
+  "file": "src/driver/CLPluginAPI.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CLPluginRequests.cpp",
+  "file": "src/ps2/driver/CLPluginRequests.cpp",
+  "how": "separate",
+  "shared": 0.09
+ },
+ {
+  "source": "src/driver/CLPlugins.c",
+  "file": "src/driver/CLPlugins.c",
+  "how": "merged",
+  "shared": 0.61
+ },
+ {
+  "source": "src/driver/CLPrefs.c",
+  "file": "src/ps2/driver/CLPrefs.c",
+  "how": "separate",
+  "shared": 0.1
+ },
+ {
+  "source": "src/driver/CLProj.c",
+  "file": "src/driver/CLProj.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/driver/CLSegs.c",
+  "file": "src/ps2/driver/CLSegs.c",
+  "how": "separate",
+  "shared": 0.16
+ },
+ {
+  "source": "src/driver/CLStaticMain.c",
+  "file": "src/ps2/driver/CLStaticMain.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CLTarg.c",
+  "file": "src/ps2/driver/CLTarg.c",
+  "how": "separate",
+  "shared": 0.17
+ },
+ {
+  "source": "src/driver/CLToolExec.c",
+  "file": "src/driver/CLToolExec.c",
+  "how": "merged",
+  "shared": 0.4
+ },
+ {
+  "source": "src/driver/CLWriteObjectFile.c",
+  "file": "src/driver/CLWriteObjectFile.c",
+  "how": "merged",
+  "shared": 0.38
+ },
+ {
+  "source": "src/driver/COSToolsCLT.c",
+  "file": "src/driver/COSToolsCLT.c",
+  "how": "merged",
+  "shared": 0.43
+ },
+ {
+  "source": "src/driver/CWParserPluginsPrivate.cpp",
+  "file": "src/ps2/driver/CWParserPluginsPrivate.cpp",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CWPluginConversions.cpp",
+  "file": "src/driver/CWPluginConversions.cpp",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CWPluginsPrivate.cpp",
+  "file": "src/ps2/driver/CWPluginsPrivate.cpp",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CWSecretPluginCallbacks.c",
+  "file": "src/driver/CWSecretPluginCallbacks.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/ClientGlue.c",
+  "file": "src/ps2/driver/ClientGlue.c",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "src/driver/CmdLineBuildDate.c",
+  "file": "src/ps2/driver/CmdLineBuildDate.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/CompilerSetupOptions.c",
+  "file": "src/driver/CompilerSetupOptions.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/DateTimeUtils.c",
+  "file": "src/driver/DateTimeUtils.c",
+  "how": "merged",
+  "shared": 0.6
+ },
+ {
+  "source": "src/driver/DropInCompilerLinkerPrivate.cpp",
+  "file": "src/ps2/driver/DropInCompilerLinkerPrivate.cpp",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "src/driver/ELFImportFileIO.c",
+  "file": "src/driver/ELFImportFileIO.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/ELFImportReader.c",
+  "file": "src/driver/ELFImportReader.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/ELF_Lib_Import.c",
+  "file": "src/ps2/driver/ELF_Lib_Import.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/ErrMgr.c",
+  "file": "src/driver/ErrMgr.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/driver/FileHandles.c",
+  "file": "src/driver/FileHandles.c",
+  "how": "merged",
+  "shared": 0.28
+ },
+ {
+  "source": "src/driver/Files.c",
+  "file": "src/driver/Files.c",
+  "how": "merged",
+  "shared": 0.79
+ },
+ {
+  "source": "src/driver/Generic.c",
+  "file": "src/driver/Generic.c",
+  "how": "merged",
+  "shared": 0.74
+ },
+ {
+  "source": "src/driver/Help.c",
+  "file": "src/driver/Help.c",
+  "how": "merged",
+  "shared": 0.87
+ },
+ {
+  "source": "src/driver/IO.c",
+  "file": "src/ps2/driver/IO.c",
+  "how": "separate",
+  "shared": 0.11
+ },
+ {
+  "source": "src/driver/MacFileTypes.c",
+  "file": "src/ps2/driver/MacFileTypes.c",
+  "how": "separate",
+  "shared": 0.19
+ },
+ {
+  "source": "src/driver/MacSpecs.c",
+  "file": "src/ps2/driver/MacSpecs.c",
+  "how": "separate",
+  "shared": 0.13
+ },
+ {
+  "source": "src/driver/MemUtils.c",
+  "file": "src/ps2/driver/MemUtils.c",
+  "how": "separate",
+  "shared": 0.14
+ },
+ {
+  "source": "src/driver/Memory.c",
+  "file": "src/ps2/driver/Memory.c",
+  "how": "separate",
+  "shared": 0.11
+ },
+ {
+  "source": "src/driver/MsDos.c",
+  "file": "src/ps2/driver/MsDos.c",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "src/driver/OptimizerHelpers.c",
+  "file": "src/compiler/driver/OptimizerHelpers.c",
+  "how": "merged",
+  "shared": 0.39
+ },
+ {
+  "source": "src/driver/Option.c",
+  "file": "src/driver/Option.c",
+  "how": "merged",
+  "shared": 0.23
+ },
+ {
+  "source": "src/driver/OverlayOptions.c",
+  "file": "src/driver/OverlayOptions.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/Parameter.c",
+  "file": "src/driver/Parameter.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/driver/ParserErrors.c",
+  "file": "src/ps2/driver/ParserErrors.c",
+  "how": "separate",
+  "shared": 0.15
+ },
+ {
+  "source": "src/driver/ParserFace.c",
+  "file": "src/driver/ParserFace.c",
+  "how": "merged",
+  "shared": 0.47
+ },
+ {
+  "source": "src/driver/ParserGlue-ps2-cc.c",
+  "file": "src/driver/ParserGlue-ps2-cc.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/ParserHelpers-cc.c",
+  "file": "src/ps2/driver/ParserHelpers-cc.c",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "src/driver/ParserHelpers.c",
+  "file": "src/ps2/driver/ParserHelpers.c",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "src/driver/Projects.c",
+  "file": "src/driver/Projects.c",
+  "how": "merged",
+  "shared": 0.38
+ },
+ {
+  "source": "src/driver/ResourceStrings.c",
+  "file": "src/driver/ResourceStrings.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/driver/Resources.c",
+  "file": "src/driver/Resources.c",
+  "how": "merged",
+  "shared": 0.85
+ },
+ {
+  "source": "src/driver/StaticParserGlue.c",
+  "file": "src/driver/StaticParserGlue.c",
+  "how": "merged",
+  "shared": 0.56
+ },
+ {
+  "source": "src/driver/StdTargetWarningHelpers-cc.c",
+  "file": "src/ps2/driver/StdTargetWarningHelpers-cc.c",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "src/driver/StringExtras.c",
+  "file": "src/driver/StringExtras.c",
+  "how": "merged",
+  "shared": 0.3
+ },
+ {
+  "source": "src/driver/StringUtils.c",
+  "file": "src/ps2/driver/StringUtils.c",
+  "how": "separate",
+  "shared": 0.09
+ },
+ {
+  "source": "src/driver/TargetOptimizerHelpers-mips.c",
+  "file": "src/driver/TargetOptimizerHelpers-mips.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/Targets.c",
+  "file": "src/driver/Targets.c",
+  "how": "merged",
+  "shared": 0.37
+ },
+ {
+  "source": "src/driver/TextUtils.c",
+  "file": "src/ps2/driver/TextUtils.c",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "src/driver/ToolHelpers-cc.c",
+  "file": "src/compiler/driver/ToolHelpers-cc.c",
+  "how": "merged",
+  "shared": 0.76
+ },
+ {
+  "source": "src/driver/ToolHelpers.c",
+  "file": "src/driver/ToolHelpers.c",
+  "how": "merged",
+  "shared": 0.52
+ },
+ {
+  "source": "src/driver/Utils.c",
+  "file": "src/driver/Utils.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/driver/WarningHelpers.c",
+  "file": "src/driver/WarningHelpers.c",
+  "how": "merged",
+  "shared": 0.28
+ },
+ {
+  "source": "src/driver/cc-eabi-ppc-mw.c",
+  "file": "src/compiler/driver/cc-eabi-ppc-mw.c",
+  "how": "merged",
+  "shared": 0.44
+ },
+ {
+  "source": "src/driver/cc-eabi-ppc.c",
+  "file": "src/compiler/driver/cc-eabi-ppc.c",
+  "how": "merged",
+  "shared": 0.96
+ },
+ {
+  "source": "src/driver/libimp-eabi-ppc.c",
+  "file": "src/ps2/driver/libimp-eabi-ppc.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/driver/libimp-ps2.c",
+  "file": "src/driver/libimp-ps2.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CABI.c",
+  "file": "src/ps2/frontend/CABI.c",
+  "how": "separate",
+  "shared": 0.15
+ },
+ {
+  "source": "src/frontend/CBrowse.c",
+  "file": "src/ps2/frontend/CBrowse.c",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "src/frontend/CClass.c",
+  "file": "src/ps2/frontend/CClass.c",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "src/frontend/CDecl.c",
+  "file": "src/compiler/frontend/CDecl.c",
+  "how": "merged",
+  "shared": 0.23
+ },
+ {
+  "source": "src/frontend/CError.c",
+  "file": "src/compiler/frontend/CError.c",
+  "how": "merged",
+  "shared": 0.28
+ },
+ {
+  "source": "src/frontend/CException.c",
+  "file": "src/compiler/frontend/CException.c",
+  "how": "merged",
+  "shared": 0.24
+ },
+ {
+  "source": "src/frontend/CExpr.c",
+  "file": "src/compiler/frontend/CExpr.c",
+  "how": "merged",
+  "shared": 0.33
+ },
+ {
+  "source": "src/frontend/CExpr2.c",
+  "file": "src/compiler/frontend/CExpr2.c",
+  "how": "merged",
+  "shared": 0.36
+ },
+ {
+  "source": "src/frontend/CExprConvMatch.c",
+  "file": "src/ps2/frontend/CExprConvMatch.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CFunc.c",
+  "file": "src/ps2/frontend/CFunc.c",
+  "how": "separate",
+  "shared": 0.1
+ },
+ {
+  "source": "src/frontend/CInit.c",
+  "file": "src/ps2/frontend/CInit.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CInline.c",
+  "file": "src/ps2/frontend/CInline.c",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "src/frontend/CInt64.c",
+  "file": "src/ps2/frontend/CInt64.c",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "src/frontend/CMangler.c",
+  "file": "src/ps2/frontend/CMangler.c",
+  "how": "separate",
+  "shared": 0.15
+ },
+ {
+  "source": "src/frontend/CParser.c",
+  "file": "src/ps2/frontend/CParser.c",
+  "how": "separate",
+  "shared": 0.05
+ },
+ {
+  "source": "src/frontend/CPrec.c",
+  "file": "src/ps2/frontend/CPrec.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CPrep.c",
+  "file": "src/compiler/frontend/CPrep.c",
+  "how": "merged",
+  "shared": 0.25
+ },
+ {
+  "source": "src/frontend/CPrepTokenizer.c",
+  "file": "src/ps2/frontend/CPrepTokenizer.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CPreprocess.c",
+  "file": "src/ps2/frontend/CPreprocess.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CRTTI.c",
+  "file": "src/compiler/frontend/CRTTI.c",
+  "how": "merged",
+  "shared": 0.34
+ },
+ {
+  "source": "src/frontend/CSOM.c",
+  "file": "src/compiler/frontend/CSOM.c",
+  "how": "merged",
+  "shared": 0.8
+ },
+ {
+  "source": "src/frontend/CScope.c",
+  "file": "src/compiler/frontend/CScope.c",
+  "how": "merged",
+  "shared": 0.62
+ },
+ {
+  "source": "src/frontend/CTemplateClass.c",
+  "file": "src/ps2/frontend/CTemplateClass.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CTemplateFunc.c",
+  "file": "src/compiler/frontend/CTemplateFunc.c",
+  "how": "merged",
+  "shared": 0.72
+ },
+ {
+  "source": "src/frontend/CTemplateFuncInst.c",
+  "file": "src/compiler/frontend/CTemplateFuncInst.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CTemplateNew.c",
+  "file": "src/compiler/frontend/CTemplateNew.c",
+  "how": "merged",
+  "shared": 0.24
+ },
+ {
+  "source": "src/frontend/CTemplateTools.c",
+  "file": "src/compiler/frontend/CTemplateTools.c",
+  "how": "merged",
+  "shared": 0.21
+ },
+ {
+  "source": "src/frontend/CTypeTools.c",
+  "file": "src/compiler/frontend/CTypeTools.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/CompilerTools.c",
+  "file": "src/frontend/CompilerTools.c",
+  "how": "merged",
+  "shared": 0.46
+ },
+ {
+  "source": "src/frontend/FEInterface.c",
+  "file": "src/compiler/frontend/FEInterface.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/frontend/Unmangle.c",
+  "file": "src/frontend/Unmangle.c",
+  "how": "merged",
+  "shared": 0.81
+ },
+ {
+  "source": "src/msl/CaseFoldCompare.c",
+  "file": "src/msl/CaseFoldCompare.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/ThreadLocalData.c",
+  "file": "src/msl/ps2/ThreadLocalData.c",
+  "how": "separate",
+  "shared": 0.14
+ },
+ {
+  "source": "src/msl/abort_exit_win32.c",
+  "file": "src/msl/abort_exit_win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/alloc.c",
+  "file": "src/msl/ps2/alloc.c",
+  "how": "patched",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/ansi_files.c",
+  "file": "src/msl/ps2/ansi_files.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/ansifp_x86.c",
+  "file": "src/msl/ansifp_x86.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/msl/arith.c",
+  "file": "src/msl/ps2/arith.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/assert.win32.c",
+  "file": "src/msl/assert.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/bsearch.c",
+  "file": "src/msl/bsearch.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/buffer_io.c",
+  "file": "src/msl/buffer_io.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/ctype.c",
+  "file": "src/msl/ps2/ctype.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/direct_io.c",
+  "file": "src/msl/direct_io.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/file_io.c",
+  "file": "src/msl/ps2/file_io.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/file_io.win32.c",
+  "file": "src/msl/file_io.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/file_pos.c",
+  "file": "src/msl/file_pos.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/mbstring.c",
+  "file": "src/msl/ps2/mbstring.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/mem.c",
+  "file": "src/msl/ps2/mem.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/misc_io.c",
+  "file": "src/msl/ps2/misc_io.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/pool_alloc.win32.c",
+  "file": "src/msl/pool_alloc.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/printf_g.c",
+  "file": "src/msl/ps2/printf_g.c",
+  "how": "patched",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/qsort.c",
+  "file": "src/msl/qsort.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/runinit.c",
+  "file": "src/msl/ps2/runinit.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/scanf.c",
+  "file": "src/msl/ps2/scanf.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/scanf_core.c",
+  "file": "src/msl/ps2/scanf_core.c",
+  "how": "patched",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/setjmp_x86.c",
+  "file": "src/msl/ps2/setjmp_x86.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/setupargs.c",
+  "file": "src/msl/ps2/setupargs.c",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "src/msl/signal.c",
+  "file": "src/msl/ps2/signal.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/signal_win32.c",
+  "file": "src/msl/signal_win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/startup.win32.c",
+  "file": "src/msl/startup.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/startup.win32_early.c",
+  "file": "src/msl/startup.win32_early.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/strerror.c",
+  "file": "src/msl/strerror.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/string.c",
+  "file": "src/msl/ps2/string.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/strtold.c",
+  "file": "src/msl/ps2/strtold.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/strtold_core.c",
+  "file": "src/msl/strtold_core.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/strtoul.c",
+  "file": "src/msl/ps2/strtoul.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/strtoull.c",
+  "file": "src/msl/ps2/strtoull.c",
+  "how": "patched",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/sysenv.win32.c",
+  "file": "src/msl/sysenv.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/time.c",
+  "file": "src/msl/ps2/time.c",
+  "how": "patched",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/time.win32.c",
+  "file": "src/msl/time.win32.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/msl/wchar_io.c",
+  "file": "src/msl/ps2/wchar_io.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/Alias.c",
+  "file": "src/ps2/optimizer/Alias.c",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "src/optimizer/COptimizer.c",
+  "file": "src/compiler/optimizer/COptimizer.c",
+  "how": "merged",
+  "shared": 0.31
+ },
+ {
+  "source": "src/optimizer/IROUseDef.c",
+  "file": "src/ps2/optimizer/IROUseDef.c",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "src/optimizer/IrObitvect.c",
+  "file": "src/ps2/optimizer/IrObitvect.c",
+  "how": "separate",
+  "shared": 0.12
+ },
+ {
+  "source": "src/optimizer/IrOptimizer.c",
+  "file": "src/ps2/optimizer/IrOptimizer.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroAggregateAssignment.c",
+  "file": "src/ps2/optimizer/IroAggregateAssignment.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroCSE.c",
+  "file": "src/ps2/optimizer/IroCSE.c",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "src/optimizer/IroCodePositioning.c",
+  "file": "src/compiler/optimizer/IroCodePositioning.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroCounterLoop.c",
+  "file": "src/compiler/optimizer/IroCounterLoop.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroDependenceAnalysis.c",
+  "file": "src/compiler/optimizer/IroDependenceAnalysis.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroDependsKills.c",
+  "file": "src/compiler/optimizer/IroDependsKills.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroDump.c",
+  "file": "src/ps2/optimizer/IroDump.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroEmptyLoop.c",
+  "file": "src/compiler/optimizer/IroEmptyLoop.c",
+  "how": "merged",
+  "shared": 0.32
+ },
+ {
+  "source": "src/optimizer/IroEval.c",
+  "file": "src/compiler/optimizer/IroEval.c",
+  "how": "merged",
+  "shared": 0.5
+ },
+ {
+  "source": "src/optimizer/IroExprRegeneration.c",
+  "file": "src/compiler/optimizer/IroExprRegeneration.c",
+  "how": "merged",
+  "shared": 0.21
+ },
+ {
+  "source": "src/optimizer/IroExprs.c",
+  "file": "src/compiler/optimizer/IroExprs.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroFlowgraph.c",
+  "file": "src/ps2/optimizer/IroFlowgraph.c",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "src/optimizer/IroJump.c",
+  "file": "src/ps2/optimizer/IroJump.c",
+  "how": "separate",
+  "shared": 0.08
+ },
+ {
+  "source": "src/optimizer/IroLibrary.c",
+  "file": "src/compiler/optimizer/IroLibrary.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLifetime.c",
+  "file": "src/compiler/optimizer/IroLifetime.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLinearForm.c",
+  "file": "src/ps2/optimizer/IroLinearForm.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLoop.c",
+  "file": "src/ps2/optimizer/IroLoop.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLoopReversal.c",
+  "file": "src/compiler/optimizer/IroLoopReversal.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLoopRotation.c",
+  "file": "src/compiler/optimizer/IroLoopRotation.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroLoopVector.c",
+  "file": "src/compiler/optimizer/IroLoopVector.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroMalloc.c",
+  "file": "src/ps2/optimizer/IroMalloc.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroNonRegLoopAccesses.c",
+  "file": "src/ps2/optimizer/IroNonRegLoopAccesses.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroPointerAnalysisADTs.c",
+  "file": "src/ps2/optimizer/IroPointerAnalysisADTs.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroPropagate.c",
+  "file": "src/ps2/optimizer/IroPropagate.c",
+  "how": "separate",
+  "shared": 0.14
+ },
+ {
+  "source": "src/optimizer/IroRangePropagation.c",
+  "file": "src/compiler/optimizer/IroRangePropagation.c",
+  "how": "merged",
+  "shared": 0.95
+ },
+ {
+  "source": "src/optimizer/IroScalarization.c",
+  "file": "src/compiler/optimizer/IroScalarization.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroSerializeAssignments.c",
+  "file": "src/compiler/optimizer/IroSerializeAssignments.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroStrengthReduction.c",
+  "file": "src/ps2/optimizer/IroStrengthReduction.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroSubable.c",
+  "file": "src/ps2/optimizer/IroSubable.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroTransform.c",
+  "file": "src/ps2/optimizer/IroTransform.c",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "src/optimizer/IroType.c",
+  "file": "src/compiler/optimizer/IroType.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroUnrollLoop.c",
+  "file": "src/ps2/optimizer/IroUnrollLoop.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/IroUtil.c",
+  "file": "src/ps2/optimizer/IroUtil.c",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "src/optimizer/IroVars.c",
+  "file": "src/ps2/optimizer/IroVars.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/LoopDetection.c",
+  "file": "src/ps2/optimizer/LoopDetection.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/UseDefChains.c",
+  "file": "src/ps2/optimizer/UseDefChains.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/optimizer/VectorArraysToRegs.c",
+  "file": "src/compiler/optimizer/VectorArraysToRegs.c",
+  "how": "merged",
+  "shared": 0.37
+ },
+ {
+  "source": "src/runtime/ExceptionX86.cpp",
+  "file": "src/runtime/ps2/ExceptionX86.cpp",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/LongLongx86.c",
+  "file": "src/runtime/ps2/LongLongx86.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/NMWException.c",
+  "file": "src/runtime/NMWException.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/NMWException_handlers.c",
+  "file": "src/runtime/NMWException_handlers.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/exchand.cpp",
+  "file": "src/runtime/ps2/exchand.cpp",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/excrtl.cpp",
+  "file": "src/runtime/excrtl.cpp",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/globdest.c",
+  "file": "src/runtime/ps2/globdest.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/maincrt.c",
+  "file": "src/runtime/ps2/maincrt.c",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "src/runtime/stackall.c",
+  "file": "src/runtime/stackall.c",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "src/runtime/terminate.c",
+  "file": "src/runtime/terminate.c",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/alloca.h",
+  "file": "include/libc/alloca.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Alias.h",
+  "file": "include/ps2/compiler/Alias.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/compiler/AliasPropagation.h",
+  "file": "include/compiler/AliasPropagation.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/BE_binary.h",
+  "file": "include/compiler/BE_binary.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/BE_macro.h",
+  "file": "include/compiler/BE_macro.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/BE_schedule.h",
+  "file": "include/compiler/BE_schedule.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/BitVector.h",
+  "file": "include/ps2/compiler/BitVector.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/BitVectors.h",
+  "file": "include/ps2/compiler/BitVectors.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/CABI.h",
+  "file": "include/ps2/compiler/CABI.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/compiler/CBrowse.h",
+  "file": "include/ps2/compiler/CBrowse.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CClass.h",
+  "file": "include/ps2/compiler/CClass.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CDecl.h",
+  "file": "include/ps2/compiler/CDecl.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CError.h",
+  "file": "include/ps2/compiler/CError.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CException.h",
+  "file": "include/ps2/compiler/CException.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CExpr.h",
+  "file": "include/ps2/compiler/CExpr.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CExpr2.h",
+  "file": "include/compiler/CExpr2.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CExprConvMatch.h",
+  "file": "include/compiler/CExprConvMatch.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CFunc.h",
+  "file": "include/ps2/compiler/CFunc.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/CInit.h",
+  "file": "include/ps2/compiler/CInit.h",
+  "how": "separate",
+  "shared": 0.05
+ },
+ {
+  "source": "include/compiler/CInline.h",
+  "file": "include/ps2/compiler/CInline.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CInt64.h",
+  "file": "include/ps2/compiler/CInt64.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CMachine.h",
+  "file": "include/ps2/compiler/CMachine.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CMachineState.h",
+  "file": "include/compiler/CMachineState.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CMangler.h",
+  "file": "include/ps2/compiler/CMangler.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/COptimizer.h",
+  "file": "include/compiler/COptimizer.h",
+  "how": "merged",
+  "shared": 0.91
+ },
+ {
+  "source": "include/compiler/CParser.h",
+  "file": "include/ps2/compiler/CParser.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CPrec.h",
+  "file": "include/ps2/compiler/CPrec.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CPrep.h",
+  "file": "include/ps2/compiler/CPrep.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CPrepTokenizer.h",
+  "file": "include/ps2/compiler/CPrepTokenizer.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CPreprocess.h",
+  "file": "include/ps2/compiler/CPreprocess.h",
+  "how": "separate",
+  "shared": 0.12
+ },
+ {
+  "source": "include/compiler/CRTTI.h",
+  "file": "include/ps2/compiler/CRTTI.h",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "include/compiler/CSOM.h",
+  "file": "include/compiler/CSOM.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/compiler/CScope.h",
+  "file": "include/ps2/compiler/CScope.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/CTemplateClass.h",
+  "file": "include/compiler/CTemplateClass.h",
+  "how": "merged",
+  "shared": 0.5
+ },
+ {
+  "source": "include/compiler/CTemplateFunc.h",
+  "file": "include/compiler/CTemplateFunc.h",
+  "how": "merged",
+  "shared": 0.5
+ },
+ {
+  "source": "include/compiler/CTemplateFuncInst.h",
+  "file": "include/compiler/CTemplateFuncInst.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CTemplateNew.h",
+  "file": "include/compiler/CTemplateNew.h",
+  "how": "merged",
+  "shared": 0.33
+ },
+ {
+  "source": "include/compiler/CTemplateTools.h",
+  "file": "include/ps2/compiler/CTemplateTools.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CodeGen.h",
+  "file": "include/ps2/compiler/CodeGen.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Coloring.h",
+  "file": "include/ps2/compiler/Coloring.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CompilerTools.h",
+  "file": "include/ps2/compiler/CompilerTools.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/ConditionalMoveOptimization.h",
+  "file": "include/compiler/ConditionalMoveOptimization.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/CopyPropagation.h",
+  "file": "include/ps2/compiler/CopyPropagation.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/compiler/DIVbyCnst.h",
+  "file": "include/compiler/DIVbyCnst.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/DWARF.h",
+  "file": "include/ps2/compiler/DWARF.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/DeadCodeElimination.h",
+  "file": "include/compiler/DeadCodeElimination.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/ELF_Endian.h",
+  "file": "include/ps2/compiler/ELF_Endian.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/ELFgen.h",
+  "file": "include/compiler/ELFgen.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Exceptions.h",
+  "file": "include/ps2/compiler/Exceptions.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/ExprPreparation.h",
+  "file": "include/compiler/ExprPreparation.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/FEInterface.h",
+  "file": "include/compiler/FEInterface.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/FuncLevelAsm.h",
+  "file": "include/compiler/FuncLevelAsm.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/FunctionCalls.h",
+  "file": "include/ps2/compiler/FunctionCalls.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/compiler/GCCInlineAsm.h",
+  "file": "include/ps2/compiler/GCCInlineAsm.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IROUseDef.h",
+  "file": "include/ps2/compiler/IROUseDef.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/InlineAsm.h",
+  "file": "include/ps2/compiler/InlineAsm.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/InlineAsmMIPS.h",
+  "file": "include/ps2/compiler/InlineAsmMIPS.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/InlineAsmPPC.h",
+  "file": "include/ps2/compiler/InlineAsmPPC.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/InstrSelection.h",
+  "file": "include/ps2/compiler/InstrSelection.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/InterferenceGraph.h",
+  "file": "include/ps2/compiler/InterferenceGraph.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/compiler/Intrinsics.h",
+  "file": "include/ps2/compiler/Intrinsics.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IrOptimizer.h",
+  "file": "include/ps2/compiler/IrOptimizer.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroAggregateAssignment.h",
+  "file": "include/compiler/IroAggregateAssignment.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroCSE.h",
+  "file": "include/ps2/compiler/IroCSE.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroCodePositioning.h",
+  "file": "include/compiler/IroCodePositioning.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroCounterLoop.h",
+  "file": "include/compiler/IroCounterLoop.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroDependenceAnalysis.h",
+  "file": "include/compiler/IroDependenceAnalysis.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroDependsKills.h",
+  "file": "include/compiler/IroDependsKills.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroDump.h",
+  "file": "include/compiler/IroDump.h",
+  "how": "merged",
+  "shared": 0.25
+ },
+ {
+  "source": "include/compiler/IroEmptyLoop.h",
+  "file": "include/ps2/compiler/IroEmptyLoop.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroEval.h",
+  "file": "include/ps2/compiler/IroEval.h",
+  "how": "separate",
+  "shared": 0.08
+ },
+ {
+  "source": "include/compiler/IroExprRegeneration.h",
+  "file": "include/compiler/IroExprRegeneration.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/compiler/IroExprs.h",
+  "file": "include/compiler/IroExprs.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroFlowgraph.h",
+  "file": "include/ps2/compiler/IroFlowgraph.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroJump.h",
+  "file": "include/compiler/IroJump.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/compiler/IroLibrary.h",
+  "file": "include/compiler/IroLibrary.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroLinearForm.h",
+  "file": "include/ps2/compiler/IroLinearForm.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroLoop.h",
+  "file": "include/ps2/compiler/IroLoop.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroLoopReversal.h",
+  "file": "include/compiler/IroLoopReversal.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroLoopVector.h",
+  "file": "include/compiler/IroLoopVector.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroMalloc.h",
+  "file": "include/ps2/compiler/IroMalloc.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroNonRegLoopAccesses.h",
+  "file": "include/compiler/IroNonRegLoopAccesses.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroPointerAnalysis.h",
+  "file": "include/compiler/IroPointerAnalysis.h",
+  "how": "merged",
+  "shared": 0.2
+ },
+ {
+  "source": "include/compiler/IroPointerAnalysisADTs.h",
+  "file": "include/compiler/IroPointerAnalysisADTs.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroPropagate.h",
+  "file": "include/ps2/compiler/IroPropagate.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroRangePropagation.h",
+  "file": "include/compiler/IroRangePropagation.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/compiler/IroScalarization.h",
+  "file": "include/compiler/IroScalarization.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroSerializeAssignments.h",
+  "file": "include/compiler/IroSerializeAssignments.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroStrengthReduction.h",
+  "file": "include/compiler/IroStrengthReduction.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroSubable.h",
+  "file": "include/ps2/compiler/IroSubable.h",
+  "how": "separate",
+  "shared": 0.1
+ },
+ {
+  "source": "include/compiler/IroTransform.h",
+  "file": "include/ps2/compiler/IroTransform.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroType.h",
+  "file": "include/compiler/IroType.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroUnrollLoop.h",
+  "file": "include/ps2/compiler/IroUnrollLoop.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroUtil.h",
+  "file": "include/ps2/compiler/IroUtil.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/IroVars.h",
+  "file": "include/ps2/compiler/IroVars.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/LiveRegisters.h",
+  "file": "include/compiler/LiveRegisters.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/LiveVariables.h",
+  "file": "include/compiler/LiveVariables.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/compiler/LoopDetection.h",
+  "file": "include/ps2/compiler/LoopDetection.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/compiler/LoopOptimization.h",
+  "file": "include/ps2/compiler/LoopOptimization.h",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "include/compiler/MIPSError.h",
+  "file": "include/compiler/MIPSError.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/MIPSSimulation.h",
+  "file": "include/compiler/MIPSSimulation.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/MIPS_Peephole.h",
+  "file": "include/compiler/MIPS_Peephole.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/ObjGen.h",
+  "file": "include/compiler/ObjGen.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/OpcodeInfo.h",
+  "file": "include/compiler/OpcodeInfo.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Operands.h",
+  "file": "include/ps2/compiler/Operands.h",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "include/compiler/PCode.h",
+  "file": "include/ps2/compiler/PCode.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/PCodeInfo.h",
+  "file": "include/ps2/compiler/PCodeInfo.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/compiler/PCodeListing.h",
+  "file": "include/ps2/compiler/PCodeListing.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/PCodeUtilities.h",
+  "file": "include/ps2/compiler/PCodeUtilities.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Peephole.h",
+  "file": "include/ps2/compiler/Peephole.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/compiler/RegListQueries.h",
+  "file": "include/compiler/RegListQueries.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/RegisterInfo.h",
+  "file": "include/ps2/compiler/RegisterInfo.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Registers.h",
+  "file": "include/ps2/compiler/Registers.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/ScanFloatX86.h",
+  "file": "include/compiler/ScanFloatX86.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Scheduler.h",
+  "file": "include/ps2/compiler/Scheduler.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Spill.h",
+  "file": "include/compiler/Spill.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/StructMoves.h",
+  "file": "include/ps2/compiler/StructMoves.h",
+  "how": "separate",
+  "shared": 0.05
+ },
+ {
+  "source": "include/compiler/Switch.h",
+  "file": "include/ps2/compiler/Switch.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/Unmangle.h",
+  "file": "include/ps2/compiler/Unmangle.h",
+  "how": "separate",
+  "shared": 0.18
+ },
+ {
+  "source": "include/compiler/UseDefChains.h",
+  "file": "include/ps2/compiler/UseDefChains.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/VReg.h",
+  "file": "include/compiler/VReg.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/ValueNumbering.h",
+  "file": "include/ps2/compiler/ValueNumbering.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/VectorArraysToRegs.h",
+  "file": "include/ps2/compiler/VectorArraysToRegs.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/common.h",
+  "file": "include/ps2/compiler/common.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/cos.h",
+  "file": "include/compiler/cos.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/enode.h",
+  "file": "include/ps2/compiler/enode.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/mips.h",
+  "file": "include/compiler/mips.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/objects.h",
+  "file": "include/ps2/compiler/objects.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/scopes.h",
+  "file": "include/ps2/compiler/scopes.h",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "include/compiler/som.h",
+  "file": "include/ps2/compiler/som.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/compiler/templates.h",
+  "file": "include/ps2/compiler/templates.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/tokens.h",
+  "file": "include/ps2/compiler/tokens.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/types.h",
+  "file": "include/ps2/compiler/types.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/compiler/win32.h",
+  "file": "include/ps2/compiler/win32.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/ctype.h",
+  "file": "include/ps2/ctype.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/Arguments.h",
+  "file": "include/ps2/driver/Arguments.h",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "include/driver/CCompiler.h",
+  "file": "include/driver/CCompiler.h",
+  "how": "merged",
+  "shared": 0.79
+ },
+ {
+  "source": "include/driver/CCompilerPS2.h",
+  "file": "include/driver/CCompilerPS2.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLAccessPaths.h",
+  "file": "include/ps2/driver/CLAccessPaths.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLBrowser.h",
+  "file": "include/ps2/driver/CLBrowser.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLDependencies.h",
+  "file": "include/ps2/driver/CLDependencies.h",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "include/driver/CLDropinCallbacks_V10.h",
+  "file": "include/ps2/driver/CLDropinCallbacks_V10.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLErrors.h",
+  "file": "include/ps2/driver/CLErrors.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/driver/CLFileOps.h",
+  "file": "include/ps2/driver/CLFileOps.h",
+  "how": "separate",
+  "shared": 0.14
+ },
+ {
+  "source": "include/driver/CLFiles.h",
+  "file": "include/ps2/driver/CLFiles.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLIO.h",
+  "file": "include/ps2/driver/CLIO.h",
+  "how": "separate",
+  "shared": 0.05
+ },
+ {
+  "source": "include/driver/CLIncludeFileCache.h",
+  "file": "include/ps2/driver/CLIncludeFileCache.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLLicenses.h",
+  "file": "include/driver/CLLicenses.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/CLLoadAndCache.h",
+  "file": "include/ps2/driver/CLLoadAndCache.h",
+  "how": "separate",
+  "shared": 0.18
+ },
+ {
+  "source": "include/driver/CLMain.h",
+  "file": "include/ps2/driver/CLMain.h",
+  "how": "separate",
+  "shared": 0.15
+ },
+ {
+  "source": "include/driver/CLOverlays.h",
+  "file": "include/ps2/driver/CLOverlays.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/driver/CLParserCallbacks_v1.h",
+  "file": "include/driver/CLParserCallbacks_v1.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/CLPluginAPI.h",
+  "file": "include/driver/CLPluginAPI.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLPluginRequests.h",
+  "file": "include/ps2/driver/CLPluginRequests.h",
+  "how": "separate",
+  "shared": 0.13
+ },
+ {
+  "source": "include/driver/CLPlugins.h",
+  "file": "include/ps2/driver/CLPlugins.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLPrefs.h",
+  "file": "include/ps2/driver/CLPrefs.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLProj.h",
+  "file": "include/driver/CLProj.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/CLSegs.h",
+  "file": "include/ps2/driver/CLSegs.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/driver/CLStaticMain.h",
+  "file": "include/driver/CLStaticMain.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLTarg.h",
+  "file": "include/ps2/driver/CLTarg.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CLToolExec.h",
+  "file": "include/driver/CLToolExec.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/CLWriteObjectFile.h",
+  "file": "include/driver/CLWriteObjectFile.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/COSToolsCLT.h",
+  "file": "include/ps2/driver/COSToolsCLT.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWParserPluginsContext.h",
+  "file": "include/driver/CWParserPluginsContext.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWParserPluginsPrivate.h",
+  "file": "include/ps2/driver/CWParserPluginsPrivate.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWPluginErrors.h",
+  "file": "include/driver/CWPluginErrors.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWPlugins.h",
+  "file": "include/ps2/driver/CWPlugins.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWPluginsPrivate.h",
+  "file": "include/ps2/driver/CWPluginsPrivate.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWPluginsPrivateExtended.h",
+  "file": "include/driver/CWPluginsPrivateExtended.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CWSecretPluginCallbacks.h",
+  "file": "include/ps2/driver/CWSecretPluginCallbacks.h",
+  "how": "separate",
+  "shared": 0.12
+ },
+ {
+  "source": "include/driver/ClientGlue.h",
+  "file": "include/driver/ClientGlue.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/CmdLineBuildDate.h",
+  "file": "include/ps2/driver/CmdLineBuildDate.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/CompilerSetupOptions.h",
+  "file": "include/driver/CompilerSetupOptions.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/DateTimeUtils.h",
+  "file": "include/driver/DateTimeUtils.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/DropInCompilerLinker.h",
+  "file": "include/ps2/driver/DropInCompilerLinker.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/DropInCompilerLinkerContext.h",
+  "file": "include/driver/DropInCompilerLinkerContext.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ELFImportFileIO.h",
+  "file": "include/driver/ELFImportFileIO.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ELFImportReader.h",
+  "file": "include/driver/ELFImportReader.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ELF_Lib_Import.h",
+  "file": "include/ps2/driver/ELF_Lib_Import.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ErrMgr.h",
+  "file": "include/driver/ErrMgr.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/FileHandles.h",
+  "file": "include/ps2/driver/FileHandles.h",
+  "how": "separate",
+  "shared": 0.15
+ },
+ {
+  "source": "include/driver/Files.h",
+  "file": "include/ps2/driver/Files.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/Generic.h",
+  "file": "include/ps2/driver/Generic.h",
+  "how": "separate",
+  "shared": 0.06
+ },
+ {
+  "source": "include/driver/Help.h",
+  "file": "include/ps2/driver/Help.h",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "include/driver/IO.h",
+  "file": "include/driver/IO.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/LicenseImports.h",
+  "file": "include/ps2/driver/LicenseImports.h",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "include/driver/LowMem.h",
+  "file": "include/driver/LowMem.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/MacFileTypes.h",
+  "file": "include/ps2/driver/MacFileTypes.h",
+  "how": "separate",
+  "shared": 0.12
+ },
+ {
+  "source": "include/driver/MacSpecs.h",
+  "file": "include/ps2/driver/MacSpecs.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/MemUtils.h",
+  "file": "include/driver/MemUtils.h",
+  "how": "merged",
+  "shared": 0.92
+ },
+ {
+  "source": "include/driver/Memory.h",
+  "file": "include/ps2/driver/Memory.h",
+  "how": "separate",
+  "shared": 0.07
+ },
+ {
+  "source": "include/driver/MsDos.h",
+  "file": "include/ps2/driver/MsDos.h",
+  "how": "separate",
+  "shared": 0.03
+ },
+ {
+  "source": "include/driver/OptimizerHelpers.h",
+  "file": "include/driver/OptimizerHelpers.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/Option.h",
+  "file": "include/ps2/driver/Option.h",
+  "how": "separate",
+  "shared": 0.11
+ },
+ {
+  "source": "include/driver/OverlayOptions.h",
+  "file": "include/driver/OverlayOptions.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/Parameter.h",
+  "file": "include/ps2/driver/Parameter.h",
+  "how": "separate",
+  "shared": 0.12
+ },
+ {
+  "source": "include/driver/ParserErrors.h",
+  "file": "include/ps2/driver/ParserErrors.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/driver/ParserErrors.r",
+  "file": "include/driver/ParserErrors.r",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ParserFace.h",
+  "file": "include/ps2/driver/ParserFace.h",
+  "how": "separate",
+  "shared": 0.08
+ },
+ {
+  "source": "include/driver/ParserGlue-ps2-cc.h",
+  "file": "include/driver/ParserGlue-ps2-cc.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ParserHelpers-cc.h",
+  "file": "include/driver/ParserHelpers-cc.h",
+  "how": "merged",
+  "shared": 0.8
+ },
+ {
+  "source": "include/driver/ParserHelpers.h",
+  "file": "include/ps2/driver/ParserHelpers.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/Projects.h",
+  "file": "include/ps2/driver/Projects.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ResourceStrings.h",
+  "file": "include/ps2/driver/ResourceStrings.h",
+  "how": "separate",
+  "shared": 0.11
+ },
+ {
+  "source": "include/driver/Resources.h",
+  "file": "include/ps2/driver/Resources.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/StaticParserGlue.h",
+  "file": "include/driver/StaticParserGlue.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/StdTargetWarningHelpers-cc.h",
+  "file": "include/driver/StdTargetWarningHelpers-cc.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/StringExtras.h",
+  "file": "include/driver/StringExtras.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/StringUtils.h",
+  "file": "include/ps2/driver/StringUtils.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/TargetOptimizerHelpers-mips.h",
+  "file": "include/driver/TargetOptimizerHelpers-mips.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/Targets.h",
+  "file": "include/driver/Targets.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/TextUtils.h",
+  "file": "include/ps2/driver/TextUtils.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/ToolHelpers-cc.h",
+  "file": "include/driver/ToolHelpers-cc.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/ToolHelpers.h",
+  "file": "include/ps2/driver/ToolHelpers.h",
+  "how": "separate",
+  "shared": 0.05
+ },
+ {
+  "source": "include/driver/Utils.h",
+  "file": "include/driver/Utils.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/WarningHelpers.h",
+  "file": "include/driver/WarningHelpers.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/cc-eabi-ppc-mw.h",
+  "file": "include/driver/cc-eabi-ppc-mw.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/cc-eabi-ppc.h",
+  "file": "include/driver/cc-eabi-ppc.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/cc-eabi-ppc.r",
+  "file": "include/driver/cc-eabi-ppc.r",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/cmdline.h",
+  "file": "include/ps2/driver/cmdline.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/libimp-eabi-ppc.h",
+  "file": "include/ps2/driver/libimp-eabi-ppc.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/libimp-ps2.h",
+  "file": "include/driver/libimp-ps2.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/option_system.h",
+  "file": "include/driver/option_system.h",
+  "how": "merged",
+  "shared": 1.0
+ },
+ {
+  "source": "include/driver/oslib.h",
+  "file": "include/ps2/driver/oslib.h",
+  "how": "separate",
+  "shared": 0.02
+ },
+ {
+  "source": "include/driver/parser.h",
+  "file": "include/ps2/driver/parser.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/driver/pref_structs.h",
+  "file": "include/ps2/driver/pref_structs.h",
+  "how": "separate",
+  "shared": 0.01
+ },
+ {
+  "source": "include/errno.h",
+  "file": "include/ps2/errno.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/limits.h",
+  "file": "include/libc/limits.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/CaseFoldCompare.h",
+  "file": "include/msl/CaseFoldCompare.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/abort_exit.h",
+  "file": "include/msl/abort_exit.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/alloc.h",
+  "file": "include/msl/alloc.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/ansi_files.h",
+  "file": "include/msl/ansi_files.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/ansifp_x86.h",
+  "file": "include/msl/ansifp_x86.h",
+  "how": "merged",
+  "shared": 0.85
+ },
+ {
+  "source": "include/msl/arith.h",
+  "file": "include/msl/arith.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/buffer_io.h",
+  "file": "include/msl/buffer_io.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/critical_regions.h",
+  "file": "include/msl/critical_regions.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/crtl.h",
+  "file": "include/msl/crtl.h",
+  "how": "merged",
+  "shared": 0.7
+ },
+ {
+  "source": "include/msl/ctype_api.h",
+  "file": "include/msl/ctype_api.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/extras_string.h",
+  "file": "include/msl/extras_string.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/fcntl.h",
+  "file": "include/msl/fcntl.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/file_io.h",
+  "file": "include/msl/file_io.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/file_io_helpers.h",
+  "file": "include/msl/file_io_helpers.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/file_struc.h",
+  "file": "include/msl/file_struc.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/float_api.h",
+  "file": "include/msl/float_api.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/locale.h",
+  "file": "include/msl/locale.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/mbstring.h",
+  "file": "include/msl/mbstring.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/misc_io.h",
+  "file": "include/msl/misc_io.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/pool_alloc.h",
+  "file": "include/msl/pool_alloc.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/runinit.h",
+  "file": "include/msl/runinit.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/scanf.h",
+  "file": "include/msl/scanf.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/setjmp_x86.h",
+  "file": "include/msl/setjmp_x86.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/setupargs.h",
+  "file": "include/msl/setupargs.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/signal.h",
+  "file": "include/msl/signal.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/startup.win32.h",
+  "file": "include/msl/startup.win32.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/stdio_api.h",
+  "file": "include/msl/stdio_api.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/strerror.h",
+  "file": "include/msl/strerror.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/string.h",
+  "file": "include/msl/string.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/strtold.h",
+  "file": "include/msl/strtold.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/strtoul.h",
+  "file": "include/msl/strtoul.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/sysenv_api.h",
+  "file": "include/msl/sysenv_api.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/threadlocaldata.h",
+  "file": "include/msl/threadlocaldata.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/time_api.h",
+  "file": "include/msl/time_api.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/msl/wchar_io.h",
+  "file": "include/msl/wchar_io.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/ExceptionX86.h",
+  "file": "include/runtime/ExceptionX86.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/exchand.h",
+  "file": "include/runtime/exchand.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/excrtl.h",
+  "file": "include/runtime/excrtl.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/globdest.h",
+  "file": "include/runtime/globdest.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/maincrt.h",
+  "file": "include/runtime/maincrt.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/runtime/terminate.h",
+  "file": "include/runtime/terminate.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/setjmp.h",
+  "file": "include/ps2/setjmp.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/stdarg.h",
+  "file": "include/ps2/stdarg.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/stddef.h",
+  "file": "include/ps2/stddef.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/stdint.h",
+  "file": "include/libc/stdint.h",
+  "how": "new",
+  "shared": 0.0
+ },
+ {
+  "source": "include/stdio.h",
+  "file": "include/ps2/stdio.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/stdlib.h",
+  "file": "include/ps2/stdlib.h",
+  "how": "separate",
+  "shared": 0.0
+ },
+ {
+  "source": "include/string.h",
+  "file": "include/ps2/string.h",
+  "how": "separate",
+  "shared": 0.04
+ },
+ {
+  "source": "include/time.h",
+  "file": "include/libc/time.h",
+  "how": "merged",
+  "shared": 1.0
+ }
+]

@@ -1,3 +1,31 @@
+#if MWCCPS2_B198
+#include "driver/pref_structs.h"
+#include "compiler/win32.h"
+#include "msl/crtl.h"
+#include "msl/signal.h"
+#include "driver/CLErrors.h"
+#include "driver/CLIO.h"
+#include "driver/CLPlugins.h"
+#include "driver/CLTarg.h"
+#include "driver/Memory.h"
+#include "driver/cmdline.h"
+#include "driver/CLMain.h"
+#include "driver/CWPlugins.h"
+#include "driver/FileHandles.h"
+#include "driver/Generic.h"
+#include "driver/MacFileTypes.h"
+#include "driver/MemUtils.h"
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/StringUtils.h"
+#include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#else
 #include "driver/CLIO.h"
 #include "compiler/win32.h"
 #include "driver/CLErrors.h"
@@ -32,6 +60,7 @@ extern FILE* win32_fopen(const char* path, const char* mode);
 #include <string.h>
 #endif
 
+#endif
 static Boolean ioPiping;
 static Boolean ioInHelp;
 static SInt32 lastPrintingPlugin;
@@ -60,6 +89,29 @@ static BOOL __stdcall catchinterrupt(DWORD ctrlType) {
     return FALSE;
 }
 
+#if MWCCPS2_B198
+static void SetupConsoleInfo(void) {
+    HANDLE console;
+    CONSOLE_SCREEN_BUFFER_INFO info;
+
+    console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleCtrlHandler(catchinterrupt, TRUE);
+    ioPiping = FALSE;
+    if (!GetConsoleScreenBufferInfo(console, &info)) {
+        optsEnvir.rows = 0;
+        optsEnvir.cols = 80;
+    } else {
+        optsEnvir.rows = info.dwSize.Y;
+        optsEnvir.cols = info.dwSize.X;
+        if (optsEnvir.cols > 256) {
+            optsEnvir.cols = 256;
+        }
+    }
+    _HandleTable[0]->translate = 0;
+    _HandleTable[1]->translate = 0;
+    _HandleTable[2]->translate = 0;
+}
+#else
 static void SetupConsoleInfo(void) {
     HANDLE console;
     CONSOLE_SCREEN_BUFFER_INFO info;
@@ -83,11 +135,17 @@ static void SetupConsoleInfo(void) {
     _HandleTable[2]->translate = 0;
 #endif
 }
+#endif
 
 static void Crash(void) {
     *((volatile unsigned char*)NULL) = 0;
 }
 
+#if MWCCPS2_B198
+void SetupDebuggingTraps(void) {
+    signal(SIGABRT, (__signal_func_ptr)Crash);
+}
+#else
 void SetupDebuggingTraps(void) {
 #if MWCCPSP_NATIVE
     signal(SIGABRT, (void (*)(int))Crash);
@@ -95,6 +153,7 @@ void SetupDebuggingTraps(void) {
     signal(SIGABRT, (__signal_func_ptr)Crash);
 #endif
 }
+#endif
 
 Boolean IO_Initialize(void) {
     ioPiping = FALSE;
@@ -114,6 +173,7 @@ Boolean IO_Initialize(void) {
     return TRUE;
 }
 
+#if !MWCCPS2_B198
 Boolean IO_Terminate(void) {
     if (ioInHelp) {
         IO_HelpTerminate();
@@ -127,11 +187,13 @@ Boolean IO_HelpInitialize(void) {
     return TRUE;
 }
 
+#endif
 Boolean IO_HelpTerminate(void) {
     ioInHelp = FALSE;
     return TRUE;
 }
 
+#if !MWCCPS2_B198
 #if MWCCPSP
 // 3.0.1: writes the lines of a text buffer with CRLF endings; a final line
 // without an end-of-line character gets none
@@ -287,7 +349,61 @@ void FixHandleForIDE(Handle text, UInt32 size) {
     }
     HUnlock(text);
 }
+#endif
 
+#if MWCCPS2_B198
+static Boolean SendTextToFile(FILE* file, char* ptr, UInt32 size) {
+    Boolean ret;
+    char* lineEnd;
+    char* end;
+
+    if (file != stdout && file != stderr) {
+        setvbuf(file, NULL, _IOFBF, 0x1000);
+    }
+
+    end = ptr + size;
+    while (ptr < end) {
+        lineEnd = ptr;
+        while (lineEnd < end && *lineEnd != '\n' && *lineEnd != '\r') {
+            lineEnd++;
+        }
+
+        if (lineEnd - ptr) {
+            if (fwrite(ptr, lineEnd - ptr, 1, file) != 1) {
+                CLReportCError(CLStr10, errno);
+                ret = FALSE;
+                goto fail;
+            }
+        }
+
+        if (CheckForUserBreak()) {
+            ret = TRUE;
+            goto fail;
+        }
+
+        if (fwrite("\r\n", strlen("\r\n"), 1, file) != 1) {
+            CLReportCError(CLStr10, errno);
+            ret = FALSE;
+            goto fail;
+        }
+
+        if (lineEnd < end && *(lineEnd++) == '\r' && *lineEnd == '\n') {
+            ++lineEnd;
+        }
+        ptr = lineEnd;
+    }
+    ret = TRUE;
+
+fail:
+    fflush(file);
+
+    if (file != stdout && file != stderr) {
+        setvbuf(file, NULL, _IONBF, 0x1000);
+    }
+
+    return ret;
+}
+#else
 #if MWCCPSP
 Boolean ShowHandle(OSHandle* text, Boolean decorate) {
     static const char* const border = "===============\n";
@@ -378,7 +494,62 @@ Boolean WriteBinaryHandleToFile(OSSpec* spec, OSType maccreator, OSType mactype,
 
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+static Boolean SendHandleToFile(FILE* file, OSHandle* text) {
+    Boolean ret;
+    char* ptr;
+    UInt32 size;
+
+    ptr = (char*)OS_LockHandle(text);
+    if (!ptr) {
+        return FALSE;
+    }
+    OS_GetHandleSize(text, &size);
+    if (size && ptr[size - 1] == 0) {
+        size--;
+    }
+    if (size) {
+        ret = SendTextToFile(file, ptr, size);
+    } else {
+        ret = TRUE;
+    }
+    OS_UnlockHandle(text);
+    return ret;
+}
+
+Boolean ShowHandle(OSHandle* text, Boolean decorate) {
+    static const char* const border = "===============\n";
+
+    if (decorate) {
+        fprintf(stdout, border);
+    }
+    if (!SendHandleToFile(stdout, text)) {
+        return FALSE;
+    }
+    if (decorate) {
+        fprintf(stdout, border);
+    }
+    fflush(stdout);
+
+    return TRUE;
+}
+
+Boolean WriteBinaryHandleToFile(OSSpec* spec, OSType maccreator, OSType mactype, OSHandle* text) {
+    int err;
+    OSFileHandle file;
+
+    if ((err = OS_NewFileHandle(spec, text, TRUE, &file)) ||
+        (err = OS_FreeFileHandle(&file)) ||
+        (err = OS_SetMacFileCreatorAndType(spec, maccreator, mactype))) {
+        CLReportOSError(CLStr8, err, OS_SpecToString(spec, STSbuf, sizeof(STSbuf)));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#else
 #if MWCCPSP
 Boolean AppendHandleToFile(OSSpec* spec, OSHandle* text, OSType maccreator, OSType mactype) {
     FILE* file;
@@ -418,6 +589,7 @@ Boolean AppendHandleToFile(
     return TRUE;
 }
 #endif
+#endif
 
 void InitWorking(void) {}
 
@@ -425,12 +597,14 @@ void ShowWorking(int x) {}
 
 void TermWorking(void) {}
 
+#if !MWCCPS2_B198
 static void ProgressFunction(const char* functionname) {
     if (optsCmdLine.verbose) {
         CLReport(CLStr7, functionname);
     }
 }
 
+#endif
 Boolean CheckForUserBreak(void) {
     ShowWorking(4);
     return clState.userBreak;
@@ -483,6 +657,16 @@ inline void appendChar(TextBuffer* f, char c) {
     f->col++;
 }
 
+#if MWCCPS2_B198
+//! @reconstructed
+static void StartLine(TextBuffer* f) {
+    f->col = 0;
+    if (!optsEnvir.underIDE && f->newline) {
+        appendText(f, f->newline);
+    }
+}
+
+#else
 static void StartLine(TextBuffer* f) {
 #if MWCCPSP
     char* nl;
@@ -497,6 +681,7 @@ static void StartLine(TextBuffer* f) {
     }
 #endif
 }
+#endif
 
 inline void newLine(TextBuffer* f) {
     if (f->newline) {
@@ -507,6 +692,7 @@ inline void newLine(TextBuffer* f) {
     StartLine(f);
 }
 
+#if !MWCCPS2_B198
 static void WrapText(TextBuffer* f) {
     int wrapped;
     char wrapbuf[256];
@@ -529,6 +715,49 @@ static void WrapText(TextBuffer* f) {
         return;
     }
 #endif
+
+    while (wrapped < (optsEnvir.cols - 1) && (size_t)f->col > strlen(f->newline)) {
+        c = f->buffer[f->pos - 1];
+        if (c == ' ') {
+            break;
+        }
+        if (c == '/') {
+            break;
+        }
+        if (c == '-') {
+            break;
+        }
+        wrapbuf[wrapped] = c;
+        wrapped++;
+        f->pos--;
+        f->col--;
+    }
+
+    if ((size_t)f->col <= strlen(f->newline)) {
+        while (f->col < (optsEnvir.cols - 1) && wrapped > 0) {
+            appendChar(f, wrapbuf[--wrapped]);
+        }
+    }
+
+    newLine(f);
+    while (wrapped > 0 && f->maxlen > 0) {
+        appendChar(f, wrapbuf[--wrapped]);
+    }
+}
+#endif
+
+#if MWCCPS2_B198
+static void WrapText(TextBuffer* f) {
+    int wrapped;
+    char wrapbuf[256];
+    char c;
+
+    wrapped = 0;
+    if (optsCmdLine.noWrapOutput ||
+        !f->newline ||
+        strlen(f->newline) > (size_t)(optsEnvir.cols / 2)) {
+        return;
+    }
 
     while (wrapped < (optsEnvir.cols - 1) && (size_t)f->col > strlen(f->newline)) {
         c = f->buffer[f->pos - 1];
@@ -606,6 +835,65 @@ static char* IO_VFormatText(
         }
     }
 
+    if (f.newline) {
+        if ((size_t)(int)f.col == strlen(f.newline)) {
+            f.pos -= f.col;
+            f.col = 0;
+        }
+    }
+
+    appendChar(&f, 0);
+
+    return f.buffer;
+}
+#else
+static char* IO_VFormatText(
+    char* buffer, SInt32 size, char* newline, const char* format, va_list ap
+) {
+    TextBuffer f;
+    char* arg;
+
+    f.buffer = buffer;
+    f.pos = 0;
+    f.maxlen = size;
+    f.col = 0;
+    f.original = TRUE;
+    f.newline = newline;
+    StartLine(&f);
+
+    while (*format && f.maxlen > 0) {
+        if (*format == '%') {
+            arg = va_arg(ap, char*);
+            while (*arg && f.maxlen > 0) {
+                if (*arg == '\r' || *arg == '\n') {
+                    newLine(&f);
+                    arg++;
+                } else if (*arg == '\t') {
+                    if (f.maxlen > 0) {
+                        do {
+                            appendChar(&f, ' ');
+                        } while (f.col & 7);
+                    }
+                    arg++;
+                } else {
+                    appendChar(&f, *(arg++));
+                    if (!optsCmdLine.noWrapOutput && f.newline && f.col >= optsEnvir.cols - 1) {
+                        WrapText(&f);
+                    }
+                }
+            }
+            format++;
+        } else if (*format == '\r' || *format == '\n') {
+            format++;
+            newLine(&f);
+        } else {
+            appendChar(&f, *(format++));
+            if (!optsCmdLine.noWrapOutput && f.col >= optsEnvir.cols - 1) {
+                WrapText(&f);
+            }
+        }
+    }
+
 #if MWCCPSP
     {
         char* nl;
@@ -631,6 +919,7 @@ static char* IO_VFormatText(
 
     return f.buffer;
 }
+#endif
 
 char* IO_FormatText(char* buffer, SInt32 size, char* newline, const char* format, ...) {
     va_list ap;
@@ -645,6 +934,63 @@ char* IO_FormatText(char* buffer, SInt32 size, char* newline, const char* format
 
 static const char* pagePrompt = "\n[Press enter for next page, 'q'+enter to quit]\r";
 
+#if MWCCPS2_B198
+void CLPrintDispatch(int unused, SInt16 msgtype, const char* message) {
+    FILE* out;
+    const char* ptr;
+    const char* nptr;
+
+    if (optsCmdLine.stderr2stdout == 1 ||
+        optsCmdLine.stderr2stdout == 2 ||
+        msgtype == Msg_Note ||
+        msgtype == Msg_Status) {
+        out = stdout;
+    } else if (msgtype == Msg_Warning || msgtype == Msg_Error || msgtype == Msg_Alert) {
+        out = stderr;
+    } else {
+        OS_ASSERT(847, 0);
+    }
+
+    if (!printedAnything && !ioPiping) {
+        printedAnything = TRUE;
+        ioLineNum = 0;
+    }
+
+    ptr = message;
+    while (*ptr) {
+        nptr = ptr;
+        while (*nptr && *nptr != '\n' && *nptr != '\r') {
+            ++nptr;
+        }
+
+        if (nptr - ptr) {
+            if (fwrite(ptr, nptr - ptr, 1, out) != 1) {
+                clState.userBreak = TRUE;
+            }
+        }
+
+        if (*nptr) {
+            ioLineNum++;
+            fwrite("\r\n", strlen("\r\n"), 1, out);
+            if (*nptr == '\r') {
+                nptr++;
+            }
+            if (*nptr == '\n') {
+                nptr++;
+            }
+            if (nptr[0] && !nptr[1] && (nptr[0] == '\n' || nptr[0] == '\r')) {
+                nptr++;
+            }
+        }
+
+        ptr = nptr;
+    }
+
+    if (out == stdout && optsCmdLine.verbose > 1) {
+        fflush(out);
+    }
+}
+#else
 void CLPrintDispatch(int unused, SInt16 msgtype, const char* message) {
     FILE* out;
     const char* ptr;
@@ -704,6 +1050,7 @@ void CLPrintDispatch(int unused, SInt16 msgtype, const char* message) {
         fflush(out);
     }
 }
+#endif
 
 #define GetFileInfo CLIO_GetFileInfo
 
@@ -751,6 +1098,21 @@ static char* Arrows(MessageRef* ref) {
     return arrowBuf;
 }
 
+#if MWCCPS2_B198
+static Boolean IsLikelyAnImporter(Plugin* plugin) {
+    if (Plugin_CL_GetObjectFlags(plugin)->flags & 0x80000000) {
+        return FALSE;
+    }
+
+    if (plugin ==
+        Plugins_GetPluginForFile(
+            NULL, gTarg->cpu, gTarg->os, clState.plugintype, clState.language
+        )) {
+        return FALSE;
+    }
+    return TRUE;
+}
+#else
 static Boolean IsLikelyAnImporter(Plugin* plugin) {
 #if MWCCPSP
     // 3.0.1 still counts a plugin with the 0x40000000 flag as an importer
@@ -770,6 +1132,7 @@ static Boolean IsLikelyAnImporter(Plugin* plugin) {
     }
     return TRUE;
 }
+#endif
 
 // clang-format off
 static const char* msgnames[6] = {
@@ -782,6 +1145,32 @@ static const char* msgnames[6] = {
 };
 // clang-format on
 
+#if MWCCPS2_B198
+static char* GuessTool(Plugin* plugin) {
+    if (plugin) {
+        DropInFlags* df = Plugin_GetDropInFlags(plugin);
+        switch (df->dropintype) {
+            case CWDROPINDRIVERTYPE:
+                return "Driver";
+            case CWDROPINPARSERTYPE:
+                return "Usage";
+            case CWDROPINCOMPILERTYPE:
+                if (df->edit_language == Lang_C_CPP || df->edit_language == Lang_Pascal) {
+                    return "Compiler";
+                } else if (df->edit_language == 'Asm ') {
+                    return "Assembler";
+                } else if (IsLikelyAnImporter(plugin)) {
+                    return "Importer";
+                } else {
+                    return "Compiler";
+                }
+            case CWDROPINLINKERTYPE:
+                return "Linker";
+        }
+    }
+    return "Driver";
+}
+#else
 static char* GuessTool(Plugin* plugin) {
     if (plugin) {
         DropInFlags* df = Plugin_GetDropInFlags(plugin);
@@ -810,6 +1199,7 @@ static char* GuessTool(Plugin* plugin) {
     }
     return "Driver";
 }
+#endif
 
 static char* GuessDoing(Plugin* plugin) {
     if (plugin) {
@@ -876,6 +1266,81 @@ static void styledMessage_MPW(
     }
 }
 
+#if MWCCPS2_B198
+static void styledMessage_Default(
+    Plugin* plugin,
+    MessageRef* ref,
+    SInt32 errorNumber,
+    SInt16 msgType,
+    const char* format,
+    va_list va
+) {
+    char lineBuf[324];
+    char msgBuf[256];
+    char* msgPtr;
+    char* ptr;
+    SInt16 cols;
+
+    msgPtr = IO_VFormatText(msgBuf, sizeof(msgBuf), "#   ", format, va);
+    if (ref) {
+        CLPrintType(msgType, "### %s %s:\n", clState.programName, GuessTool(plugin));
+    } else if (msgType != Msg_Status) {
+        CLPrintType(
+            msgType, "### %s %s %s:\n", clState.programName, GuessTool(plugin), msgnames[msgType]
+        );
+    }
+
+    if (ref) {
+        GetFileInfo(ref);
+        if (newErr || (newSrc && srcIsErr)) {
+            if (srcIsErr) {
+                sprintf(
+                    lineBuf,
+                    "#%8s: %s\n",
+                    "File",
+                    OS_SpecToStringRelative(&errSpec, NULL, STSbuf, sizeof(STSbuf))
+                );
+            } else {
+                sprintf(
+                    lineBuf,
+                    "#%8s: %s\n",
+                    "In",
+                    OS_SpecToStringRelative(&errSpec, NULL, STSbuf, sizeof(STSbuf))
+                );
+            }
+            CLPrintDispatch(0, msgType, lineBuf);
+        }
+        if (newSrc && !srcIsErr) {
+            sprintf(
+                lineBuf,
+                "# %7s: %s\n",
+                "From",
+                OS_SpecToStringRelative(&srcSpec, NULL, STSbuf, sizeof(STSbuf))
+            );
+            CLPrintDispatch(0, msgType, lineBuf);
+        }
+        if (newErr || newSrc) {
+            ptr = &lineBuf[2];
+            while (*ptr && *ptr != '\n') {
+                *(ptr++) = '-';
+            }
+            *ptr = 0;
+            if (ptr - lineBuf >= (cols = optsEnvir.cols) - 1) {
+                lineBuf[cols - 1] = 0;
+            }
+            strcat(lineBuf, "\n");
+            CLPrintDispatch(0, msgType, lineBuf);
+        }
+        CLPrintType(msgType, "#%8d: %s\n", ref->linenumber, ref->sourceline);
+        CLPrintType(msgType, "#%8s: %s\n", msgnames[msgType], Arrows(ref));
+    }
+
+    CLPrintDispatch(0, msgType, msgPtr);
+    if (msgPtr != msgBuf) {
+        free(msgPtr);
+    }
+}
+#else
 static void styledMessage_Default(
     Plugin* plugin,
     MessageRef* ref,
@@ -953,6 +1418,7 @@ static void styledMessage_Default(
         free(msgPtr);
     }
 }
+#endif
 
 // clang-format off
 static const char* msgnames_gcc[6] = {
@@ -963,6 +1429,7 @@ static const char* msgnames_gcc[6] = {
     " alert",
     " status"
 };
+#if !MWCCPS2_B198
 // clang-format on
 
 static void styledMessage_Terse(
@@ -1065,6 +1532,7 @@ static void styledMessage_Terse(
         free(msgPtr);
     }
 }
+#endif
 
 static void styledMessage_IDE(
     Plugin* plugin,
@@ -1163,6 +1631,7 @@ void CLPrint(const char* format, ...) {
     }
 }
 
+#if !MWCCPS2_B198
 void CLPrintWarning(const char* format, ...) {
     char printbuffer[256];
     char* ptr;
@@ -1177,6 +1646,7 @@ void CLPrintWarning(const char* format, ...) {
     }
 }
 
+#endif
 void CLPrintErr(const char* format, ...) {
     char printbuffer[256];
     char* ptr;
@@ -1191,6 +1661,41 @@ void CLPrintErr(const char* format, ...) {
     }
 }
 
+#if MWCCPS2_B198
+static void FixupMessageRef(MessageRef* ref) {
+    char* bol;
+    char* eol;
+    int len;
+    int scan;
+
+    if (ref->sourceline && *ref->sourceline) {
+        bol = ref->sourceline + ref->tokenoffset;
+        eol = ref->sourceline + ref->tokenoffset + ref->tokenlength - 1;
+        if (eol < bol) {
+            eol = bol;
+        }
+        while (bol > ref->sourceline && bol[-1] != '\r') {
+            bol--;
+        }
+        while (*eol && *eol != '\r' && *eol != '\n') {
+            eol++;
+        }
+
+        len = eol - bol;
+        ref->sourceline = xmalloc("text buffer", len + 1);
+        strncpy(ref->sourceline, bol, len);
+        ref->sourceline[len] = 0;
+
+        for (scan = 0; scan < len; scan++) {
+            if (ref->sourceline[scan] < ' ' || ref->sourceline[scan] >= 127) {
+                ref->sourceline[scan] = ' ';
+            }
+        }
+    } else {
+        ref->sourceline = NULL;
+    }
+}
+#else
 static void FixupMessageRef(MessageRef* ref) {
     char* bol;
     char* eol;
@@ -1319,3 +1824,4 @@ SInt16 CLStyledMessageDispatch(
 
     return msgType;
 }
+#endif

@@ -1,0 +1,45 @@
+# time.c: from the MSL's MSL_C/MSL_Common/Src/time.c, CodeWarrior 9.2
++ #define _MSL_CDECL
++ #define _MSL_RESTRICT restrict
++ #define _MSL_C99 0
++ #define _MSL_THREADSAFE 1
++ #define __dest_os 1
++ #define __win32_os 1
++ #define __wince_os 2
++ #define _MSL_LOCALDATA(x) (_GetThreadLocalData(1)->x)
++ #define _MSL_TLS
+= 1-21
++ #include "msl/arith.h"
+= 23-28
++ #include "msl/time_api.h"
++ #include "msl/locale.h"
++ #include "msl/threadlocaldata.h"
+= 32-44
++ #pragma avoid_ebp on
+= 45-68
++ #pragma avoid_ebp off
+= 69-75
++ #pragma avoid_ebp on
+= 76-80
+= 7-7
++ #pragma avoid_ebp off
+= 81-87
++ #pragma avoid_ebp on
+= 88-137
++ #pragma avoid_ebp off
+= 138-164
++ #pragma avoid_ebp on
+= 165-226
++ #pragma avoid_ebp off
+= 227-246
++ #pragma avoid_ebp on
+= 247-312
++ #pragma avoid_ebp off
+= 313-316
+= 349-371
+= 377-423
+= 445-578
++ #pragma avoid_ebp on
+= 579-611
++ #pragma avoid_ebp off
+= 612-984

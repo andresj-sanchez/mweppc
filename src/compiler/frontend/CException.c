@@ -1,3 +1,22 @@
+#if MWCCPS2_B198
+#include "compiler/CABI.h"
+#include "compiler/CError.h"
+#include "compiler/CException.h"
+#include "compiler/CExpr.h"
+#include "compiler/CFunc.h"
+#include "compiler/CInline.h"
+#include "compiler/CMachine.h"
+#include "compiler/CMangler.h"
+#include "compiler/CParser.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CScope.h"
+#include "compiler/Exceptions.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+
+#else
 #include "compiler/CException.h"
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
@@ -23,6 +42,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#endif
 #if MWCCPS2_B52
 // 2.4.5 builds offset and size constants as int where 2.4.7 uses long: b69's
 // CABI_MakeThisExpr, CClass_AccessMember, CExcept_CatchExpressionInit ... reference
@@ -41,6 +61,7 @@ ExceptionAction* cexcept_dobjstack;
 Boolean cexcept_hasdobjects;
 Boolean cexcept_magic;
 static UniqueObj* cexcept_uniqueobjs;
+#if !MWCCPS2_B198
 static Boolean cexcept_canthrow;
 static DtorTemp* cexcept_dtortemps;
 static Statement* cexcept_prevstmt;
@@ -52,6 +73,7 @@ static Boolean cexcept_serialize;
 
 static ENode* CExcept_TempTransExprCond(ENode* expr);
 static ENode* CExcept_TempTransExpr(ENode* expr);
+#endif
 
 void CExcept_Setup(void) {
     cexcept_dobjstack = NULL;
@@ -60,6 +82,58 @@ void CExcept_Setup(void) {
     cexcept_magic = FALSE;
 }
 
+#if MWCCPS2_B198
+void CExcept_CheckStackRefs(ExceptionAction* actions) {
+    while (actions) {
+        switch (actions->type) {
+            case EAT_DESTROYLOCAL:
+                CInline_ObjectAddrRef(actions->data.destroy_local.dtor);
+                break;
+            case EAT_DESTROYLOCALCOND:
+                CInline_ObjectAddrRef(actions->data.destroy_local_cond.dtor);
+                break;
+            case EAT_DESTROYLOCALOFFSET:
+                CInline_ObjectAddrRef(actions->data.destroy_local_offset.dtor);
+                break;
+            case EAT_DESTROYLOCALPOINTER:
+                CInline_ObjectAddrRef(actions->data.destroy_local_pointer.dtor);
+                break;
+            case EAT_DESTROYLOCALARRAY:
+                CInline_ObjectAddrRef(actions->data.destroy_local_array.dtor);
+                break;
+            case EAT_DESTROYPARTIALARRAY:
+                CInline_ObjectAddrRef(actions->data.destroy_partial_array.dtor);
+                break;
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
+                CInline_ObjectAddrRef(actions->data.destroy_member.dtor);
+                break;
+            case EAT_DESTROYMEMBERCOND:
+                CInline_ObjectAddrRef(actions->data.destroy_member_cond.dtor);
+                break;
+            case EAT_DESTROYMEMBERARRAY:
+                CInline_ObjectAddrRef(actions->data.destroy_member_array.dtor);
+                break;
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
+                CInline_ObjectAddrRef(actions->data.delete_pointer.deletefunc);
+                break;
+            case EAT_DELETEPOINTERCOND:
+            case EAT_DELETEVLA:
+                CInline_ObjectAddrRef(actions->data.delete_vla.deletefunc);
+                break;
+            case EAT_CATCHBLOCK:
+            case EAT_ACTIVECATCHBLOCK:
+            case EAT_SPECIFICATION:
+            case EAT_TERMINATE:
+                break;
+            default:
+                CError_FATAL(212);
+        }
+        actions = actions->prev;
+    }
+}
+#else
 Boolean CExcept_CanThrowException(Object* object, Boolean isVirtualCall) {
     if (copts.optEH && IS_TYPE_FUNC(object->type)) {
         if (isVirtualCall) {
@@ -156,6 +230,7 @@ void CExcept_CheckStackRefs(ExceptionAction* actions) {
         actions = actions->prev;
     }
 }
+#endif
 
 void CExcept_CompareSpecifications(ExceptSpecList* a, ExceptSpecList* b) {
 #if MWCCPS2_B52
@@ -218,6 +293,72 @@ void CExcept_CompareSpecifications(ExceptSpecList* a, ExceptSpecList* b) {
     }
 }
 
+#if MWCCPS2_B198
+Boolean CExcept_ActionCompare(ExceptionAction* a, ExceptionAction* b) {
+    if (a == b) {
+        return TRUE;
+    }
+
+    if (a == NULL || b == NULL) {
+        return FALSE;
+    }
+
+    if (a->type == b->type) {
+        switch (a->type) {
+            case EAT_DESTROYLOCAL:
+                return a->data.destroy_local.local == b->data.destroy_local.local;
+            case EAT_DESTROYLOCALCOND:
+                return a->data.destroy_local_cond.local == b->data.destroy_local_cond.local;
+            case EAT_DESTROYLOCALOFFSET:
+                return a->data.destroy_local_offset.local == b->data.destroy_local_offset.local &&
+                    a->data.destroy_local_offset.offset == b->data.destroy_local_offset.offset;
+            case EAT_DESTROYLOCALPOINTER:
+                return a->data.destroy_local_pointer.pointer ==
+                    b->data.destroy_local_pointer.pointer;
+            case EAT_DESTROYLOCALARRAY:
+                return a->data.destroy_local_array.localarray ==
+                    b->data.destroy_local_array.localarray;
+            case EAT_DESTROYPARTIALARRAY:
+                return a->data.destroy_partial_array.arraypointer ==
+                    b->data.destroy_partial_array.arraypointer;
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
+                return a->data.destroy_member.objectptr == b->data.destroy_member.objectptr &&
+                    a->data.destroy_member.offset == b->data.destroy_member.offset;
+            case EAT_DESTROYMEMBERCOND:
+                return a->data.destroy_member_cond.objectptr ==
+                    b->data.destroy_member_cond.objectptr &&
+                    a->data.destroy_member_cond.offset == b->data.destroy_member_cond.offset;
+            case EAT_DESTROYMEMBERARRAY:
+                return a->data.destroy_member_array.objectptr ==
+                    b->data.destroy_member_array.objectptr &&
+                    a->data.destroy_member_array.offset == b->data.destroy_member_array.offset;
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
+                return a->data.delete_pointer.pointerobject ==
+                    b->data.delete_pointer.pointerobject &&
+                    a->data.delete_pointer.deletefunc == b->data.delete_pointer.deletefunc;
+            case EAT_DELETEPOINTERCOND:
+                return a->data.delete_pointer_cond.cond == b->data.delete_pointer_cond.cond;
+            case EAT_CATCHBLOCK:
+                return a->data.catch_block.catch_label == b->data.catch_block.catch_label;
+            case EAT_ACTIVECATCHBLOCK:
+                return a->data.active_catch_block.catch_info_object ==
+                    b->data.active_catch_block.catch_info_object;
+            case EAT_TERMINATE:
+                return TRUE;
+            case EAT_SPECIFICATION:
+                return a->data.specification.unexp_id == b->data.specification.unexp_id;
+            case EAT_DELETEVLA:
+                return a->data.delete_vla.vlaobject == b->data.delete_vla.vlaobject;
+            default:
+                CError_FATAL(342);
+        }
+    }
+
+    return FALSE;
+}
+#else
 Boolean CExcept_ActionCompare(ExceptionAction* a, ExceptionAction* b) {
 #if MWCCPSP
     // 0x4E1E00
@@ -289,7 +430,41 @@ Boolean CExcept_ActionCompare(ExceptionAction* a, ExceptionAction* b) {
 
     return FALSE;
 }
+#endif
 
+#if MWCCPS2_B198
+Boolean CExcept_ActionNeedsDestruction(ExceptionAction* action) {
+    if (action == NULL) {
+        return FALSE;
+    }
+
+    switch (action->type) {
+        case EAT_CATCHBLOCK:
+            return FALSE;
+        case EAT_DESTROYLOCAL:
+        case EAT_DESTROYLOCALOFFSET:
+        case EAT_DESTROYLOCALARRAY:
+        case EAT_DELETELOCALPOINTER:
+        case EAT_ACTIVECATCHBLOCK:
+            return TRUE;
+        case EAT_DESTROYLOCALOBJECT:
+            return action->data.destroy_local_object.call_dtor;
+        case EAT_NOP:
+        case EAT_DESTROYLOCALPOINTER:
+        case EAT_DESTROYMEMBER:
+        case EAT_DESTROYMEMBERCOND:
+        case EAT_DESTROYMEMBERARRAY:
+        case EAT_TERMINATE:
+        case EAT_DESTROYBASE:
+        case EAT_DELETEVLA:
+            break;
+        default:
+            CError_FATAL(396);
+    }
+
+    return FALSE;
+}
+#else
 int CExcept_IsSubList(ExceptionAction* a, ExceptionAction* b) {
 #if MWCCPS2
     int diff;
@@ -342,11 +517,44 @@ int CExcept_IsSubList(ExceptionAction* a, ExceptionAction* b) {
 
     return diff;
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (33)
 #endif
+#if MWCCPS2_B198
+ENode* CExcept_RegisterDestructorObject(
+    Object* local, SInt32 offset, Object* dtor, Boolean unused
+) {
+    ExceptionAction* action;
+    ENode* expr;
+
+    action = lalloc(sizeof(ExceptionAction));
+    memclrw(action, sizeof(ExceptionAction));
+
+    action->prev = cexcept_dobjstack;
+    cexcept_dobjstack = action;
+
+    expr = create_objectrefnode(local);
+    dtor = CABI_GetDestructorObject(dtor, CABIDestroyComplete);
+
+    if (offset == 0) {
+        action->type = EAT_DESTROYLOCAL;
+        action->data.destroy_local.local = local;
+        action->data.destroy_local.dtor = dtor;
+    } else {
+        action->type = EAT_DESTROYLOCALOFFSET;
+        action->data.destroy_local_offset.local = local;
+        action->data.destroy_local_offset.dtor = dtor;
+        action->data.destroy_local_offset.offset = offset;
+        expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
+    }
+
+    cexcept_hasdobjects = TRUE;
+    return expr;
+}
+#else
 #if MWCCPSP
 Boolean CExcept_ActionNeedsDestruction(ExceptionAction* action) {
     if (!action) {
@@ -446,6 +654,7 @@ ENode* CExcept_RegisterDestructorObject(
     cexcept_hasdobjects = TRUE;
     return expr;
 }
+#endif
 
 void CExcept_RegisterLocalArray(
     Statement* stmt, Object* localarray, Object* dtor, SInt32 elements, SInt32 element_size
@@ -469,6 +678,89 @@ void CExcept_RegisterLocalArray(
     cexcept_hasdobjects = TRUE;
 }
 
+#if MWCCPS2_B198
+static void CExcept_PatchConstructorAction(Statement* stmt, ExceptionAction* actionArg) {
+    ExceptionAction* scan;
+    ExceptionAction* action;
+
+    for (action = stmt->dobjstack; action; action = action->prev) {
+        switch (action->type) {
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYMEMBERCOND:
+            case EAT_DESTROYMEMBERARRAY:
+            case EAT_SPECIFICATION:
+            case EAT_DESTROYBASE:
+                break;
+            case EAT_CATCHBLOCK:
+                scan = action;
+                while (1) {
+                    if (!scan->prev) {
+                        break;
+                    }
+                    scan = scan->prev;
+                    if (scan->type != EAT_CATCHBLOCK) {
+                        CError_FATAL(536);
+                    }
+                }
+                break;
+            default:
+                continue;
+        }
+        break;
+    }
+
+    if (action == NULL) {
+        while (stmt) {
+            if ((scan = stmt->dobjstack)) {
+                while (1) {
+                    if (scan == actionArg) {
+                        break;
+                    }
+                    if (scan->prev == NULL) {
+                        scan->prev = actionArg;
+                        break;
+                    }
+                    scan = scan->prev;
+                }
+            } else {
+                stmt->dobjstack = actionArg;
+            }
+            stmt = stmt->next;
+        }
+    } else {
+        actionArg->prev = action;
+        while (stmt) {
+            if (stmt->dobjstack != action) {
+                scan = stmt->dobjstack;
+                while (1) {
+                    if (scan == actionArg) {
+                        break;
+                    }
+                    if (scan->prev == action) {
+                        scan->prev = actionArg;
+                        break;
+                    }
+                    if (!(scan = scan->prev)) {
+                        while (1) {
+                            if (action->type == EAT_CATCHBLOCK && action->prev == NULL) {
+                                return;
+                            }
+
+                            action = action->prev;
+                            if (!action) {
+                                CError_FATAL(586);
+                            }
+                        }
+                    }
+                }
+            } else {
+                stmt->dobjstack = actionArg;
+            }
+            stmt = stmt->next;
+        }
+    }
+}
+#else
 void CExcept_RegisterDeleteObject(Statement* stmt, Object* pointerobject, Object* deletefunc) {
     ExceptionAction* action;
 
@@ -576,6 +868,7 @@ nextStmt:
         }
     }
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -601,6 +894,25 @@ void CExcept_Magic(void) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (57)
 #endif
+#if MWCCPS2_B198
+static Object* CExcept_FindLocalObject(char* name) {
+    NameResult result;
+    NameSpaceObjectList* list;
+    Object* object;
+
+    list = CScope_FindObjectList(&result, GetHashNameNodeExport(name));
+    if (list) {
+        object = list->object;
+        if (object->otype == OT_OBJECT && object->datatype == DLOCAL) {
+            ((VarInfo*)object->u.varptr)->usage++;
+            return object;
+        }
+    }
+
+    CError_FATAL(637);
+    return NULL;
+}
+#else
 static Object* CExcept_FindLocalObject(char* name) {
     NameResult result;
     NameSpaceObjectList* list;
@@ -613,6 +925,7 @@ static Object* CExcept_FindLocalObject(char* name) {
     CError_FATAL(580);
     return NULL;
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -638,6 +951,38 @@ void CExcept_ArrayInit(void) {
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (57)
 #endif
+#if MWCCPS2_B198
+void CExcept_RegisterMember(
+    Statement* stmt, Object* objectptr, SInt32 offset, Object* dtor, Object* cond, Boolean isMember
+) {
+    ExceptionAction* action;
+
+    action = lalloc(sizeof(ExceptionAction));
+    memclrw(action, sizeof(ExceptionAction));
+
+    if (cond == NULL) {
+        if (isMember) {
+            action->type = EAT_DESTROYMEMBER;
+            action->data.destroy_member.dtor = CABI_GetDestructorObject(dtor, CABIDestroyComplete);
+        } else {
+            action->type = EAT_DESTROYBASE;
+            action->data.destroy_member.dtor = CABI_GetDestructorObject(dtor, CABIDestroyBase);
+        }
+        action->data.destroy_member.objectptr = objectptr;
+        action->data.destroy_member.offset = offset;
+    } else {
+        CError_ASSERT(689, cond->type == TYPE(&stsignedshort));
+        action->type = EAT_DESTROYMEMBERCOND;
+        action->data.destroy_member_cond.objectptr = objectptr;
+        action->data.destroy_member_cond.cond = cond;
+        action->data.destroy_member_cond.dtor = CABI_GetDestructorObject(dtor, CABIDestroyComplete);
+        action->data.destroy_member_cond.offset = offset;
+    }
+
+    CExcept_PatchConstructorAction(stmt, action);
+    stmt->flags |= StmtFlag_EndsConstruction;
+}
+#else
 void CExcept_RegisterMember(
     Statement* stmt, Object* objectptr, SInt32 offset, Object* dtor, Object* cond, Boolean isMember
 ) {
@@ -672,6 +1017,7 @@ void CExcept_RegisterMember(
     CExcept_PatchConstructorAction(stmt, action);
     stmt->flags |= StmtFlag_EndsConstruction;
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT 0
@@ -705,6 +1051,30 @@ void CExcept_RegisterMemberArray(
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (57)
 #endif
+#if MWCCPS2_B198
+static Statement* CExcept_DestroyLocal(
+    ExceptionAction* ea, Statement* stmt, Object* object, Object* dtor, SInt32 offset
+) {
+    ENode* expr;
+
+    expr = create_objectrefnode(object);
+    if (offset) {
+        expr = makediadicnode(expr, intconstnode(TYPE(&stunsignedint), offset), EADD);
+    }
+
+    expr = CABI_DestroyObject(dtor, expr, CABIDestroyComplete, TRUE, FALSE);
+
+    CError_ASSERT(744, expr->type == EFUNCCALL && expr->data.funccall.funcref->type == EOBJREF);
+    if (expr->data.funccall.funcref->data.objref->datatype == DVFUNC) {
+        expr->data.funccall.funcref->flags |= ENODE_FLAG_NONVIRTUAL;
+    }
+
+    stmt = CFunc_InsertStatement(ST_EXPRESSION, stmt);
+    stmt->expr = expr;
+    stmt->dobjstack = ea->prev;
+    return stmt;
+}
+#else
 static Statement* CExcept_DestroyLocal(
     ExceptionAction* ea, Statement* stmt, Object* object, Object* dtor, SInt32 offset
 ) {
@@ -739,6 +1109,7 @@ static Statement* CExcept_DestroyLocal(
     stmt->dobjstack = ea->prev;
     return stmt;
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -755,6 +1126,35 @@ static Statement* CExcept_DestroyLocalPointer(
     return newStmt;
 }
 
+#if MWCCPS2_B198
+static Statement* CExcept_DestroyLocalArray(
+    ExceptionAction* ea,
+    Statement* stmt,
+    Object* object,
+    Object* dtor,
+    SInt32 elements,
+    SInt32 element_size
+) {
+    Statement* newStmt;
+    ENode* dtorExpr;
+
+    newStmt = CFunc_InsertStatement(ST_EXPRESSION, stmt);
+
+    dtorExpr = dtor ? create_objectrefnode(CABI_GetDestructorObject(dtor, CABIDestroyComplete))
+                    : nullnode();
+
+    newStmt->expr = funccallexpr(
+        darr_func,
+        create_objectrefnode(object),
+        dtorExpr,
+        intconstnode(TYPE(&stunsignedlong), element_size),
+        intconstnode(TYPE(&stunsignedlong), elements)
+    );
+
+    newStmt->dobjstack = ea->prev;
+    return newStmt;
+}
+#else
 static Statement* CExcept_DestroyLocalArray(
     ExceptionAction* ea,
     Statement* stmt,
@@ -795,6 +1195,7 @@ static Statement* CExcept_DestroyLocalArray(
     newStmt->dobjstack = ea->prev;
     return newStmt;
 }
+#endif
 
 static Statement* CExcept_EndCatch(ExceptionAction* ea, Statement* stmt) {
 #if MWCCPS2_B52
@@ -822,6 +1223,78 @@ static Statement* CExcept_EndCatch(ExceptionAction* ea, Statement* stmt) {
 #endif
 }
 
+#if MWCCPS2_B198
+Statement* CExcept_ActionCleanup(ExceptionAction* ea, Statement* stmt) {
+    Object* obj;
+    ENode* expr;
+
+    switch (ea->type) {
+        case EAT_DESTROYLOCALCOND:
+        case EAT_DESTROYLOCALPOINTER:
+        case EAT_DESTROYPARTIALARRAY:
+        case EAT_DESTROYMEMBER:
+        case EAT_DESTROYMEMBERCOND:
+        case EAT_DESTROYMEMBERARRAY:
+        case EAT_DELETEPOINTER:
+        case EAT_DELETEPOINTERCOND:
+        case EAT_CATCHBLOCK:
+        case EAT_SPECIFICATION:
+        case EAT_TERMINATE:
+        case EAT_DESTROYBASE:
+        case EAT_DELETEVLA:
+            break;
+        case EAT_DESTROYLOCAL:
+            stmt = CExcept_DestroyLocal(
+                ea, stmt, ea->data.destroy_local.local, ea->data.destroy_local.dtor, 0
+            );
+            break;
+        case EAT_DESTROYLOCALOFFSET:
+            stmt = CExcept_DestroyLocal(
+                ea,
+                stmt,
+                ea->data.destroy_local.local,
+                ea->data.destroy_local.dtor,
+                ea->data.destroy_local_offset.offset
+            );
+            break;
+        case EAT_DELETELOCALPOINTER:
+            stmt = CExcept_DestroyLocalPointer(
+                ea, stmt, ea->data.delete_pointer.pointerobject, ea->data.delete_pointer.deletefunc
+            );
+            break;
+        case EAT_DESTROYLOCALARRAY:
+            stmt = CExcept_DestroyLocalArray(
+                ea,
+                stmt,
+                ea->data.destroy_local_array.localarray,
+                ea->data.destroy_local_array.dtor,
+                ea->data.destroy_local_array.elements,
+                ea->data.destroy_local_array.element_size
+            );
+            break;
+        case EAT_DESTROYLOCALOBJECT:
+            if (ea->data.destroy_local_object.call_dtor) {
+                Statement* newStmt;
+
+                obj = ea->data.destroy_local_object.local;
+                expr = CExpr_NewTemplDepENode(TDE_UNK25);
+                expr->data.templdep.u0.expr = (ENode*)obj;
+                newStmt = CFunc_InsertStatement(ST_EXPRESSION, stmt);
+                newStmt->expr = expr;
+                newStmt->dobjstack = ea->prev;
+                stmt = newStmt;
+            }
+            break;
+        case EAT_ACTIVECATCHBLOCK:
+            stmt = CExcept_EndCatch(ea, stmt);
+            break;
+        default:
+            CError_FATAL(917);
+    }
+
+    return stmt;
+}
+#else
 Statement* CExcept_ActionCleanup(ExceptionAction* ea, Statement* stmt) {
     switch (ea->type) {
         case EAT_DESTROYLOCALCOND:
@@ -892,7 +1365,22 @@ Statement* CExcept_ActionCleanup(ExceptionAction* ea, Statement* stmt) {
 
     return stmt;
 }
+#endif
 
+#if MWCCPS2_B198
+void fn_004EC8B0(Statement* stmt) {
+    cexcept_uniqueobjs_61BAB8 = NULL;
+    fn_004ECC50(stmt);
+    if (cscope_currentfunc && CExcept_ExceptionTansform(cscope_currentfunc, stmt)) {
+        if (cscope_currentfunc->type->type != TYPEFUNC) {
+            CError_Internal(__FILE__, 3333);
+        }
+        if (TYPE_FUNC(cscope_currentfunc->type)->exspecs && copts.exceptions) {
+            fn_004ECA00(stmt, TYPE_FUNC(cscope_currentfunc->type)->exspecs);
+        }
+    }
+}
+#else
 static void CExcept_MangleNameSpaceName(NameSpace* nspace) {
     while (nspace) {
         if (nspace->name) {
@@ -2990,4 +3478,5 @@ void func_004E1C10(Object* obj, Boolean flag) {
     ((Boolean*)&action->data)[sizeof(void*)] = flag; // +8
     cexcept_hasdobjects = TRUE;
 }
+#endif
 #endif

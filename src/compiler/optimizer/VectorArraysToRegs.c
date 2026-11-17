@@ -10,6 +10,28 @@
 #include "compiler/types.h"
 #include "compiler/UseDefChains.h"
 
+#if MWCCPS2_B198
+void fn_00555DD0(void) {
+    PCodeBlock* block;
+    PCode* instr;
+    UInt32 localCount;
+
+    vectorarrays_block_count_636DE8 = oalloc(pcblockcount * sizeof(UInt32));
+    vectorarrays_first_id_636200 = oalloc(pcblockcount * sizeof(UInt32));
+    vectorarrays_total_id_636184 = 0;
+    for (block = pcbasicblocks; block; block = block->nextBlock) {
+        vectorarrays_first_id_636200[block->blockIndex] = vectorarrays_total_id_636184;
+        localCount = 0;
+        for (instr = block->firstPCode; instr; instr = instr->nextPCode) {
+            if (vectorarrays_eligible_61E9F8(instr)) {
+                vectorarrays_total_id_636184++;
+                localCount++;
+            }
+        }
+        vectorarrays_block_count_636DE8[block->blockIndex] = localCount;
+    }
+}
+#else
 typedef struct LocalVectorArray {
     struct LocalVectorArray* next;
     Object* object;
@@ -561,6 +583,7 @@ int vectorarraystoregs(void) {
     freeoheap();
     return converted_arrays;
 }
+#endif
 #if MWCCPS2_B52
 
 // IRO's is_unsigned wrapper (compiler/IroUtil.h). Its unit is unknown

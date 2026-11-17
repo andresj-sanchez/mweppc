@@ -1,0 +1,6 @@
+#ifndef DRIVER_CWPLUGINSPRIVATEEXTENDED_H
+#define DRIVER_CWPLUGINSPRIVATEEXTENDED_H
+
+#include "driver/CWPluginsPrivate.h"
+
+#endif

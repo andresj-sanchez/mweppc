@@ -1,3 +1,20 @@
+#if MWCCPS2_B198
+#include "compiler/CDecl.h"
+#include "compiler/CError.h"
+#include "compiler/CExpr.h"
+#include "compiler/CFunc.h"
+#include "compiler/CInline.h"
+#include "compiler/CMangler.h"
+#include "compiler/CParser.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CTemplateTools.h"
+#include "compiler/tokens.h"
+#include "compiler/types.h"
+#include "compiler/CException.h"
+#include "compiler/CTemplateClass.h"
+
+static void CDecl_ParseCPPFuncDecl(TypeFunc* tfunc);
+#else
 #include "compiler/CDecl.h"
 #include "compiler/CABI.h"
 #include "compiler/CBrowse.h"
@@ -33,13 +50,26 @@
 AccessType global_access;
 FileOffsetInfo member_fileoffset;
 
+#endif
 static void scandirectdecl1(DeclInfo* declinfo);
+#if !MWCCPS2_B198
 void CheckDefaultArgs(FuncArg* args);
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT (30)
 #endif
+#if MWCCPS2_B198
+static Type* CDecl_NewPointerType_inline(Type* type) {
+    TypePointer* tptr = galloc(sizeof(TypePointer));
+    memclrw(tptr, sizeof(TypePointer));
+    tptr->type = TYPEPOINTER;
+    tptr->size = 4;
+    tptr->target = type;
+    return (Type*)tptr;
+}
+#else
 Type* CDecl_NewStructType(SInt32 size, SInt16 align) {
     TypeStruct* tstruct = galloc(sizeof(TypeStruct));
     memclrw(tstruct, sizeof(TypeStruct));
@@ -149,6 +179,7 @@ TypeTemplDep* CDecl_NewTemplDepType(TypeTemplDepType tdt) {
 
     return t;
 }
+#endif
 
 void CDecl_SetResultReg(TypeFunc* tfunc) {}
 
@@ -217,6 +248,36 @@ void CDecl_NewConvFuncType(DeclInfo* declinfo) {
     declinfo->storageclass = 0;
 }
 
+#if MWCCPS2_B198
+void CDecl_CompleteType(Type* type) {
+    switch ((SInt8)type->type) {
+        case TYPEPOINTER:
+            if ((TYPE_POINTER(type)->qual & Q_REFERENCE) &&
+                IS_TYPE_CLASS(TYPE_POINTER(type)->target)) {
+                type = TYPE_POINTER(type)->target;
+                break;
+            }
+            return;
+        case TYPEARRAY:
+            do {
+                type = TYPE_POINTER(type)->target;
+            } while (IS_TYPE_ARRAY(type));
+            if (IS_TYPE_CLASS(type)) {
+                break;
+            }
+            return;
+        case TYPECLASS:
+            break;
+        default:
+            return;
+    }
+
+    if ((TYPE_CLASS(type)->flags & (CLASS_COMPLETED | CLASS_IS_TEMPL_INST)) ==
+        CLASS_IS_TEMPL_INST) {
+        CTempl_InstantiateTemplateClass(TYPE_CLASS(type));
+    }
+}
+#else
 void CDecl_CompleteType(Type* type) {
     switch (type->type) {
         case TYPEPOINTER:
@@ -245,7 +306,38 @@ void CDecl_CompleteType(Type* type) {
         CTempl_InstantiateTemplateClass(TYPE_CLASS(type));
     }
 }
+#endif
 
+#if MWCCPS2_B198
+Boolean IsCompleteType(Type* type) {
+    switch ((SInt8)type->type) {
+        case TYPEVOID:
+        case TYPEFUNC:
+            CError_Error(ERR_ILLEGAL_USE_VOID, type, 0);
+            return FALSE;
+        case TYPESTRUCT:
+            if (!type->size) {
+                CError_Error(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
+                return FALSE;
+            }
+            return TRUE;
+        case TYPECLASS:
+            if (!(TYPE_CLASS(type)->flags & CLASS_COMPLETED) &&
+                (!(TYPE_CLASS(type)->flags & CLASS_IS_TEMPL_INST) ||
+                 !CTempl_InstantiateTemplateClass(TYPE_CLASS(type)))) {
+                CError_Error(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
+                return FALSE;
+            }
+            return TRUE;
+        default:
+            if (!type->size) {
+                CError_Error(ERR_DATA_TYPE_INCOMPLETE);
+                return FALSE;
+            }
+            return TRUE;
+    }
+}
+#else
 Boolean IsCompleteType(Type* type) {
     switch (type->type) {
 #if MWCCPSP
@@ -291,7 +383,25 @@ Boolean IsCompleteType(Type* type) {
 extern void func_00500E90(void* list); // walks the list (0x500ED0 per entry)
 extern TemplClass* CTemplTool_GetTemplClass(TypeClass* tclass);
 #endif
+#endif
 
+#if MWCCPS2_B198
+Boolean CanAllocObject(Type* type) {
+    switch ((SInt8)type->type) {
+        case TYPEVOID:
+        case TYPEFUNC:
+            CError_Error(ERR_ILLEGAL_USE_VOID, type, 0);
+            return FALSE;
+        case TYPECLASS:
+            if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
+                CError_AbstractClassError(TYPE_CLASS(type));
+                return FALSE;
+            }
+        default:
+            return TRUE;
+    }
+}
+#else
 Boolean CanAllocObject(Type* type) {
     switch (type->type) {
 #if MWCCPSP
@@ -316,7 +426,24 @@ Boolean CanAllocObject(Type* type) {
             return TRUE;
     }
 }
+#endif
 
+#if MWCCPS2_B198
+Boolean CanCreateObject(Type* type) {
+    if (!CanAllocObject(type)) {
+        return FALSE;
+    }
+
+    if (IS_TYPE_CLASS(type)) {
+        if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
+            CError_Error(ERR_ILLEGAL_USE_HANDLEOBJECT);
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+#else
 Boolean CanCreateObject(Type* type) {
     if (!CanAllocObject(type)) {
         return FALSE;
@@ -341,7 +468,18 @@ Boolean CanCreateObject(Type* type) {
 
     return TRUE;
 }
+#endif
 
+#if MWCCPS2_B198
+void makethetypepointer(DeclInfo* declinfo, UInt32 qual) {
+    if (IS_TYPE_POINTER_ONLY(declinfo->thetype) &&
+        (TYPE_POINTER(declinfo->thetype)->qual & Q_REFERENCE)) {
+        CError_Error(ERR_ILLEGAL_AMPERSAND_REFERENCE);
+    }
+    declinfo->thetype = CDecl_NewPointerType_inline(declinfo->thetype);
+    TYPE_POINTER(declinfo->thetype)->qual = qual;
+}
+#else
 static Boolean CanCreateHandleMemberObject(Type* type) {
     while (IS_TYPE_ARRAY(type)) {
         type = TYPE_POINTER(type)->target;
@@ -360,11 +498,33 @@ static Boolean CanCreateHandleMemberObject(Type* type) {
 
     return TRUE;
 }
+#endif
 
 #if MWCCPS2_B52
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT (34)
 #endif
+#if MWCCPS2_B198
+void CDecl_AddThisPointerArgument(TypeFunc* tfunc, TypeClass* tclass) {
+    Type* ptype;
+    FuncArg* arg;
+
+    ptype = CDecl_NewPointerType_inline(tclass->sominfo == NULL ? (Type*)tclass : &stvoid);
+    TYPE_POINTER(ptype)->qual = Q_CONST;
+
+    arg = CParser_NewFuncArg();
+    arg->name = this_name_node;
+    arg->type = ptype;
+    if (tfunc->flags & FUNC_CONST) {
+        arg->qual |= Q_CONST;
+    }
+    if (tfunc->flags & FUNC_VOLATILE) {
+        arg->qual |= Q_VOLATILE;
+    }
+    arg->next = tfunc->args;
+    tfunc->args = arg;
+}
+#else
 void makethetypepointer(DeclInfo* declinfo, UInt32 qual) {
 #if MWCCPS2
     if (IS_TYPE_REFERENCE(declinfo->thetype)) {
@@ -374,11 +534,42 @@ void makethetypepointer(DeclInfo* declinfo, UInt32 qual) {
     declinfo->thetype = CDecl_NewPointerType(declinfo->thetype);
     TYPE_POINTER(declinfo->thetype)->qual = qual;
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B69_SHIFT
 #define CError_B69_SHIFT 0
 #endif
 
+#if MWCCPS2_B198
+void CDecl_MakePTMFuncType(TypeFunc* tfunc) {
+    Type* cvoidp;
+    FuncArg* arg1;
+    FuncArg* arg2;
+
+    cvoidp = CDecl_NewPointerType_inline(&stvoid);
+    TYPE_POINTER(cvoidp)->qual = Q_CONST;
+
+    arg1 = CParser_NewFuncArg();
+    arg1->name = this_name_node;
+    arg1->type = cvoidp;
+    if (tfunc->flags & FUNC_CONST) {
+        arg1->qual |= Q_CONST;
+    }
+    if (tfunc->flags & FUNC_VOLATILE) {
+        arg1->qual |= Q_VOLATILE;
+    }
+
+    arg2 = CParser_NewFuncArg();
+    arg2->name = this_name_node;
+    arg2->type = cvoidp;
+    arg2->qual = Q_CONST;
+
+    arg1->next = tfunc->args;
+    arg2->next = arg1;
+    tfunc->args = arg2;
+    tfunc->flags |= FUNC_PTM;
+}
+#else
 void CDecl_AddThisPointerArgument(TypeFunc* tfunc, TypeClass* tclass) {
     Type* ptype;
     FuncArg* arg;
@@ -427,6 +618,7 @@ void CDecl_MakePTMFuncType(TypeFunc* tfunc) {
     tfunc->args = arg2;
     tfunc->flags |= FUNC_PTM;
 }
+#endif
 
 void CDecl_AddArgument(TypeFunc* tfunc, Type* argtype) {
     FuncArg* arg = CParser_NewFuncArg();
@@ -471,6 +663,55 @@ static Boolean checkfuncintegr(Type* type) {
     return CanCreateObject(type);
 }
 
+#if MWCCPS2_B198
+void CDecl_ParseDirectFuncDecl(DeclInfo* declinfo) {
+    FuncArg* list;
+    TypeFunc* tfunc;
+
+    if (tk == ')') {
+        if (!copts.cplusplus) {
+            list = &oldstyle;
+        } else {
+            list = NULL;
+        }
+        tk = lex();
+    } else {
+        list = parameter_type_list(declinfo);
+        if (tk != ')') {
+            CError_ErrorSemantic(ERR_RPAREN_EXPECTED);
+        } else {
+            tk = lex();
+        }
+    }
+
+    tfunc = galloc(sizeof(TypeFunc));
+    memclrw(tfunc, sizeof(TypeFunc));
+    tfunc->type = TYPEFUNC;
+    tfunc->args = list;
+    if (declinfo->qual & Q_PASCAL) {
+        declinfo->qual &= ~Q_PASCAL;
+        tfunc->flags = FUNC_PASCAL;
+    }
+
+    if (copts.cplusplus) {
+        CDecl_ParseCPPFuncDecl(tfunc);
+        if (declinfo->storageclass == TK_TYPEDEF && tfunc->exspecs) {
+            CError_Error(ERR_ILLEGAL_EXCEPTION_SPECIFICATION);
+        }
+    }
+
+    scandirectdecl1(declinfo);
+    if (!checkfuncintegr(declinfo->thetype)) {
+        declinfo->thetype = &stvoid;
+    }
+
+    tfunc->functype = declinfo->thetype;
+    tfunc->qual = declinfo->qual & (Q_CONST | Q_VOLATILE);
+    declinfo->thetype = (Type*)tfunc;
+    declinfo->qual &= ~(Q_CONST | Q_VOLATILE);
+    declinfo->isType = FALSE;
+}
+#else
 void CDecl_ParseDirectFuncDecl(DeclInfo* declinfo) {
     FuncArg* list;
     TypeFunc* tfunc;
@@ -518,12 +759,129 @@ void CDecl_ParseDirectFuncDecl(DeclInfo* declinfo) {
     declinfo->qual &= ~(Q_CONST | Q_VOLATILE);
     declinfo->isType = FALSE;
 }
+#endif
 
 #if MWCCPS2_B52
 #if defined(__MWERKS__)
 #pragma dont_inline on // b69 calls the header inlines out of line here
 #endif
 #endif
+#if MWCCPS2_B198
+static void scandirectdecl1(DeclInfo* declinfo) {
+    Boolean unsized;
+    CInt64 len;
+    ENode* expr;
+
+    unsized = FALSE;
+    if (tk == '[') {
+        if ((tk = lex()) == ']') {
+            len = cint64_zero;
+            tk = lex();
+            unsized = TRUE;
+        } else {
+            if (!declinfo->isNewExpression || declinfo->hasArrayDimension) {
+                expr = CExpr_IntegralConstOrDepExpr();
+                if (!ENODE_IS(expr, EINTCONST)) {
+                    TypeTemplDep* ttempl;
+                    if (tk != ']') {
+                        CError_ErrorSemantic(ERR_RBRACKET_EXPECTED);
+                    } else {
+                        tk = lex();
+                    }
+                    declinfo->hasArrayDimension = TRUE;
+                    scandirectdecl1(declinfo);
+                    if (!CDecl_CheckArrayIntegr(declinfo->thetype)) {
+                        declinfo->thetype = (Type*)&stsignedchar;
+                    }
+                    ttempl = CDecl_NewTemplDepType(TEMPLDEP_ARRAY);
+                    ttempl->u.array.type = declinfo->thetype;
+                    ttempl->u.array.index = CInline_CopyExpression(expr, CopyModeGlobal);
+                    declinfo->thetype = (Type*)ttempl;
+                    return;
+                }
+                len = expr->data.intval;
+                if (len.hi & 0x80000000) {
+                    CError_Error(ERR_ILLEGAL_CONSTANT_EXPRESSION);
+                    len = cint64_one;
+                } else if (CInt64_IsZero(&len)) {
+                    if (!copts.ANSIstrict && declinfo->allowZeroLengthArray) {
+                        unsized = TRUE;
+                    } else {
+                        CError_Error(ERR_ILLEGAL_CONSTANT_EXPRESSION);
+                        len = cint64_one;
+                    }
+                }
+            } else {
+                len = cint64_one;
+                expr = expression();
+                if (IS_TYPE_INT(expr->rtype)) {
+                    if (!ENODE_IS(expr, EINTCONST)) {
+                        declinfo->arrayBound = expr;
+                    } else {
+                        len = expr->data.intval;
+                    }
+                } else {
+                    CError_Error(ERR_ILLEGAL_CONSTANT_EXPRESSION);
+                }
+            }
+
+            if (tk != ']') {
+                CError_ErrorSemantic(ERR_RBRACKET_EXPECTED);
+            } else {
+                tk = lex();
+            }
+        }
+
+        declinfo->hasArrayDimension = TRUE;
+        scandirectdecl1(declinfo);
+
+        if (unsized && declinfo->thetype->type == TYPEARRAY && !declinfo->thetype->size) {
+            CError_Error(ERR_DATA_TYPE_INCOMPLETE);
+            declinfo->thetype = (Type*)&stsignedchar;
+        }
+
+        if (!unsized && !CDecl_CheckArrayIntegr(declinfo->thetype)) {
+            declinfo->thetype = (Type*)&stsignedchar;
+        }
+
+        if (!declinfo->thetype->size && CTemplTool_IsTypeDepType(declinfo->thetype)) {
+            TypeTemplDep* ttempl = CDecl_NewTemplDepType(TEMPLDEP_ARRAY);
+            ttempl->u.array.type = declinfo->thetype;
+            ttempl->u.array.index = CInline_CopyExpression(
+                intconstnode((Type*)&stsignedint, CInt64_GetULong(&len)), CopyModeGlobal
+            );
+            declinfo->thetype = (Type*)ttempl;
+            return;
+        }
+
+        {
+            CInt64 size64;
+            CInt64 product;
+            CInt64 max;
+
+            CInt64_SetULong(&size64, declinfo->thetype->size);
+            product = CInt64_Mul(size64, len);
+            CInt64_SetULong(&max, 0x7fffffff);
+            if (CInt64_GreaterU(product, max)) {
+                CError_Error(ERR_TYPE_SIZE_TOO_LARGE, CInt64_GetULong(&max));
+                product = cint64_one;
+            }
+
+            declinfo->thetype = CDecl_NewArrayType(declinfo->thetype, CInt64_GetULong(&product));
+        }
+    } else if (tk == '(') {
+        if (!copts.cplusplus ||
+            !declinfo->name ||
+            IS_TYPE_VOID(declinfo->thetype) ||
+            declinfo->unk67 ||
+            declinfo->unk66 ||
+            CParser_TryParamList(declinfo->unk10)) {
+            tk = lex();
+            CDecl_ParseDirectFuncDecl(declinfo);
+        }
+    }
+}
+#else
 static void scandirectdecl1(DeclInfo* declinfo) {
     Boolean unsized;
     CInt64 len;
@@ -651,12 +1009,88 @@ static void scandirectdecl1(DeclInfo* declinfo) {
         }
     }
 }
+#endif
 #if MWCCPS2_B52
 #if defined(__MWERKS__)
 #pragma dont_inline reset
 #endif
 #endif
 
+#if MWCCPS2_B198
+static void substitute_type(Type* type1, Type* type2) {
+    SInt32 oldsize;
+
+    for (;;) {
+        switch ((SInt8)type1->type) {
+            case TYPEPOINTER:
+                if (TYPE_POINTER(type1)->target == &stillegal) {
+                    TYPE_POINTER(type1)->target = type2;
+                    type1->size = 4;
+                    return;
+                }
+                type1 = TYPE_POINTER(type1)->target;
+                break;
+            case TYPEMEMBERPOINTER:
+                if (TYPE_MEMBER_POINTER(type1)->ty1 == &stillegal) {
+                    TYPE_MEMBER_POINTER(type1)->ty1 = type2;
+                    if (IS_TYPE_FUNC(type2)) {
+                        CDecl_MakePTMFuncType(TYPE_FUNC(type2));
+                        type1->size = 12;
+                    } else {
+                        type1->size = 4;
+                    }
+                    return;
+                }
+                type1 = TYPE_MEMBER_POINTER(type1)->ty1;
+                break;
+            case TYPEARRAY:
+                if (TYPE_POINTER(type1)->target == &stillegal) {
+                    if (!CDecl_CheckArrayIntegr(type2)) {
+                        type2 = (Type*)&stsignedchar;
+                    }
+                    type1->size *= type2->size;
+                    TYPE_POINTER(type1)->target = type2;
+                    return;
+                }
+                oldsize = TYPE_POINTER(type1)->target->size;
+                substitute_type(TYPE_POINTER(type1)->target, type2);
+                if (oldsize != TYPE_POINTER(type1)->target->size && oldsize != 0) {
+                    type1->size = TYPE_POINTER(type1)->target->size * (type1->size / oldsize);
+                }
+                return;
+            case TYPEFUNC:
+                if (TYPE_FUNC(type1)->functype == &stillegal) {
+                    if (!checkfuncintegr(type2)) {
+                        type2 = &stvoid;
+                    }
+                    TYPE_FUNC(type1)->functype = type2;
+                    CDecl_SetFuncResultReg((TypeFunc*)type1);
+                    return;
+                }
+                type1 = TYPE_FUNC(type1)->functype;
+                break;
+            case TYPETEMPLATE:
+                if (TYPE_TEMPLATE(type1)->dtype == TEMPLDEP_ARRAY) {
+                    if (TYPE_TEMPLATE(type1)->u.array.type == &stillegal) {
+                        if (!CDecl_CheckArrayIntegr(type2)) {
+                            type2 = (Type*)&stsignedchar;
+                        }
+                        TYPE_TEMPLATE(type1)->u.array.type = type2;
+                        return;
+                    }
+                    type1 = TYPE_TEMPLATE(type1)->u.array.type;
+                } else {
+                    CError_Error(ERR_ILLEGAL_TYPE);
+                    return;
+                }
+                break;
+            default:
+                CError_Error(ERR_DECLARATION_SYNTAX_ERROR);
+                return;
+        }
+    }
+}
+#else
 static void substitute_type(Type* type1, Type* type2) {
     SInt32 oldsize;
 
@@ -730,7 +1164,36 @@ static void substitute_type(Type* type1, Type* type2) {
         }
     }
 }
+#endif
 
+#if MWCCPS2_B198
+static void scandecl(DeclInfo* declinfo) {
+    Type* oldtype;
+    Type* newtype;
+
+    oldtype = declinfo->thetype;
+    declinfo->thetype = &stillegal;
+    scandeclarator(declinfo);
+
+    if (tk != ')') {
+        CError_ErrorSemantic(ERR_RPAREN_EXPECTED);
+    } else {
+        tk = lex();
+    }
+
+    newtype = declinfo->thetype;
+    if (newtype == &stillegal) {
+        declinfo->thetype = oldtype;
+        scandirectdecl1(declinfo);
+        return;
+    }
+
+    declinfo->thetype = oldtype;
+    scandirectdecl1(declinfo);
+    substitute_type(newtype, declinfo->thetype);
+    declinfo->thetype = newtype;
+}
+#else
 static void scandecl(DeclInfo* declinfo) {
     Type* oldtype;
     Type* newtype;
@@ -1130,6 +1593,7 @@ static void scandirectdeclarator(DeclInfo* declinfo, NameSpace* nspace) {
 #endif
     }
 }
+#endif
 
 void makememberpointertype(DeclInfo* declinfo, TypeClass* tclass, UInt32 qual) {
     TypeMemberPointer* tmemp;
@@ -1164,6 +1628,7 @@ void makememberpointertype(DeclInfo* declinfo, TypeClass* tclass, UInt32 qual) {
     }
     declinfo->thetype = (Type*)tmemp;
 }
+#if !MWCCPS2_B198
 
 #if MWCCPS2
 // b210 (3.0.1): a repeated qualifier (or one on a reference) is reported as
@@ -7053,3 +7518,4 @@ tagtype_search:
     }
     CScope_RestoreScope(&scopesave);
 }
+#endif

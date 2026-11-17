@@ -3,6 +3,11 @@
 
 #include "compiler/common.h"
 
+#if MWCCPS2_B198
+extern void CTempl_Setup(void);
+
+extern void CTempl_Cleanup(void);
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +41,7 @@ extern Boolean CTempl_InlineFunctionCheck(Object* funcobj);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

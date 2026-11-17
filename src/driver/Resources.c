@@ -1,3 +1,19 @@
+#if MWCCPS2_B198
+#include "driver/Resources.h"
+#include "compiler/win32.h"
+#include "driver/Files.h"
+#include "driver/MacSpecs.h"
+
+#include "driver/MsDos.h"
+#include "driver/oslib.h"
+#include "driver/StringUtils.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "driver/Memory.h"
+
+#else
 #include "driver/Resources.h"
 #include "compiler/win32.h"
 #include "driver/Files.h"
@@ -11,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#endif
 #define SWAP16(x) ((((x) & 0xff00) >> 8) | (((x) & 0xff) << 8))
 #define SWAP32(x) \
     (((((UInt32)(x)) & 0xff000000u) >> 24) | ((((UInt32)(x)) & 0x00ff0000u) >> 8) | \
@@ -114,16 +131,20 @@ static Boolean UseResourceForkInfo;
 
 static void ReadResourceFork(SInt16 ref, SInt8 permission, void* file_data, SInt32 file_size);
 static void WriteEmptyResourceFork(SInt16 ref);
+#if !MWCCPS2_B198
 SInt16 __stdcall FSpOpenResFile(const FSSpec* spec, SInt8 permission);
 void __stdcall CloseResFile(SInt16 refNum);
+#endif
 
 Boolean OS_UsingMacResourceForkInfo(void) {
     return UseResourceForkInfo;
 }
+#if !MWCCPS2_B198
 
 void OS_UseMacResourceForkInfo(Boolean which) {
     UseResourceForkInfo = which;
 }
+#endif
 
 OSErr SystemInitResources(OSSpec* spec) {
     FSSpec prog;
@@ -775,6 +796,24 @@ static void WriteEmptyResourceFork(SInt16 ref) {
     DisposeHandle(hand_ref);
 }
 
+#if MWCCPS2_B198
+void __stdcall OS_AddMacResourceForkRef(int ref, const OSSpec* spec) {
+    ResRef* nw;
+
+    nw = malloc(sizeof(ResRef));
+    if (nw) {
+        nw->spec = *spec;
+        nw->ref = ref;
+        nw->next = NULL;
+        if (resForkLast) {
+            resForkLast->next = nw;
+        } else {
+            resForkList = nw;
+        }
+        resForkLast = nw;
+    }
+}
+#else
 static MemRsrcTypeList* FindResourceType1(MemRsrcMap* rm, OSType theType) {
     MemRsrcTypeList* mtyp;
 
@@ -788,7 +827,36 @@ static MemRsrcTypeList* FindResourceType1(MemRsrcMap* rm, OSType theType) {
 
     return NULL;
 }
+#endif
 
+#if MWCCPS2_B198
+void __stdcall OS_RemoveMacResourceForkRef(int ref) {
+    ResRef* lst;
+    ResRef* prev;
+
+    lst = resForkList;
+    prev = NULL;
+    while (lst && lst->ref != ref) {
+        prev = lst;
+        lst = lst->next;
+    }
+
+    if (lst) {
+        if (prev) {
+            prev->next = lst->next;
+            if (!prev->next) {
+                resForkLast = prev;
+            }
+        } else {
+            resForkList = lst->next;
+            if (!resForkList) {
+                resForkLast = NULL;
+            }
+        }
+        free(lst);
+    }
+}
+#else
 static MemRefList* FindResourceTypeAndID1(MemRsrcMap* rm, OSType theType, SInt16 theID) {
     MemRsrcTypeList* mtyp = FindResourceType1(rm, theType);
     MemRefList* mref;
@@ -805,7 +873,21 @@ static MemRefList* FindResourceTypeAndID1(MemRsrcMap* rm, OSType theType, SInt16
 
     return NULL;
 }
+#endif
 
+#if MWCCPS2_B198
+OSSpec* __stdcall OS_GetMacResourceForkFromRef(int ref) {
+    ResRef* lst;
+
+    for (lst = resForkList; lst; lst = lst->next) {
+        if (lst->ref == ref) {
+            return &lst->spec;
+        }
+    }
+
+    return NULL;
+}
+#else
 static MemRefList* FindResourceTypeAndID(OSType theType, SInt16 theID) {
     MemRsrcMap* rm = FindResourceMap(cur_res_file);
     MemRefList* mref;
@@ -820,7 +902,48 @@ static MemRefList* FindResourceTypeAndID(OSType theType, SInt16 theID) {
 
     return NULL;
 }
+#endif
 
+#if MWCCPS2_B198
+int __stdcall OS_SetMacResourceForkCreatorAndType(int ref, OSType creator, OSType type) {
+    int err;
+    UInt32 buf[2];
+    UInt32 sz;
+    MemRsrcMap* rm;
+
+    if (!OS_GetMacResourceForkFromRef(ref)) {
+        sz = 8;
+        buf[0] = SWAP32(type);
+        buf[1] = SWAP32(creator);
+        err = OS_Seek(ref, OSSeekAbs, 0x52);
+        if (!err) {
+            err = OS_Write(ref, buf, &sz);
+            if (!err && sz == 8) {
+                err = 0;
+            }
+        }
+        return err;
+    }
+
+    rm = FindResourceMap(OS_RefToMac(ref));
+    if (!rm) {
+        return ERROR_FILE_NOT_FOUND;
+    }
+    if (rm->fork_attr & mapReadOnly) {
+        return ERROR_INVALID_ACCESS;
+    }
+    rm->sys_data.creator[0] = (creator >> 24) & 0xFF;
+    rm->sys_data.creator[1] = (creator >> 16) & 0xFF;
+    rm->sys_data.creator[2] = (creator >> 8) & 0xFF;
+    rm->sys_data.creator[3] = creator & 0xFF;
+    rm->sys_data.type[0] = (type >> 24) & 0xFF;
+    rm->sys_data.type[1] = (type >> 16) & 0xFF;
+    rm->sys_data.type[2] = (type >> 8) & 0xFF;
+    rm->sys_data.type[3] = type & 0xFF;
+    rm->fork_attr |= mapChanged;
+    return 0;
+}
+#else
 #if MWCCPSP
 void __stdcall OS_AddMacResourceForkRef(int ref, const OSSpec* spec) {
 #else
@@ -841,7 +964,42 @@ void OS_AddMacResourceForkRef(int ref, const OSSpec* spec) {
         resForkLast = nw;
     }
 }
+#endif
 
+#if MWCCPS2_B198
+int __stdcall OS_GetMacResourceForkCreatorAndType(int ref, OSType* creator, OSType* type) {
+    int err;
+    UInt32 buf[2];
+    UInt32 sz;
+    MemRsrcMap* rm;
+
+    if (!OS_GetMacResourceForkFromRef(ref)) {
+        sz = 8;
+        err = OS_Seek(ref, OSSeekAbs, 0x52);
+        if (!err) {
+            err = OS_Read(ref, buf, &sz);
+            if (!err && sz == 8) {
+                err = 0;
+                buf[0] = SWAP32(buf[0]);
+                buf[1] = SWAP32(buf[1]);
+                *type = buf[0];
+                *creator = buf[1];
+            }
+        }
+        return err;
+    }
+
+    rm = FindResourceMap(OS_RefToMac(ref));
+    if (!rm) {
+        return ERROR_FILE_NOT_FOUND;
+    }
+    *creator = (rm->sys_data.creator[0] << 24) | (rm->sys_data.creator[1] << 16) |
+        (rm->sys_data.creator[2] << 8) | rm->sys_data.creator[3];
+    *type = (rm->sys_data.type[0] << 24) | (rm->sys_data.type[1] << 16) |
+        (rm->sys_data.type[2] << 8) | rm->sys_data.type[3];
+    return 0;
+}
+#else
 #if MWCCPSP
 void __stdcall OS_RemoveMacResourceForkRef(int ref) {
 #else
@@ -1101,6 +1259,7 @@ OSErr OS_MacDumpResourceFork(SInt16 ref, Boolean dumpContents) {
     CloseResFile(ref);
     return noErr;
 }
+#endif
 
 OSErr __stdcall FSpOpenRF(const FSSpec* fss, SInt8 permission, SInt16* refNum) {
     OSErr err;
@@ -1165,6 +1324,7 @@ SInt16 __stdcall FSpOpenResFile(const FSSpec* spec, SInt8 permission) {
     return ref;
 }
 
+#if !MWCCPS2_B198
 #if MWCCPSP
 Handle __stdcall GetResource(OSType theType, SInt16 theID) {
 #else
@@ -1182,6 +1342,7 @@ Handle GetResource(OSType theType, SInt16 theID) {
     }
 }
 
+#endif
 void __stdcall ReleaseResource(Handle theResource) {
     resError = noErr;
 }

@@ -1,3 +1,23 @@
+#if MWCCPS2_B198
+#include "driver/Targets.h"
+#include "driver/CWPlugins.h"
+#include "driver/Option.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
+#include "driver/StringExtras.h"
+
+Boolean SetupParserToolOptions(void) {
+    int idx;
+
+    Options_Init();
+    for (idx = 0; idx < pTool->numOptionLists; idx++) {
+        Options_AddList(pTool->optionLists[idx]);
+    }
+    Options_SortOptions();
+
+    return TRUE;
+}
+#else
 #include "driver/Targets.h"
 #include "driver/CWPlugins.h"
 #include "driver/Option.h"
@@ -32,6 +52,7 @@ Boolean ParserToolMatchesPlugin(OSType type, OSType lang, OSType cpu, OSType os)
         return FALSE;
     }
 }
+#endif
 
 Boolean ParserToolHandlesPanels(int numPanels, const char** panelNames) {
     int idx;
@@ -60,6 +81,35 @@ Boolean ParserToolHandlesPanels(int numPanels, const char** panelNames) {
     }
 }
 
+#if MWCCPS2_B198
+Boolean ParserToolMatchesPlugin(OSType type, OSType lang, OSType cpu, OSType os) {
+    if (!pTool) {
+        CLPFatalError("No options loaded for command line\n");
+        return FALSE;
+    }
+
+    if ((type == CWDROPINANYTYPE || pTool->TYPE == CWDROPINANYTYPE || pTool->TYPE == type) &&
+        (lang == Lang_Any || pTool->LANG == Lang_Any || pTool->LANG == lang) &&
+        (cpu == targetCPUAny || pTool->CPU == targetCPUAny || pTool->CPU == cpu) &&
+        (os == targetOSAny || pTool->OS == targetOSAny || pTool->OS == os)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+int SetParserToolInfo(ParserTool* tool) {
+    pTool = tool;
+
+    if (!(pTool->toolInfo && (parseopts.toolVersion || pTool->copyright))) {
+        __msl_assertion_failed(
+            "pTool->toolInfo && (parseopts.toolVersion || pTool->copyright)", "Targets.c", 0, 16
+        );
+    }
+
+    return TRUE;
+}
+#else
 Boolean SetupParserToolOptions(void) {
     int idx;
 
@@ -71,3 +121,4 @@ Boolean SetupParserToolOptions(void) {
 
     return TRUE;
 }
+#endif

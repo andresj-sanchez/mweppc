@@ -1,0 +1,2267 @@
+{
+  "src/runtime/ps2/maincrt.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/runtime/excrtl.cpp": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/runtime/ps2/exchand.cpp": {
+    "status": "Matching"
+  },
+  "src/runtime/ps2/ExceptionX86.cpp": {},
+  "src/ps2/optimizer/Alias.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/msl/ps2/setjmp_x86.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ansifp_x86.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ps2/alloc.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ps2/mem.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/strerror.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/string.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true
+  },
+  "src/runtime/ps2/globdest.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-flag",
+      "no-opt_rotateloops"
+    ],
+    "replace_inline": true
+  },
+  "src/runtime/stackall.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/runtime/ps2/LongLongx86.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/runtime/NMWException_handlers.c": {
+    "flags": [
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/runtime/terminate.c": {
+    "status": "Matching"
+  },
+  "src/ps2/backend/InstrSelection.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/ps2/backend/OpcodeInfo.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-flag",
+      "no-opt_common_subs",
+      "-flag",
+      "no-opt_propagation"
+    ]
+  },
+  "src/ps2/backend/Intrinsics.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/compiler/backend/mips.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/ps2/optimizer/IroTransform.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "auto"
+    ],
+    "replace_inline": true
+  },
+  "src/compiler/backend/MIPS_Peephole.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/ObjGen.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/FunctionCalls.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Operands.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/ps2/optimizer/IroUnrollLoop.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/ps2/backend/PCode.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "auto"
+    ],
+    "replace_inline": true
+  },
+  "src/compiler/backend/BE_schedule.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/MIPSError.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/ErrMgr.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/ps2/driver/CmdLineBuildDate.c": {
+    "flags": [
+      "-O4,p",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLLoadAndCache.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLTarg.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/MsDos.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/FileHandles.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/StringExtras.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/MemUtils.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CWSecretPluginCallbacks.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/ps2/driver/CLIncludeFileCache.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/MacFileTypes.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/TextUtils.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/MacSpecs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/Targets.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-opt",
+      "nospeed",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLPrefs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "status": "Matching"
+  },
+  "src/ps2/driver/StringUtils.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "status": "Matching"
+  },
+  "src/ps2/driver/CLSegs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/backend/BE_macro.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ]
+  },
+  "src/compiler/backend/InlineAsmMIPS.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/backend/PCodeUtilities.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/LiveRegisters.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/VReg.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/Spill.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/CodeGen.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Coloring.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/StructMoves.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/ELFgen.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/DWARF.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/ScanFloatX86.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/ps2/backend/InlineAsm.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/BitVectors.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/AliasPropagation.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CPrepTokenizer.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Registers.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Exceptions.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CMangler.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly",
+      "-str",
+      "pool"
+    ]
+  },
+  "src/ps2/backend/PCodeInfo.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/backend/BE_binary.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Peephole.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/Scheduler.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/MIPSSimulation.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroUtil.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "auto"
+    ],
+    "replace_inline": true
+  },
+  "src/compiler/backend/DeadCodeElimination.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/ps2/backend/ValueNumbering.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/InterferenceGraph.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/ConditionalMoveOptimization.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/driver/Option.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/frontend/CInline.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CTypeTools.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/frontend/CDecl.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CException.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CABI.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CBrowse.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "pool,noreadonly"
+    ]
+  },
+  "src/compiler/frontend/CExpr2.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CFunc.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CClass.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CTemplateTools.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CTemplateNew.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CTemplateFunc.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CExprConvMatch.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CPrep.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CExpr.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CScope.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CError.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/frontend/CompilerTools.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CParser.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroLinearForm.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroDump.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroMalloc.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroType.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/LoopDetection.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroVars.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroPointerAnalysisADTs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/CMachine.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/backend/RegisterInfo.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/optimizer/UseDefChains.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/driver/ParserErrors.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/Arguments.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/Help.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLOverlays.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLIO.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/ParserHelpers.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/ParserFace.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/driver/IO.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/Projects.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/driver/ResourceStrings.c": {
+    "status": "Matching",
+    "flags": [
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/CLLicenses.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLMain.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLFileOps.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLToolExec.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CompilerSetupOptions.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/driver/StdTargetWarningHelpers-cc.c": {
+    "status": "Matching",
+    "flags": [
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off",
+      "-opt",
+      "noschedule"
+    ],
+    "replace_inline": true
+  },
+  "src/compiler/driver/OptimizerHelpers.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off",
+      "-opt",
+      "noschedule",
+      "-flag",
+      "no-opt_rotateloops"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/CLWriteObjectFile.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/WarningHelpers.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off",
+      "-opt",
+      "noschedule",
+      "-flag",
+      "no-opt_rotateloops"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/DateTimeUtils.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLStaticMain.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLProj.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/compiler/driver/cc-eabi-ppc-mw.c": {
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLParserCallbacks_v1.cpp": {
+    "flags": [
+      "-O4,p",
+      "-bool",
+      "off",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLPluginRequests.cpp": {
+    "flags": [
+      "-O4,p",
+      "-bool",
+      "off",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLPluginAPI.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/ELF_Lib_Import.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/driver/libimp-eabi-ppc.c": {
+    "flags": [
+      "-opt",
+      "noschedule",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/driver/libimp-ps2.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/compiler/driver/cc-eabi-ppc.c": {
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLDependencies.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/Generic.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/Parameter.c": {
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/DropInCompilerLinkerPrivate.cpp": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/ParserHelpers-cc.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/ToolHelpers.c": {
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLPlugins.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLBrowser.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/StaticParserGlue.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/CLErrors.c": {
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLFiles.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/CLAccessPaths.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/Memory.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/driver/ClientGlue.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "status": "Matching"
+  },
+  "src/driver/Resources.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/driver/COSToolsCLT.c": {
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CWParserPluginsPrivate.cpp": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "off"
+    ]
+  },
+  "src/ps2/driver/CLDropinCallbacks_V10.cpp": {
+    "flags": [
+      "-O4,p",
+      "-bool",
+      "off",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/ps2/driver/CLCompilerLinkerDropin_V10.cpp": {
+    "flags": [
+      "-O4,p",
+      "-bool",
+      "off",
+      "-inline",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/msl/qsort.c": {
+    "status": "Matching",
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/bsearch.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/misc_io.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/buffer_io.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/pool_alloc.win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/time.win32.c": {
+    "status": "Matching",
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/startup.win32_early.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/startup.win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/ThreadLocalData.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/file_io.win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/file_pos.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/abort_exit_win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/ctype.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/mbstring.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/driver/ParserGlue-ps2-cc.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/msl/ps2/printf_g.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ps2/time.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ps2/scanf_core.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/scanf.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/wchar_io.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/strtold_core.c": {
+    "flags": [
+      "-opt",
+      "nospeed",
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/ps2/strtold.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/strtoull.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/strtoul.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/ansi_files.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/file_io.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/signal_win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/signal.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/sysenv.win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/ps2/driver/CWPluginsPrivate.cpp": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "off"
+    ]
+  },
+  "src/driver/Files.c": {
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/compiler/driver/ToolHelpers-cc.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/TargetOptimizerHelpers-mips.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-opt",
+      "noschedule"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/Utils.c": {
+    "status": "Matching",
+    "flags": [
+      "-O4,s",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/optimizer/IrObitvect.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly,pool"
+    ],
+    "status": "Matching"
+  },
+  "src/ps2/frontend/CInt64.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/COptimizer.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/VectorArraysToRegs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroJump.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroEmptyLoop.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/frontend/Unmangle.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/compiler/optimizer/IroSerializeAssignments.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/optimizer/IroScalarization.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroCodePositioning.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/compiler/optimizer/IroDependsKills.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroAggregateAssignment.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroExprs.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroLibrary.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroDependenceAnalysis.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CTemplateClass.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CPrec.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/frontend/CInit.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CTemplateFuncInst.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IrOptimizer.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroLoopVector.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroSubable.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/optimizer/IroLifetime.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroStrengthReduction.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroNonRegLoopAccesses.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroLoopRotation.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/optimizer/IroCounterLoop.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroLoopReversal.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroLoop.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroFlowgraph.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroCSE.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroEval.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroRangePropagation.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IroPropagate.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/frontend/CRTTI.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/ps2/optimizer/IROUseDef.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/optimizer/IroExprRegeneration.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/DIVbyCnst.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/ExprPreparation.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  },
+  "src/compiler/backend/RegListQueries.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "auto"
+    ],
+    "replace_inline": true
+  },
+  "src/ps2/frontend/CPreprocess.c": {
+    "status": "Matching",
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-strings",
+      "noreadonly"
+    ]
+  },
+  "src/compiler/backend/FuncLevelAsm.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/compiler/frontend/FEInterface.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "status": "Matching"
+  },
+  "src/driver/OverlayOptions.c": {
+    "flags": [
+      "-O4,s",
+      "-opt",
+      "nospeed",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/arith.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/assert.win32.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly"
+    ],
+    "replace_inline": true
+  },
+  "src/msl/CaseFoldCompare.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/setupargs.c": {
+    "flags": [
+      "-strings",
+      "noreadonly",
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "on",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/direct_io.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto",
+      "-flag",
+      "avoid_ebp"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/msl/ps2/runinit.c": {
+    "flags": [
+      "-lang",
+      "c99",
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/ELFImportReader.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/CCompilerPS2.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-strings",
+      "noreadonly",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true
+  },
+  "src/driver/ELFImportFileIO.c": {
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "noauto",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/runtime/NMWException.c": {
+    "flags": [
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/driver/CWPluginConversions.cpp": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off",
+      "-inline",
+      "noauto"
+    ],
+    "replace_inline": true,
+    "status": "Matching"
+  },
+  "src/ps2/backend/GCCInlineAsm.c": {
+    "flags": [
+      "-Cpp_exceptions",
+      "off"
+    ]
+  }
+}

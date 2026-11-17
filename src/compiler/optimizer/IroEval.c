@@ -1,3 +1,24 @@
+#if MWCCPS2_B198
+#include "compiler/IroEval.h"
+#include "compiler/IroFlowgraph.h"
+#include "compiler/IroLinearForm.h"
+#include "compiler/IroMalloc.h"
+#include "compiler/IroPointerAnalysis.h"
+#include "compiler/IroUtil.h"
+#include "compiler/IroVars.h"
+#include "compiler/CInt64.h"
+#include "compiler/CMachine.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CParser.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/Switch.h"
+#include "compiler/tokens.h"
+#include "compiler/types.h"
+#include "compiler/IroType.h"
+
+static Boolean IsAssociativeENodeType[IRO_MAXEXPR];
+#else
 #if MWCCPSP
 #include "compiler/CScope.h"
 #include <string.h>
@@ -1271,6 +1292,7 @@ Boolean IRO_EvaluateConditionals(void) {
     return changed;
 }
 #endif
+#endif
 
 static int EEquConst(IROLinear* nd) {
     return nd && (nd->nodetype == EEQU) && IRO_IsIntConstant(nd->u.diadic.right);
@@ -1284,6 +1306,7 @@ static Object* VEquConst(IROLinear* nd) {
     }
 }
 
+#if !MWCCPS2_B198
 static int IsConsecutive(CInt64 a, CInt64 b) {
     CInt64 diff;
 
@@ -1376,6 +1399,7 @@ static int checkStruct(IRONode* fnode1, IRONode* fnode2) {
         checkExpr(var, fnode2->last->u.label.cond);
 }
 
+#endif
 typedef struct ReduceInfo {
     int mark;
     int state;
@@ -1384,6 +1408,7 @@ typedef struct ReduceInfo {
     struct ReduceInfo* next;
     CInt64 val;
 } ReduceInfo;
+#if !MWCCPS2_B198
 
 static int MarkPattern1(ReduceInfo* info1, ReduceInfo* info2, CInt64* val) {
     ReduceInfo* scan;
@@ -2207,4 +2232,5 @@ Boolean func_0057B7A0(Object* obj) {
     }
     return TRUE;
 }
+#endif
 #endif

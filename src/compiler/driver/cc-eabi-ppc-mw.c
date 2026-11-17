@@ -1,3 +1,15 @@
+#if MWCCPS2_B198
+#include "driver/cc-eabi-ppc-mw.h"
+#include "driver/cc-eabi-ppc.h"
+#include "driver/CWPlugins.h"
+#include "driver/oslib.h"
+#include "driver/libimp-eabi-ppc.h"
+
+void GetStaticTarget(OSType* cpu, OSType* os) {
+    *cpu = 'mips';
+    *os = 'psx2';
+}
+#else
 #include "driver/cc-eabi-ppc-mw.h"
 #include "driver/cc-eabi-ppc.h"
 #include "driver/CWPlugins.h"
@@ -13,6 +25,7 @@ void GetStaticTarget(OSType* cpu, OSType* os) {
     *os = 'EABI';
 #endif
 }
+#endif
 
 void GetStaticPluginType(OSType* language, OSType* plugintype) {
     *language = Lang_Any;
@@ -22,6 +35,7 @@ void GetStaticPluginType(OSType* language, OSType* plugintype) {
 void GetStaticParserPluginType(OSType* style) {
     *style = 'Seep';
 }
+#if !MWCCPS2_B198
 
 int RegisterStaticTargetPlugins(void) {
     return RegisterStaticCompilerPlugin() && RegisterStaticLibImporterPlugin();
@@ -30,3 +44,4 @@ int RegisterStaticTargetPlugins(void) {
 int RegisterStaticTargetResources(void) {
     return RegisterCompilerResources() && RegisterLibImporterResources();
 }
+#endif

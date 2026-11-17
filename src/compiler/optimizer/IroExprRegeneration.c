@@ -1,3 +1,32 @@
+#if MWCCPS2_B198
+#include "compiler/IroExprRegeneration.h"
+#include "compiler/IroCSE.h"
+#include "compiler/IroDump.h"
+#include "compiler/IroFlowgraph.h"
+#include "compiler/IroLinearForm.h"
+#include "compiler/IroSubable.h"
+#include "compiler/IroTransform.h"
+#include "compiler/IROUseDef.h"
+#include "compiler/IroUtil.h"
+#include "compiler/IroVars.h"
+#include "compiler/BitVector.h"
+#include "compiler/CDecl.h"
+#include "compiler/CExpr.h"
+#include "compiler/CFunc.h"
+#include "compiler/CInt64.h"
+#include "compiler/CMachine.h"
+#include "compiler/CParser.h"
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/types.h"
+#include <setjmp.h>
+#include <string.h>
+#include "compiler/CompilerTools.h"
+#pragma pack(push, 2)
+#pragma pack(pop)
+#define RG_VAR(o) ((VarRecord*)((o)->u.varptr))
+
+#else
 #if MWCCPSP
 #include "compiler/IrOptimizer.h"
 #endif
@@ -1437,6 +1466,7 @@ static Boolean IsPossibleCondAssStart(IRONode* fnode) {
         (last->type == IROLinearIf || last->type == IROLinearIfNot);
 }
 
+#endif
 static Type* logicalType(void) {
     if (copts.cplusplus && copts.booltruefalse) {
         return TYPE(&stbool);
@@ -1444,6 +1474,7 @@ static Type* logicalType(void) {
         return TYPE(&stsignedint);
     }
 }
+#if !MWCCPS2_B198
 
 static Boolean GeneratePossibleCondAss(IRONode* fnode) {
     IROLinear* ass1;
@@ -3597,4 +3628,5 @@ Boolean IRO_IsCosCall(IROLinear* linear, IROLinear** arg) {
 Boolean IRO_IsSinCall(IROLinear* linear, IROLinear** arg) {
     return IRO_IsMathCall(linear, arg, "sin");
 }
+#endif
 #endif

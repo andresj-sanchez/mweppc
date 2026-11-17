@@ -1,3 +1,14 @@
+#if MWCCPS2_B198
+#include "compiler/CError.h"
+#include "compiler/CParser.h"
+#include "compiler/CompilerTools.h"
+#include "compiler/CScope.h"
+#include "compiler/common.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+
+#else
 #include "compiler/CScope.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -51,6 +62,7 @@ TypeClass* cscope_currentclass;
 NameSpace* cscope_current;
 NameSpace* cscope_root;
 
+#endif
 void CScope_Setup(void) {
     cscope_current = cscope_root = CScope_NewHashNameSpace(NULL);
     cscope_currentclass = NULL;
@@ -58,6 +70,12 @@ void CScope_Setup(void) {
     cscope_is_member_func = FALSE;
 }
 
+#if MWCCPS2_B198
+void CScope_Cleanup(void) {
+    cscope_currentfunc = NULL;
+    cscope_currentclass = NULL;
+}
+#else
 #if MWCCPSP
 void CScope_Cleanup(void) {
     cscope_currentfunc = NULL;
@@ -73,6 +91,7 @@ void CScope_Cleanup(void) {
 void CScope_Cleanup(void) {}
 #endif
 #endif
+#endif
 
 void CScope_GetScope(CScopeSave* save) {
     save->current = cscope_current;
@@ -81,6 +100,19 @@ void CScope_GetScope(CScopeSave* save) {
     save->is_member_func = cscope_is_member_func;
 }
 
+#if MWCCPS2_B198
+void CScope_SetClassScope(TypeClass* cls, CScopeSave* save) {
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+
+    cscope_current = cls->nspace;
+    cscope_currentclass = cls;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = FALSE;
+}
+#else
 void CScope_SetNameSpaceScope(NameSpace* nspace, CScopeSave* save) {
     save->current = cscope_current;
     save->currentclass = cscope_currentclass;
@@ -92,7 +124,19 @@ void CScope_SetNameSpaceScope(NameSpace* nspace, CScopeSave* save) {
     cscope_currentfunc = NULL;
     cscope_is_member_func = FALSE;
 }
+#endif
 
+#if MWCCPS2_B198
+void CScope_SetClassDefScope(TypeClass* cls, CScopeSave* save) {
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+
+    cscope_current = cls->nspace;
+    cscope_currentclass = cls;
+}
+#else
 void CScope_SetClassScope(TypeClass* cls, CScopeSave* save) {
     save->current = cscope_current;
     save->currentclass = cscope_currentclass;
@@ -120,6 +164,7 @@ void CScope_SetClassDefScope(TypeClass* cls, CScopeSave* save) {
     CError_ASSERT(269, cscope_current);
 #endif
 }
+#endif
 
 void CScope_SetFunctionScope(Object* function, CScopeSave* save) {
     save->current = cscope_current;
@@ -159,6 +204,7 @@ void CScope_RestoreScope(CScopeSave* saved) {
     cscope_is_member_func = saved->is_member_func;
 }
 
+#if !MWCCPS2_B198
 static Boolean CScope_ObjectIsFunction(Object* obj) {
     return obj->otype == OT_OBJECT && IS_TYPE_FUNC(obj->type);
 }
@@ -494,6 +540,7 @@ NameSpaceObjectList* CScope_ArgumentDependentNameLookup(
     return list;
 }
 
+#endif
 NameSpace* CScope_NewHashNameSpace(HashNameNode* name) {
     NameSpace* nspace;
     void* buffer;
@@ -524,6 +571,7 @@ NameSpace* CScope_NewListNameSpace(HashNameNode* name, Boolean is_global) {
     return nspace;
 }
 
+#if !MWCCPS2_B198
 NameSpace* CScope_FindNonClassNonFunctionNS(NameSpace* nspace) {
     while (nspace) {
 #if MWCCPS2
@@ -538,6 +586,7 @@ NameSpace* CScope_FindNonClassNonFunctionNS(NameSpace* nspace) {
     return cscope_root;
 }
 
+#endif
 NameSpace* CScope_FindGlobalNS(NameSpace* nspace) {
     while (nspace) {
         if (nspace->name && !nspace->theclass && nspace->is_global) {
@@ -548,6 +597,12 @@ NameSpace* CScope_FindGlobalNS(NameSpace* nspace) {
     return cscope_root;
 }
 
+#if MWCCPS2_B198
+Boolean CScope_IsEmptyNameSpace(NameSpace* nspace) {
+    CError_ASSERT(866, !nspace->is_hash);
+    return nspace->data.list == NULL;
+}
+#else
 Boolean CScope_IsStdNameSpace(NameSpace* nspace) {
     return nspace &&
         !nspace->theclass &&
@@ -709,6 +764,7 @@ void CScope_AddObject(NameSpace* nspace, HashNameNode* name, ObjBase* obj) {
     }
 done:;
 }
+#endif
 #if MWCCPS2_B52
 #undef CError_B52_SHIFT
 #define CError_B52_SHIFT (0)
@@ -719,6 +775,7 @@ void CScope_AddGlobalObject(Object* obj) {
     CScope_AddObject(cscope_root, obj->name, OBJ_BASE(obj));
 }
 
+#if !MWCCPS2_B198
 NameSpaceLookupList* CScope_BuildNameSpaceLookupList(NameSpace* nspace) {
     NameSpaceLookupList* lookup;
     NameSpaceList list;
@@ -2902,6 +2959,7 @@ Boolean CScope_FindClassMemberObject(TypeClass* tclass, NameResult* result, Hash
     return FALSE;
 }
 
+#endif
 void CScope_InitObjectIterator(CScopeObjectIterator* iterator, NameSpace* nspace) {
     memclrw(iterator, sizeof(CScopeObjectIterator));
     iterator->nspace = nspace;
@@ -2912,6 +2970,33 @@ void CScope_InitObjectIterator(CScopeObjectIterator* iterator, NameSpace* nspace
     }
 }
 
+#if MWCCPS2_B198
+ObjBase* CScope_NextObjectIteratorObject(CScopeObjectIterator* iterator) {
+    ObjBase* obj;
+
+    do {
+        if (iterator->currlist) {
+            do {
+                obj = (ObjBase*)iterator->currlist->object;
+                if (obj->otype == OT_OBJECT) {
+                    iterator->currlist = iterator->currlist->next;
+                    return obj;
+                }
+            } while ((iterator->currlist = iterator->currlist->next));
+        }
+
+        if (iterator->nextname) {
+            iterator->currlist = &iterator->nextname->first;
+            iterator->nextname = iterator->nextname->next;
+        } else {
+            if (!iterator->nspace->is_hash || ++iterator->hashindex >= 1024) {
+                return NULL;
+            }
+            iterator->nextname = iterator->nspace->data.hash[iterator->hashindex];
+        }
+    } while (1);
+}
+#else
 ObjBase* CScope_NextObjectIteratorObject(CScopeObjectIterator* iterator) {
     ObjBase* obj;
 
@@ -2937,6 +3022,7 @@ ObjBase* CScope_NextObjectIteratorObject(CScopeObjectIterator* iterator) {
         }
     } while (1);
 }
+#endif
 
 NameSpaceObjectList* CScope_NextObjectIteratorObjectList(CScopeObjectIterator* iterator) {
     NameSpaceName* nsname;
@@ -2954,6 +3040,18 @@ NameSpaceObjectList* CScope_NextObjectIteratorObjectList(CScopeObjectIterator* i
     } while (1);
 }
 
+#if MWCCPS2_B198
+void CScope_DefineTypeTag(NameSpace* nspace, HashNameNode* name, Type* type) {
+    ObjTypeTag* ott;
+
+    ott = galloc(sizeof(ObjTypeTag));
+    memclrw(ott, sizeof(ObjTypeTag));
+    ott->otype = OT_TYPETAG;
+    ott->access = nspace->theclass ? global_access : ACCESSPUBLIC;
+    ott->type = type;
+    CScope_AddObject(nspace, name, OBJ_BASE(ott));
+}
+#else
 #if MWCCPSP
 ObjTypeTag* CScope_DefineTypeTag(NameSpace* nspace, HashNameNode* name, Type* type) {
 #else
@@ -3589,3 +3687,4 @@ void CScope_ParseUsingDirective(NameSpace* nspace) {
 }
 
 #pragma pack(2)
+#endif

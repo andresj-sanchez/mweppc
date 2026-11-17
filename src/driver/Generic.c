@@ -130,6 +130,36 @@ char* __stdcall OS_GetDirName(const OSPathSpec* spec, char* buf, int size) {
     return buf;
 }
 
+#if MWCCPS2_B198
+int __stdcall OS_MakeSpec2(const char* path, const char* filename, OSSpec* spec) {
+    char bpath[260];
+    char* eptr;
+    int pthlen;
+    int fnlen;
+
+    if (!path) {
+        path = "";
+    }
+    if (!filename) {
+        filename = "";
+    }
+
+    fnlen = strlen(filename);
+    pthlen = strlen(path);
+    if (fnlen + pthlen + 1 > 259) {
+        return ERROR_BUFFER_OVERFLOW;
+    }
+
+    strncpy(bpath, path, pthlen);
+    eptr = bpath + pthlen;
+    if (eptr[-1] != OS_PATHSEP) {
+        *(eptr++) = OS_PATHSEP;
+    }
+    strcpy(eptr, filename);
+
+    return OS_MakeSpec(bpath, spec, 0);
+}
+#else
 int __stdcall OS_MakeSpec2(const char* path, const char* filename, OSSpec* spec) {
     char bpath[260];
     char* eptr;
@@ -163,6 +193,7 @@ int __stdcall OS_MakeSpec2(const char* path, const char* filename, OSSpec* spec)
 
     return OS_MakeSpec(bpath, spec, 0);
 }
+#endif
 
 int __stdcall OS_MakeSpecWithPath(
     OSPathSpec* path, const char* filename, Boolean noRelative, OSSpec* spec
@@ -257,6 +288,84 @@ int __stdcall OS_NameSpecSetExtension(OSNameSpec* spec, const char* ext) {
     return OS_MakeNameSpec(name, spec);
 }
 
+#if MWCCPS2_B198
+char* __stdcall OS_SpecToStringRelative(
+    const OSSpec* spec, const OSPathSpec* cwdspec, char* path, int size
+) {
+    char fullbuf[260];
+    char* full;
+    char cwdbuf[260];
+    char* cwd;
+    OSPathSpec mycwdspec;
+    char* pptr;
+
+    full = fullbuf;
+    cwd = cwdbuf;
+    OS_SpecToString(spec, full, 260);
+
+    if (!size) {
+        size = 260;
+    }
+
+    if (!path) {
+        path = malloc(size);
+        if (!path) {
+            return 0;
+        }
+    }
+
+    if (!cwdspec) {
+        OS_GetCWD(&mycwdspec);
+        cwdspec = &mycwdspec;
+    }
+
+    if (!OS_PathSpecToString(cwdspec, cwdbuf, 260)) {
+        memcpy(path, fullbuf, size - 1);
+        path[size - 1] = 0;
+        return path;
+    }
+
+    while (*cwd && tolower(*full) == tolower(*cwd)) {
+        full++;
+        cwd++;
+    }
+
+    if ((size_t)(cwd - cwdbuf) < (strlen(fullbuf) / 2) && (strlen(cwd) > (strlen(fullbuf) / 2))) {
+        memcpy(path, fullbuf, size - 1);
+        path[size - 1] = 0;
+        return path;
+    }
+
+    while (cwd > cwdbuf) {
+        full--;
+        cwd--;
+        if (*cwd == OS_PATHSEP) {
+            break;
+        }
+    }
+
+    if (cwd == cwdbuf) {
+        strncpy(path, full, size - 1);
+        path[size - 1] = 0;
+    } else {
+        if (*(++cwd)) {
+            pptr = path;
+            while (*cwd) {
+                if (*cwd == OS_PATHSEP) {
+                    pptr += sprintf(pptr, "..\\");
+                }
+                ++cwd;
+            }
+            strcpy(pptr, full + 1);
+        } else {
+            strncpy(path, full + 1, size - 1);
+            path[size - 1] = 0;
+        }
+    }
+
+    return path;
+}
+#else
 char* __stdcall OS_CompactPaths(char* buf, const char* path, const char* name, int size) {
     int plen;
     int nlen;
@@ -404,6 +513,7 @@ char* __stdcall OS_SpecToStringRelative(
 
     return path;
 }
+#endif
 
 int __stdcall OS_FindFileInPath(const char* filename, const char* plist, OSSpec* spec) {
     const char* next;
@@ -439,6 +549,7 @@ int __stdcall OS_FindFileInPath(const char* filename, const char* plist, OSSpec*
     }
     return err;
 }
+#if !MWCCPS2_B198
 
 int __stdcall OS_FindProgram(const char* filename, OSSpec* spec) {
     char exename[260];
@@ -481,6 +592,7 @@ int __stdcall OS_FindProgram(const char* filename, OSSpec* spec) {
     }
     return err;
 }
+#endif
 
 int __stdcall OS_CopyHandle(OSHandle* hand, OSHandle* copy) {
     int err;
