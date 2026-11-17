@@ -2,13 +2,14 @@
 
 A decompilation of the Metrowerks CodeWarrior toolchain. Currently supported versions:
 
-| Compiler       | Version    | Internal version | Exact functions | Linked functions    | Linked bytes | Notes                         |
-| -------------- | ---------- | ---------------- | --------------- | ------------------- | ------------ | ----------------------------- |
-| GameCube 2.0   | `GC_2_0`   | 2.4.7 build 92   | 4016 / 4065     | 2850 / 4068 (70.1%) | 54.3%        |                               |
-| GameCube 2.0p2 | `GC_2_0p2` | 2.4.7 build 92   | 4019 / 4068     | 2853 / 4071 (70.1%) | 54.3%        | GameCube 2.0 patched for BFBB |
-| GameCube 2.5   | `GC_2_5`   | 2.4.7 build 105  | 4026 / 4076     | 2860 / 4079 (70.1%) | 54.3%        |                               |
-| GameCube 2.6   | `GC_2_6`   | 2.4.7 build 107  | 4027 / 4077     | 2860 / 4080 (70.1%) | 54.4%        |                               |
-| GameCube 2.7   | `GC_2_7`   | 2.4.7 build 108  | 4033 / 4084     | 2848 / 4087 (69.7%) | 54.2%        |                               |
+| Compiler       | Version         | Internal version | Exact functions | Linked functions    | Linked bytes | Notes                         |
+| -------------- | --------------- | ---------------- | --------------- | ------------------- | ------------ | ----------------------------- |
+| GameCube 2.0   | `GC_2_0`        | 2.4.7 build 92   | 4016 / 4065     | 2850 / 4068 (70.1%) | 54.3%        |                               |
+| GameCube 2.0p2 | `GC_2_0p2`      | 2.4.7 build 92   | 4019 / 4068     | 2853 / 4071 (70.1%) | 54.3%        | GameCube 2.0 patched for BFBB |
+| GameCube 2.5   | `GC_2_5`        | 2.4.7 build 105  | 4026 / 4076     | 2860 / 4079 (70.1%) | 54.3%        |                               |
+| GameCube 2.6   | `GC_2_6`        | 2.4.7 build 107  | 4027 / 4077     | 2860 / 4080 (70.1%) | 54.4%        |                               |
+| GameCube 2.7   | `GC_2_7`        | 2.4.7 build 108  | 4033 / 4084     | 2848 / 4087 (69.7%) | 54.2%        |                               |
+| PS2 3.0.1      | `PS2_3_0_1b198` | 3.0.1 build 198  | 1633 / 4607     | 424 / 4607 (9.2%)   | 4.5%         |                               |
 
 - **Exact:** the compiled function has identical assembly to the original binary.
 - **Linked:** the functions whose translation unit links identically to the original executable.
@@ -265,6 +266,43 @@ Every unit of the Monster Hunter corpus (4,607 cases: the mh1-xbox decompilation
 Persona 4 units replayed through b52) gives identical objects. The same holds for 3,836 of 3,838 cases recaptured with
 b52 from Silent Hill 3, Persona 4, Yu-Gi-Oh! Duelists of the Roses and Persona 3 FES. Code no corpus reaches stops with
 "not implemented"; C++ is largely untested.
+
+## PlayStation 2 3.0.1 build 198 (`PS2_3_0_1b198`)
+
+The PS2 compiler's build 198 (2005-10-11) is twelve builds older than build 210 above and shares almost all of its code
+with it. It is decompiled to match the original byte for byte, like the GameCube versions: each function is compiled by
+CodeWarrior 9.2 for Windows' x86 compiler (3.2.2 build 396) and compared with the original's.
+
+```sh
+python configure.py --mwcc --version PS2_3_0_1b198
+ninja
+```
+
+The build fetches the original from decomp.me's public image of the compiler, checked by digest, and delink, objdiff and
+wibo; it takes the host compiler and the C library's sources out of CodeWarrior 9.2's installer (with `cabextract` or
+`7z`, and `unshield` or the UnshieldSharp it downloads) and the linker out of CodeWarrior 9.4 (with `bsdtar` or `7z`).
+It splits the original into one object per unit along `config/PS2_3_0_1b198/splits.txt`, compiles the units of
+`config/PS2_3_0_1b198/sources.json`, compares each with objdiff and checks where every relocation and case table points
+(`tools/mwccps2/check_relocs.py`), then links the original back together from the units marked Matching and checks it
+against its SHA-1 (`build/PS2_3_0_1b198/mwccps2.exe`). The build fails when a Matching unit stops being exact.
+
+1,633 of its 4,607 functions are exact, and 88 of its 340 units link from source. Names follow the evidence: the Wii
+1.0RC1 compiler's debug information, the GameCube versions here, the export table and the original's own code. A name
+nothing gives is marked `//! @reconstructed` where it is declared.
+
+Its sources share this tree with the others (`tools/mwccps2/merge.py`, which can bring in a newer version of them).
+Files only it has are added where their kind belongs; files it shares with the GameCube sources are merged, with `#if
+MWCCPS2_B198` (set on its build's command line) around what differs; and files whose namesake here is different code
+(the MIPS back end, or front-end files 3.0.1 rewrote) are its own, under `src/ps2/` and `include/ps2/`, which its build
+searches first. `python tools/mwccps2/merge.py --check SOURCE_TREE` proves that every merged file reads, for every other
+version, exactly as before. Five C library files are Metrowerks' own text with a few lines changed (`alloc.c`, `time.c`,
+`scanf_core.c`, `strtoull.c`, `printf_g.c`): the build makes them from CodeWarrior 9.2's library sources and the patches in
+`config/PS2_3_0_1b198/msl` (`tools/mwccps2/msl.py`), which hold only the changed lines and refer to the rest by line
+number.
+
+`config/PS2_3_0_1b198/b210.csv` maps every function of build 198 to build 210's with the same code
+(`tools/mwccps2/map_b210.py`): 4,527 of the 4,607 have one. Compared with build 210's code, 1,612 of the 1,633 exact
+functions compile to it exactly, apart from the fields their objects relocate.
 
 ## Where the PSP and PS2 compilers come from
 
