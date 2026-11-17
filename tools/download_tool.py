@@ -11,6 +11,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import urllib.error
@@ -23,6 +24,22 @@ OBJDIFF_TAG = "v3.8.1"
 WIBO_TAG = "1.2.0"
 COMPILERS_TAG = "20250812"
 UNSHIELDSHARP_TAG = "3.0.0"
+DELINK_TAG = "v0.16.4"
+# CodeWarrior 9.2 and 9.4 for Windows, for the PS2 compiler's version: 9.2's x86 compiler (3.2.2 build 396) builds
+# its sources, 9.4's linker (3.2.4 build 418) links it back together
+CW92_INSTALLER = (
+    "https://archive.org/download/cwpro9/Metrowerks%20CodeWarrior%20for%20Windows%209.4.7z/"
+    "Metrowerks%20CodeWarrior%20for%20Windows%209.4%2FCW_Windows_9.2.exe"
+)
+CW94_ARCHIVE = "https://archive.org/download/CodewarriorForWindows/CodeWarrior%209.4.7z"
+# the PS2 compiler's build 198, from decomp.me's public image (fetched by its single layer's digest)
+PS2_B198_IMAGE = "decompme/compilers/ps2/mwcps2-3.0.1b198-051011"
+PS2_B198_LAYER = "sha256:627867f8704e14e2c8d428520f6de2668d7712903b9571e9aecf1ce628b4c60b"
+PS2_B198_FILES = {
+    "mwccps2.exe": "41983e892a7b4a34b3ba96c2dd9d45f6a52d96a5ac4120dc479246786b124184",
+    "LMGR8C.DLL": "996041141858fd4724ec36add0913755a0067498b93271d7d26e4a1bfa04a561",
+    "LMGR326B.DLL": "bd9415ab11f4aef42c372e8547a8303b02464b59549745be597cf09e460737e8",
+}
 PRO4_ISO = "https://archive.org/download/cwpro4/CW_PRO_R4.ISO"
 PRO5_BIN = "https://archive.org/download/cwpro5/Tools%20-%20Windows%2095%20NT/CW_PRO5.bin"
 PRO6_ISO = "https://archive.org/download/codewarrior-6.0/CW_Tools_6.0.iso"
@@ -51,6 +68,13 @@ SHA256 = {
     "UnshieldSharp_3.0.0_net10.0_win-arm64_release.zip": "b19e14a8f7669a29f57df8be0525a52a2f1ffb0406ea4158cc563ac2877cf8e4",
     "UnshieldSharp_3.0.0_net10.0_win-x64_release.zip": "d6eac922c9ce094fc69b4546ae182f39b4995e61f3ac5409f5b4e24d553232a4",
     "UnshieldSharp_3.0.0_net10.0_win-x86_release.zip": "185d4a1ebdc56a30a13afe22ce7455405d8dc1fdb0755103d9eb0c337afd6afe",
+    "delink-linux-x86_64": "31f221ddaf9e12e01a2b7a8f71fc6e62d35605e5e331138dc2e59de4f22f39e4",
+    "delink-macos-arm64": "7cf0182a559731188447d97c429870ab7ece49204471fdd6a3e7ce99323a5c5b",
+    "delink-macos-x86_64": "9bb721bcdec74ab4b79edcd9c6ec9c69bc05e5d035ce026b5244a68fab47d3cd",
+    "delink-windows-x86_64.exe": "06e6d5189c39c54794b9d3af4f02df6af09830aaa3caaa7d45ef3f20aa2faf1c",
+    "cw92": "6836e6a03c23b730fa106b04223548ac6cdff28112b5882ef6cb5f9abe34f193",
+    "cw92_installer": "86608e30a15f501065fc0e0aab55b0ac3372aa02818f7f37f2aa20e47dccd6dc",
+    "cw94_mwld": "badeeefa1a175bbf2ebc273d67eeda9b414002327bf2102d3db9242e74fc6bd1",
     "compilers": "f7fdc6f47d61f2e1728ba6b8dd28f13b0d510405b300d2b107e7cedd4242e706",
     "pro53_updater": "0919270219d1495764169ca190d0f341389d5aac41e509977007b8808034ec95",
     "pro4": "82d8a3e219217bea7dedd544aeeec623f01cc5ac6d6101b399a0df4c5c826b72",
@@ -252,6 +276,117 @@ def pro53(tool="mwcc.exe"):
         return next(files.rglob(tool)).read_bytes()
 
 
+def delink():
+    system = {"Darwin": "macos", "Linux": "linux", "Windows": "windows"}[platform.system()]
+    machine = {"amd64": "x86_64"}.get(platform.machine().lower(), platform.machine().lower())
+    suffix = ".exe" if system == "windows" else ""
+    return release("dbalatoni13/delink", DELINK_TAG, f"delink-{system}-{machine}{suffix}")
+
+
+def ps2_b198(output):
+    """mwccps2.exe 3.0.1 build 198 and the two license manager libraries it loads, into OUTPUT's folder."""
+    token = json.loads(get(f"https://ghcr.io/token?scope=repository:{PS2_B198_IMAGE}:pull"))["token"]
+    blob = get(f"https://ghcr.io/v2/{PS2_B198_IMAGE}/blobs/{PS2_B198_LAYER}", {"Authorization": f"Bearer {token}"})
+    if "sha256:" + hashlib.sha256(blob).hexdigest() != PS2_B198_LAYER:
+        raise SystemExit(f"{PS2_B198_IMAGE}: the layer is not {PS2_B198_LAYER}")
+    prefix = "compilers/ps2/mwcps2-3.0.1b198-051011/"
+    with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as archive:
+        for name, digest in PS2_B198_FILES.items():
+            data = archive.extractfile(prefix + name).read()
+            if hashlib.sha256(data).hexdigest() != digest:
+                raise SystemExit(f"{name}: the SHA-256 is not {digest}")
+            temporary = output.parent / (name + ".part")
+            temporary.write_bytes(data)
+            temporary.replace(output.parent / name)
+
+
+def cw92_installer():
+    """CodeWarrior 9.2's installer, kept in build/downloads: the compiler and the C library come out of it."""
+    path = DOWNLOADS / "CW_Windows_9.2.exe"
+    if path.exists():
+        return checked("cw92_installer", path.read_bytes())
+    data = checked("cw92_installer", fetch(CW92_INSTALLER))
+    DOWNLOADS.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".part")
+    temporary.write_bytes(data)
+    temporary.replace(path)
+    return data
+
+
+def cw92_files(root):
+    """The installed tree of CodeWarrior 9.2, under ROOT/files. The installer is a cabinet holding InstallShield's:
+    cabextract (or 7z) opens the first, unshield (or UnshieldSharp) the second."""
+    (root / "installer.exe").write_bytes(cw92_installer())
+    if shutil.which("cabextract"):
+        command = ["cabextract", "-q", "-d", root / "cab", root / "installer.exe"]
+    elif shutil.which("7z"):
+        command = ["7z", "x", f"-o{root / 'cab'}", root / "installer.exe"]
+    else:
+        raise SystemExit("cabextract or 7z is needed to unpack CodeWarrior 9.2's installer")
+    subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+    if shutil.which("unshield"):
+        command = ["unshield", "-d", root / "files", "x", root / "cab" / "data1.cab"]
+    else:
+        command = [unshieldsharp(), f"-o={root / 'files'}", root / "cab" / "data1.hdr"]
+    subprocess.run(
+        command,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        env={**os.environ, "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"},
+    )
+    return root / "files"
+
+
+def cw92():
+    """The command-line compiler, Tools/Other_Metrowerks_Tools/Command_Line_Tools/mwcc.exe."""
+    with tempfile.TemporaryDirectory() as temporary:
+        files = cw92_files(Path(temporary))
+        return checked("cw92", next(files.rglob("Command_Line_Tools/mwcc.exe")).read_bytes())
+
+
+def msl92(output):
+    """The C library's sources of CodeWarrior 9.2 (Tools/MSL), under OUTPUT's folder as MSL/."""
+    with tempfile.TemporaryDirectory() as temporary:
+        files = cw92_files(Path(temporary))
+        target = output.parent / "MSL"
+        shutil.rmtree(target, ignore_errors=True)
+        shutil.copytree(files / "Tools/MSL", target)
+    output.touch()
+
+
+def cw94_mwld():
+    """CodeWarrior 9.4's archive holds a ThinApp package: one large file with the installed tree, every file stored as
+    it is. The linker is found in it by its banner and cut out by its own section table. Needs bsdtar or 7z."""
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        (root / "cw94.7z").write_bytes(fetch(CW94_ARCHIVE))
+        if shutil.which("bsdtar"):
+            command = ["bsdtar", "-xf", root / "cw94.7z", "-C", root]
+        elif shutil.which("7z"):
+            command = ["7z", "x", f"-o{root}", root / "cw94.7z"]
+        else:
+            raise SystemExit("bsdtar or 7z is needed to unpack CodeWarrior 9.4")
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+        image = next(root.rglob("*.dat")).read_bytes()
+        for found in re.finditer(b"MZ", image):
+            start = found.start()
+            if start % 0x1000 or start + 0x40 > len(image):
+                continue
+            pe = struct.unpack_from("<I", image, start + 0x3C)[0]
+            if not 0x40 <= pe < 0x400 or image[start + pe : start + pe + 4] != b"PE\0\0":
+                continue
+            count, optional = (
+                struct.unpack_from("<H", image, start + pe + 6)[0],
+                struct.unpack_from("<H", image, start + pe + 20)[0],
+            )
+            table = start + pe + 24 + optional
+            end = max(sum(struct.unpack_from("<II", image, table + 40 * i + 16)) for i in range(count))
+            body = image[start : start + end]
+            if b"Metrowerks Linker for Windows/x86" in body and hashlib.sha256(body).hexdigest() == SHA256["cw94_mwld"]:
+                return body
+    raise SystemExit("CodeWarrior 9.4's linker was not found in its package")
+
+
 LIB = [
     ("msl/MSL_Common/Include", "MSL/MSL_C/MSL_Common/Include", None),
     ("msl/MSL_Common/Src", "MSL/MSL_C/MSL_Common/Src", None),
@@ -370,7 +505,22 @@ def lib(output):
     output.touch()
 
 
-TOOLS = ("objdiff-cli", "wibo", "compilers", "pro4", "pro5", "pro53", "pro6", "lib", "pro53_mwld")
+TOOLS = (
+    "objdiff-cli",
+    "wibo",
+    "compilers",
+    "pro4",
+    "pro5",
+    "pro53",
+    "pro6",
+    "lib",
+    "pro53_mwld",
+    "delink",
+    "cw92",
+    "cw94_mwld",
+    "msl92",
+    "ps2_b198",
+)
 
 
 def main():
@@ -384,11 +534,22 @@ def main():
     output.parent.mkdir(parents=True, exist_ok=True)
     if sys.platform == "win32" and tool in ("pro5", "pro53", "pro6"):
         shutil.copy(Path(__file__).parent / "lmgr_stub/lmgr326b.dll", output.parent)
-    if tool in ("compilers", "pro4", "pro5", "pro53", "pro6", "lib", "pro53_mwld") and output.exists():
+    if (
+        tool in ("compilers", "pro4", "pro5", "pro53", "pro6", "lib", "pro53_mwld", "cw92", "cw94_mwld")
+        and output.exists()
+    ):
         output.touch()
         return
     if tool == "lib":
         lib(output)
+        return
+    if tool == "ps2_b198":
+        if not output.exists():
+            ps2_b198(output)
+        return
+    if tool == "msl92":
+        if not output.exists():
+            msl92(output)
         return
     if tool == "compilers":
         data = checked("compilers", fetch(f"https://files.decomp.dev/compilers_{COMPILERS_TAG}.zip"))
@@ -405,6 +566,9 @@ def main():
         "pro5": lambda: tools_zip_member("pro5", PRO5_BIN, True, "CODEWA~1.ZIP;1", "Tools/Command Line Tools/mwcc.exe"),
         "pro53": pro53,
         "pro53_mwld": lambda: pro53("mwld.exe"),
+        "delink": delink,
+        "cw92": cw92,
+        "cw94_mwld": cw94_mwld,
         "pro6": lambda: tools_zip_member(
             "pro6", PRO6_ISO, True, "CODEWA~1.ZIP;1", "Other Metrowerks Tools/Command Line Tools/mwcc.exe"
         ),

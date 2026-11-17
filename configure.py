@@ -525,6 +525,13 @@ def main():
         selected = versions[0]
         if arguments.matching and not (selected.config / "splits.txt").exists():
             sys.exit(f"config/{selected}/splits.txt does not exist: python tools/layout.py {selected}")
+        if selected.pipeline == "mwccps2":
+            if not mwcc or arguments.matching or len(versions) > 1:
+                sys.exit(f"{selected} is built on its own, with --mwcc: configure.py --mwcc --version {selected}")
+            from mwccps2 import matching
+
+            project.write_atomic(project.ROOT / "build.ninja", matching.generate())
+            return
         text = generate(versions, arguments.matching) if mwcc else generate_clang(versions)
         project.write_atomic(project.ROOT / "build.ninja", text)
         primary = project.version()

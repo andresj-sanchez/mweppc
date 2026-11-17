@@ -17,6 +17,8 @@ WRITE = 0x80000000
 
 EXTERNAL = 2
 STATIC = 3
+WEAK_EXTERNAL = 105  # with its auxiliary record: the symbol it falls back to, and how it is searched
+SEARCH_LIBRARY = 1  # the linker looks for the fallback in the libraries
 FUNCTION_TYPE = 0x20
 
 DIR32 = 6
